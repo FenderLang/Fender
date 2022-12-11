@@ -68,9 +68,22 @@ pub struct Operator<const N: usize> {
     pub symbol: &'static str,
 }
 
-pub struct Operation<const N: usize> {
-    values: [Box<dyn LazyValue>; N],
-    operator: Operator<N>,
+pub enum Operation {
+    BinaryOperation(Operator<2>, Box<dyn LazyValue>, Box<dyn LazyValue>),
+    UnaryOperation(Operator<1>, Box<dyn LazyValue>)
+}
+
+impl LazyValue for Operation {
+    fn evaluate_value(&self, scope: &Scope) -> Value {
+        match self {
+            Self::BinaryOperation(op, left, right) => {
+                (op.operate)([left.evaluate_value(scope), right.evaluate_value(scope)])
+            },
+            Self::UnaryOperation(op, operand) => {
+                (op.operate)([operand.evaluate_value(scope)])
+            },
+        }
+    }
 }
 
 pub trait LazyValue {
@@ -82,14 +95,6 @@ pub trait LazyValue {
 
     fn is_const(&self) -> bool {
         false
-    }
-}
-
-impl<const N: usize> LazyValue for Operation<N> {
-    fn evaluate_value(&self, scope: &Scope) -> Value {
-        let values: [Value; N] = self.values.each_ref().map(|lazy| lazy.evaluate_value(scope));
-        let operator = self.operator.operate;
-        operator(values)
     }
 }
 
