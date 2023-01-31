@@ -216,3 +216,21 @@ impl TypeSystem for FenderTypeSystem {
     type U = UnaryOperator;
     type T = TypeId;
 }
+
+impl FenderReference {
+    fn assign(&self, val: FenderReference) {
+        use FenderReference::*;
+
+        let val = match val {
+            FRef(ref_val) => unsafe { ref_val.get().as_ref().unwrap().clone() },
+            FRaw(val) => val,
+        };
+
+        match self {
+            FRef(v) => unsafe {
+                *v.get() = val;
+            },
+            FRaw(_) => unreachable!(),
+        };
+    }
+}
