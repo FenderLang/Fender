@@ -5,3 +5,17 @@ version = 3
 [[package]]
 name = "fender"
 version = "0.1.0"
+dependencies = [
+ "flux_bnf",
+ "freight_vm",
+]
+
+[[package]]
+name = "flux_bnf"
+version = "0.1.0"
+source = "git+https://github.com/FenderLang/Flux?branch=master#007ca382f6735c8e8c3bee10a213ad3a7babef6c"
+
+[[package]]
+name = "freight_vm"
+version = "0.1.0"
+source = "git+https://github.com/FenderLang/Freight?branch=master#82b4c432c2ba02a57a7c13f4d48243ab2c939446"
