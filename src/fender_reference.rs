@@ -50,8 +50,7 @@ impl FenderReference {
             //
             // FenderReference::FRaw(_) => unreachable!()
             // FenderReference::FRaw(val) => FenderReference::FRef(Rc::new(UnsafeCell::new(val))),
-
-            FenderReference::FRaw(_) => unreachable!()
+            FenderReference::FRaw(_) => unreachable!(),
         }
     }
 }
@@ -107,14 +106,8 @@ impl freight_vm::BinaryOperator<FenderReference> for FenderBinaryOperator {
         use FenderReference::*;
         use FenderValue::*;
 
-        let value_a = match operand_a {
-            FenderReference::FRef(v) => unsafe { v.get().as_ref().unwrap() },
-            FenderReference::FRaw(v) => v,
-        };
-        let value_b = match operand_b {
-            FenderReference::FRef(v) => unsafe { v.get().as_ref().unwrap() },
-            FenderReference::FRaw(v) => v,
-        };
+        let value_a = operand_a.deref();
+        let value_b = operand_b.deref();
 
         match (self, value_a, value_b) {
             (Add, Int(a), Int(b)) => FRaw(Int(a + b)),
@@ -202,10 +195,7 @@ impl freight_vm::UnaryOperator<FenderReference> for crate::FenderUnaryOperator {
         use FenderUnaryOperator::*;
         use FenderValue::*;
 
-        let val = match operand {
-            FenderReference::FRef(v) => unsafe { v.get().as_ref().unwrap() },
-            FenderReference::FRaw(v) => v,
-        };
+        let val = operand.deref();
 
         match (self, val) {
             (Neg, Int(val)) => FRaw(Int(-val)),
