@@ -1,6 +1,10 @@
 use crate::{FenderBinaryOperator, FenderTypeSystem, FenderUnaryOperator, FenderValue, TypeId};
 use freight_vm::Value;
-use std::{cell::UnsafeCell, rc::Rc};
+use std::{
+    cell::UnsafeCell,
+    ops::{Deref, DerefMut},
+    rc::Rc,
+};
 
 pub type InternalReference = Rc<UnsafeCell<FenderValue>>;
 
@@ -11,7 +15,7 @@ pub enum FenderReference {
 }
 
 impl FenderReference {
-    fn assign(&self, val: FenderReference) {
+    pub fn assign(&self, val: FenderReference) {
         use FenderReference::*;
 
         let val = match val {
@@ -26,6 +30,30 @@ impl FenderReference {
             FRaw(_) => unreachable!(),
         };
     }
+
+    pub fn get_pass_object(&self) -> FenderReference {
+        if self.get_type_id().is_primitive() {
+            self.pass_copy()
+        } else {
+            self.reference_copy()
+        }
+    }
+    pub fn pass_copy(&self) -> FenderReference {
+        // depending on how we use this it should be a `FRaw` instead of `FRef`
+        FenderReference::FRef(Rc::new(UnsafeCell::new(self.deref().deep_clone())))
+    }
+    pub fn reference_copy(&self) -> FenderReference {
+        match self {
+            FenderReference::FRef(inner_rc) => FenderReference::FRef(inner_rc.clone()),
+
+            // either want this to make a reference to something that used to be raw or we just want this to be unreachable
+            //
+            // FenderReference::FRaw(_) => unreachable!()
+            // FenderReference::FRaw(val) => FenderReference::FRef(Rc::new(UnsafeCell::new(val))),
+
+            FenderReference::FRaw(_) => unreachable!()
+        }
+    }
 }
 
 impl Default for FenderReference {
@@ -34,14 +62,34 @@ impl Default for FenderReference {
     }
 }
 
+impl Deref for FenderReference {
+    type Target = FenderValue;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            FenderReference::FRaw(v) => v,
+            FenderReference::FRef(v) => unsafe { v.get().as_ref().unwrap() },
+        }
+    }
+}
+
+impl DerefMut for FenderReference {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        match self {
+            FenderReference::FRaw(v) => v,
+            FenderReference::FRef(v) => unsafe {
+                let t = &mut *v.get();
+                todo!()
+            },
+        }
+    }
+}
+
 impl Value for FenderReference {
     type V = FenderTypeSystem;
 
     fn get_type(&self) -> &<Self::V as crate::TypeSystem>::T {
-        let val = match self {
-            FenderReference::FRaw(v) => v,
-            FenderReference::FRef(v) => unsafe { v.get().as_ref().unwrap() },
-        };
+        let val = self.deref();
         match val {
             FenderValue::Int(_) => &TypeId::Int,
             FenderValue::Float(_) => &TypeId::Float,
