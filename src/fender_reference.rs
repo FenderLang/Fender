@@ -33,18 +33,18 @@ impl FenderReference {
 
     pub fn get_pass_object(&self) -> FenderReference {
         if self.get_type_id().is_primitive() {
-            self.get_value_pass()
+            self.deep_clone()
         } else {
-            self.get_reference_pass()
+            self.dupe_reference()
         }
     }
-    pub fn get_value_pass(&self) -> FenderReference {
+    pub fn deep_clone(&self) -> FenderReference {
         // depending on how we use this it should be a `FRaw` instead of `FRef`
         FenderReference::FRef(Rc::new(UnsafeCell::new(self.deref().deep_clone())))
     }
-    pub fn get_reference_pass(&self) -> FenderReference {
+    pub fn dupe_reference(&self) -> FenderReference {
         match self {
-            FenderReference::FRef(inner_rc) => FenderReference::FRef(inner_rc.clone()),
+            FenderReference::FRef(_) => self.clone(),
 
             // either want this to make a reference to something that used to be raw or we just want this to be unreachable
             //
@@ -76,10 +76,7 @@ impl DerefMut for FenderReference {
     fn deref_mut(&mut self) -> &mut Self::Target {
         match self {
             FenderReference::FRaw(v) => v,
-            FenderReference::FRef(v) => unsafe {
-                let t = &mut *v.get();
-                todo!()
-            },
+            FenderReference::FRef(v) => unsafe { &mut *v.get() },
         }
     }
 }
