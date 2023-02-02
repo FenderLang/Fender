@@ -1,4 +1,3 @@
-
 pub enum TypeId {
     Int,
     Float,
@@ -8,9 +7,9 @@ pub enum TypeId {
     Reference,
 }
 
-impl TypeId{
-    pub fn is_primitive(&self)->bool{
-        match self{
+impl TypeId {
+    pub fn is_primitive(&self) -> bool {
+        match self {
             TypeId::Int => true,
             TypeId::Float => true,
             TypeId::Bool => true,

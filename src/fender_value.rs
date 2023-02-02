@@ -29,7 +29,7 @@ impl FenderValue {
         }
     }
 
-    pub fn deep_clone(&self)-> FenderValue{
+    pub fn deep_clone(&self) -> FenderValue {
         todo!()
     }
 }

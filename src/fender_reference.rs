@@ -33,16 +33,16 @@ impl FenderReference {
 
     pub fn get_pass_object(&self) -> FenderReference {
         if self.get_type_id().is_primitive() {
-            self.pass_copy()
+            self.get_value_pass()
         } else {
-            self.reference_copy()
+            self.get_reference_pass()
         }
     }
-    pub fn pass_copy(&self) -> FenderReference {
+    pub fn get_value_pass(&self) -> FenderReference {
         // depending on how we use this it should be a `FRaw` instead of `FRef`
         FenderReference::FRef(Rc::new(UnsafeCell::new(self.deref().deep_clone())))
     }
-    pub fn reference_copy(&self) -> FenderReference {
+    pub fn get_reference_pass(&self) -> FenderReference {
         match self {
             FenderReference::FRef(inner_rc) => FenderReference::FRef(inner_rc.clone()),
 
