@@ -1,5 +1,8 @@
 use crate::{FenderBinaryOperator, FenderTypeSystem, FenderUnaryOperator, FenderValue, TypeId};
-use freight_vm::Value;
+use freight_vm::{
+    operators::{binary::BinaryOperator, unary::UnaryOperator},
+    value::Value,
+};
 use std::{
     cell::UnsafeCell,
     ops::{Deref, DerefMut},
@@ -45,11 +48,6 @@ impl FenderReference {
     pub fn dupe_reference(&self) -> FenderReference {
         match self {
             FenderReference::FRef(_) => self.clone(),
-
-            // either want this to make a reference to something that used to be raw or we just want this to be unreachable
-            //
-            // FenderReference::FRaw(_) => unreachable!()
-            // FenderReference::FRaw(val) => FenderReference::FRef(Rc::new(UnsafeCell::new(val))),
             FenderReference::FRaw(_) => unreachable!(),
         }
     }
@@ -82,9 +80,9 @@ impl DerefMut for FenderReference {
 }
 
 impl Value for FenderReference {
-    type V = FenderTypeSystem;
+    type TS = FenderTypeSystem;
 
-    fn get_type(&self) -> &<Self::V as crate::TypeSystem>::T {
+    fn get_type(&self) -> &<Self::TS as crate::TypeSystem>::TypeId {
         let val = self.deref();
         match val {
             FenderValue::Int(_) => &TypeId::Int,
@@ -95,10 +93,18 @@ impl Value for FenderReference {
             FenderValue::Ref(_) => &TypeId::Reference,
         }
     }
+
+    fn deep_clone(&self) -> Self {
+        todo!()
+    }
+
+    fn dupe_ref(&self) -> Self {
+        todo!()
+    }
 }
 
-impl freight_vm::BinaryOperator<FenderReference> for FenderBinaryOperator {
-    fn apply(&self, operand_a: &FenderReference, operand_b: &FenderReference) -> FenderReference {
+impl BinaryOperator<FenderReference> for FenderBinaryOperator {
+    fn apply_2(&self, operand_a: &FenderReference, operand_b: &FenderReference) -> FenderReference {
         use FenderBinaryOperator::*;
         use FenderReference::*;
         use FenderValue::*;
@@ -186,8 +192,8 @@ impl freight_vm::BinaryOperator<FenderReference> for FenderBinaryOperator {
     }
 }
 
-impl freight_vm::UnaryOperator<FenderReference> for crate::FenderUnaryOperator {
-    fn apply(&self, operand: &FenderReference) -> FenderReference {
+impl UnaryOperator<FenderReference> for crate::FenderUnaryOperator {
+    fn apply_1(&self, operand: &FenderReference) -> FenderReference {
         use FenderReference::*;
         use FenderUnaryOperator::*;
         use FenderValue::*;

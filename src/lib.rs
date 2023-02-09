@@ -14,6 +14,7 @@ pub mod type_sys {
     pub mod type_system;
 }
 
+#[derive(Debug, Clone)]
 pub enum FenderBinaryOperator {
     Add,
     Sub,
@@ -24,6 +25,7 @@ pub enum FenderBinaryOperator {
     Or,
 }
 
+#[derive(Debug, Clone)]
 pub enum FenderUnaryOperator {
     Neg,
     BoolNeg,
