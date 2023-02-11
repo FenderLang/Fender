@@ -1,40 +1,32 @@
-use std::{rc::Rc, cell::UnsafeCell};
+#![allow(dead_code)]
 
-type Stack = Vec<Value>;
+use freight_vm::TypeSystem;
 
-struct Scope {
-    values: usize,
-    statements: Vec<Statement>,
+// move these to a prelude or just get rid of them
+pub use fender_reference::FenderReference;
+pub use fender_value::FenderValue;
+pub use type_sys::{type_id::TypeId, type_system::FenderTypeSystem};
+
+pub mod fender_reference;
+pub mod fender_value;
+pub mod type_sys {
+    pub mod type_id;
+    pub mod type_system;
 }
 
-#[derive(Clone, Debug)]
-enum Value {
-    Reference(Rc<UnsafeCell<Value>>),
-    Integer(i64),
-    Float(f64),
-    String(String),
-    Null,
-    // TODO: Rest of values
+#[derive(Debug, Clone)]
+pub enum FenderBinaryOperator {
+    Add,
+    Sub,
+    Div,
+    Mod,
+    Mul,
+    And,
+    Or,
 }
 
-enum Statement {
-    Expression(Expression),
-}
-
-enum Expression {
-    Constant(Value),
-    Variable(usize),
-    Function(fn(&mut Stack) -> Value),
-    // TODO: Rest of expressions
-}
-
-impl Expression {
-    fn evaluate(&self, stack: &mut Stack) -> Value {
-        use Expression::*;
-        match self {
-            Constant(v) => v.clone(),
-            Variable(index) => stack[stack.len() - index].clone(),
-            Function(func) => func(stack),
-        }
-    }
+#[derive(Debug, Clone)]
+pub enum FenderUnaryOperator {
+    Neg,
+    BoolNeg,
 }
