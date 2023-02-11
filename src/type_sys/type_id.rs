@@ -5,6 +5,7 @@ pub enum TypeId {
     Error,
     Null,
     Reference,
+    Function,
 }
 
 impl TypeId {
@@ -16,6 +17,7 @@ impl TypeId {
             TypeId::Error => false,
             TypeId::Null => true,
             TypeId::Reference => false,
+            TypeId::Function => true,
         }
     }
 }
@@ -29,6 +31,7 @@ impl ToString for TypeId {
             TypeId::Error => "Error",
             TypeId::Null => "Null",
             TypeId::Reference => "Reference",
+            TypeId::Function => "Function",
         }
         .to_owned()
     }

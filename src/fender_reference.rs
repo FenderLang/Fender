@@ -1,7 +1,7 @@
 use crate::{FenderBinaryOperator, FenderTypeSystem, FenderUnaryOperator, FenderValue, TypeId};
 use freight_vm::{
     operators::{binary::BinaryOperator, unary::UnaryOperator},
-    value::Value,
+    value::Value, function::FunctionRef,
 };
 use std::{
     cell::UnsafeCell,
@@ -41,10 +41,12 @@ impl FenderReference {
             self.dupe_reference()
         }
     }
+
     pub fn deep_clone(&self) -> FenderReference {
         // depending on how we use this it should be a `FRaw` instead of `FRef`
         FenderReference::FRef(Rc::new(UnsafeCell::new(self.deref().deep_clone())))
     }
+
     pub fn dupe_reference(&self) -> FenderReference {
         match self {
             FenderReference::FRef(_) => self.clone(),
@@ -91,6 +93,7 @@ impl Value for FenderReference {
             FenderValue::Error(_) => &TypeId::Error,
             FenderValue::Null => &TypeId::Null,
             FenderValue::Ref(_) => &TypeId::Reference,
+            FenderValue::Function(_) => &TypeId::Function,
         }
     }
 
@@ -100,6 +103,13 @@ impl Value for FenderReference {
 
     fn dupe_ref(&self) -> Self {
         todo!()
+    }
+
+    fn cast_to_function(&self) -> Option<&FunctionRef> {
+        match &**self {
+            FenderValue::Function(func) => Some(&func),
+            _ => None,
+        }
     }
 }
 

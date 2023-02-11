@@ -1,3 +1,5 @@
+use freight_vm::function::FunctionRef;
+
 use crate::{fender_reference::InternalReference, TypeId};
 
 #[derive(Clone, Debug, Default)]
@@ -7,6 +9,7 @@ pub enum FenderValue {
     Float(f64),
     Bool(bool),
     Error(String),
+    Function(FunctionRef),
     #[default]
     Null,
 }
@@ -20,8 +23,10 @@ impl FenderValue {
             FenderValue::Bool(_) => TypeId::Bool,
             FenderValue::Error(_) => TypeId::Error,
             FenderValue::Null => TypeId::Null,
+            FenderValue::Function(_) => TypeId::Function,
         }
     }
+
     pub fn get_real_type_id(&self) -> TypeId {
         match self {
             FenderValue::Ref(val) => unsafe { val.get().as_ref().unwrap().get_real_type_id() },
