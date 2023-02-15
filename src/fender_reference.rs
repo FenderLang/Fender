@@ -1,7 +1,7 @@
-use crate::{FenderBinaryOperator, FenderTypeSystem, FenderUnaryOperator, FenderValue, TypeId};
+use crate::{FenderBinaryOperator, FenderTypeSystem, FenderUnaryOperator, FenderValue, FenderTypeId};
 use freight_vm::{
     operators::{binary::BinaryOperator, unary::UnaryOperator},
-    value::Value,
+    value::Value, function::FunctionRef,
 };
 use std::{
     cell::UnsafeCell,
@@ -41,10 +41,12 @@ impl FenderReference {
             self.dupe_reference()
         }
     }
+
     pub fn deep_clone(&self) -> FenderReference {
         // depending on how we use this it should be a `FRaw` instead of `FRef`
         FenderReference::FRef(Rc::new(UnsafeCell::new(self.deref().deep_clone())))
     }
+
     pub fn dupe_reference(&self) -> FenderReference {
         match self {
             FenderReference::FRef(_) => self.clone(),
@@ -85,12 +87,13 @@ impl Value for FenderReference {
     fn get_type(&self) -> &<Self::TS as crate::TypeSystem>::TypeId {
         let val = self.deref();
         match val {
-            FenderValue::Int(_) => &TypeId::Int,
-            FenderValue::Float(_) => &TypeId::Float,
-            FenderValue::Bool(_) => &TypeId::Bool,
-            FenderValue::Error(_) => &TypeId::Error,
-            FenderValue::Null => &TypeId::Null,
-            FenderValue::Ref(_) => &TypeId::Reference,
+            FenderValue::Int(_) => &FenderTypeId::Int,
+            FenderValue::Float(_) => &FenderTypeId::Float,
+            FenderValue::Bool(_) => &FenderTypeId::Bool,
+            FenderValue::Error(_) => &FenderTypeId::Error,
+            FenderValue::Null => &FenderTypeId::Null,
+            FenderValue::Ref(_) => &FenderTypeId::Reference,
+            FenderValue::Function(_) => &FenderTypeId::Function,
         }
     }
 
@@ -100,6 +103,13 @@ impl Value for FenderReference {
 
     fn dupe_ref(&self) -> Self {
         todo!()
+    }
+
+    fn cast_to_function(&self) -> Option<&FunctionRef> {
+        match &**self {
+            FenderValue::Function(func) => Some(&func),
+            _ => None,
+        }
     }
 }
 
