@@ -1,4 +1,4 @@
-pub enum TypeId {
+pub enum FenderTypeId {
     Int,
     Float,
     Bool,
@@ -8,30 +8,30 @@ pub enum TypeId {
     Function,
 }
 
-impl TypeId {
+impl FenderTypeId {
     pub fn is_primitive(&self) -> bool {
         match self {
-            TypeId::Int => true,
-            TypeId::Float => true,
-            TypeId::Bool => true,
-            TypeId::Error => false,
-            TypeId::Null => true,
-            TypeId::Reference => false,
-            TypeId::Function => true,
+            FenderTypeId::Int => true,
+            FenderTypeId::Float => true,
+            FenderTypeId::Bool => true,
+            FenderTypeId::Error => false,
+            FenderTypeId::Null => true,
+            FenderTypeId::Reference => false,
+            FenderTypeId::Function => true,
         }
     }
 }
 
-impl ToString for TypeId {
+impl ToString for FenderTypeId {
     fn to_string(&self) -> String {
         match self {
-            TypeId::Int => "Int",
-            TypeId::Float => "Float",
-            TypeId::Bool => "Bool",
-            TypeId::Error => "Error",
-            TypeId::Null => "Null",
-            TypeId::Reference => "Reference",
-            TypeId::Function => "Function",
+            FenderTypeId::Int => "Int",
+            FenderTypeId::Float => "Float",
+            FenderTypeId::Bool => "Bool",
+            FenderTypeId::Error => "Error",
+            FenderTypeId::Null => "Null",
+            FenderTypeId::Reference => "Reference",
+            FenderTypeId::Function => "Function",
         }
         .to_owned()
     }

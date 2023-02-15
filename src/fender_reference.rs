@@ -1,4 +1,4 @@
-use crate::{FenderBinaryOperator, FenderTypeSystem, FenderUnaryOperator, FenderValue, TypeId};
+use crate::{FenderBinaryOperator, FenderTypeSystem, FenderUnaryOperator, FenderValue, FenderTypeId};
 use freight_vm::{
     operators::{binary::BinaryOperator, unary::UnaryOperator},
     value::Value, function::FunctionRef,
@@ -87,13 +87,13 @@ impl Value for FenderReference {
     fn get_type(&self) -> &<Self::TS as crate::TypeSystem>::TypeId {
         let val = self.deref();
         match val {
-            FenderValue::Int(_) => &TypeId::Int,
-            FenderValue::Float(_) => &TypeId::Float,
-            FenderValue::Bool(_) => &TypeId::Bool,
-            FenderValue::Error(_) => &TypeId::Error,
-            FenderValue::Null => &TypeId::Null,
-            FenderValue::Ref(_) => &TypeId::Reference,
-            FenderValue::Function(_) => &TypeId::Function,
+            FenderValue::Int(_) => &FenderTypeId::Int,
+            FenderValue::Float(_) => &FenderTypeId::Float,
+            FenderValue::Bool(_) => &FenderTypeId::Bool,
+            FenderValue::Error(_) => &FenderTypeId::Error,
+            FenderValue::Null => &FenderTypeId::Null,
+            FenderValue::Ref(_) => &FenderTypeId::Reference,
+            FenderValue::Function(_) => &FenderTypeId::Function,
         }
     }
 

@@ -5,7 +5,7 @@ use freight_vm::TypeSystem;
 // move these to a prelude or just get rid of them
 pub use fender_reference::FenderReference;
 pub use fender_value::FenderValue;
-pub use type_sys::{type_id::TypeId, type_system::FenderTypeSystem};
+pub use type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem};
 
 pub mod fender_reference;
 pub mod fender_value;
