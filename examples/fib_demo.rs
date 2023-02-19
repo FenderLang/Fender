@@ -1,4 +1,7 @@
-use fender::{stdlib::{print_func, if_func}, FenderTypeSystem, FenderValue, FenderReference, FenderBinaryOperator};
+use fender::{
+    stdlib::{if_func, print_func},
+    FenderBinaryOperator, FenderReference, FenderTypeSystem, FenderValue,
+};
 use freight_vm::{expression::Expression, function::FunctionWriter, vm_writer::VMWriter};
 
 #[allow(unused_variables)]
@@ -12,23 +15,30 @@ fn main() {
     run_if_true
         .return_expression(Expression::BinaryOpEval(
             FenderBinaryOperator::Add,
-            Expression::DynamicFunctionCall(
-                Expression::Global(fib_ref).into(),
-                vec![Expression::BinaryOpEval(
-                    FenderBinaryOperator::Sub,
-                    Expression::Variable(run_if_true.captured_stack_offset(0)).into(),
-                    Expression::RawValue(FenderReference::FRaw(FenderValue::Int(2))).into(),
-                )],
-            )
-            .into(),
-            Expression::DynamicFunctionCall(
-                Expression::Global(fib_ref).into(),
-                vec![Expression::BinaryOpEval(
-                    FenderBinaryOperator::Sub,
-                    Expression::Variable(run_if_true.captured_stack_offset(0)).into(),
-                    Expression::RawValue(FenderReference::FRaw(FenderValue::Int(1))).into(),
-                )],
-            )
+            [
+                Expression::DynamicFunctionCall(
+                    Expression::Global(fib_ref).into(),
+                    vec![Expression::BinaryOpEval(
+                        FenderBinaryOperator::Sub,
+                        [
+                            Expression::Variable(run_if_true.captured_stack_offset(0)),
+                            Expression::RawValue(FenderReference::FRaw(FenderValue::Int(2))),
+                        ]
+                        .into(),
+                    )],
+                ),
+                Expression::DynamicFunctionCall(
+                    Expression::Global(fib_ref).into(),
+                    vec![Expression::BinaryOpEval(
+                        FenderBinaryOperator::Sub,
+                        [
+                            Expression::Variable(run_if_true.captured_stack_offset(0)),
+                            Expression::RawValue(FenderReference::FRaw(FenderValue::Int(1))),
+                        ]
+                        .into(),
+                    )],
+                ),
+            ]
             .into(),
         ))
         .unwrap();
@@ -50,8 +60,11 @@ fn main() {
         vec![
             Expression::BinaryOpEval(
                 FenderBinaryOperator::Gt,
-                Expression::Variable(n).into(),
-                Expression::RawValue(FenderReference::FRaw(FenderValue::Int(1))).into(),
+                [
+                    Expression::Variable(n),
+                    Expression::RawValue(FenderReference::FRaw(FenderValue::Int(1))),
+                ]
+                .into(),
             )
             .into(),
             Expression::FunctionCapture(run_if_true),
@@ -70,7 +83,7 @@ fn main() {
         vec![Expression::StaticFunctionCall(
             fib,
             vec![Expression::RawValue(FenderReference::FRaw(
-                FenderValue::Int(8),
+                FenderValue::Int(30),
             ))],
         )],
     ))
