@@ -8,7 +8,7 @@ fn main() {
 
     let fib_ref = main.create_variable();
 
-    let mut run_if_true = FunctionWriter::new_capturing(0, vec![1]);
+    let mut run_if_true = FunctionWriter::new_capturing(0, vec![0]);
     run_if_true
         .return_expression(Expression::BinaryOpEval(
             FenderBinaryOperator::Add,
@@ -34,7 +34,7 @@ fn main() {
         .unwrap();
     let run_if_true = writer.include_function(run_if_true);
 
-    let mut run_if_false = FunctionWriter::new_capturing(0, vec![1]);
+    let mut run_if_false = FunctionWriter::new_capturing(0, vec![0]);
     run_if_false
         .return_expression(Expression::Variable(run_if_false.captured_stack_offset(0)))
         .unwrap();
@@ -70,7 +70,7 @@ fn main() {
         vec![Expression::StaticFunctionCall(
             fib,
             vec![Expression::RawValue(FenderReference::FRaw(
-                FenderValue::Int(7),
+                FenderValue::Int(8),
             ))],
         )],
     ))
