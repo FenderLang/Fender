@@ -18,4 +18,3 @@ source = "git+https://github.com/FenderLang/Flux?branch=master#1b2f64687058c677f
 [[package]]
 name = "freight_vm"
 version = "0.1.0"
-source = "git+https://github.com/FenderLang/Freight?branch=master#4a44159ef44b27c0456baefc25fa3d8de34b3bfb"
