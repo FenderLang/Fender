@@ -24,7 +24,7 @@ fn main() {
                 vec![Expression::BinaryOpEval(
                     FenderBinaryOperator::Sub,
                     [
-                        Expression::Variable(run_if_true.captured_stack_offset(0)),
+                        Expression::CapturedValue(0),
                         Expression::RawValue(FenderReference::FRaw(FenderValue::Int(2))),
                     ]
                     .into(),
@@ -35,7 +35,7 @@ fn main() {
                 vec![Expression::BinaryOpEval(
                     FenderBinaryOperator::Sub,
                     [
-                        Expression::Variable(run_if_true.captured_stack_offset(0)),
+                        Expression::CapturedValue(0),
                         Expression::RawValue(FenderReference::FRaw(FenderValue::Int(1))),
                     ]
                     .into(),
@@ -47,7 +47,7 @@ fn main() {
     let run_if_true = writer.include_function(run_if_true);
 
     let mut run_if_false = FunctionWriter::new_capturing(0, vec![0]);
-    run_if_false.return_expression(Expression::Variable(run_if_false.captured_stack_offset(0)));
+    run_if_false.return_expression(Expression::CapturedValue(0));
     let run_if_false = writer.include_function(run_if_false);
 
     let mut fib = FunctionWriter::new(1);

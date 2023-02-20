@@ -53,7 +53,7 @@ fn main() {
         vec![Expression::StaticFunctionCall(
             fib,
             vec![Expression::RawValue(FenderReference::FRaw(
-                FenderValue::Int(10),
+                FenderValue::Int(0),
             ))],
         )],
     ));
