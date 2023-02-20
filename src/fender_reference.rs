@@ -1,39 +1,61 @@
-use crate::{FenderBinaryOperator, FenderTypeSystem, FenderUnaryOperator, FenderValue, FenderTypeId};
+use crate::{
+    FenderBinaryOperator, FenderTypeId, FenderTypeSystem, FenderUnaryOperator, FenderValue,
+};
 use freight_vm::{
+    expression::Expression,
+    function::FunctionRef,
     operators::{binary::BinaryOperator, unary::UnaryOperator},
-    value::Value, function::FunctionRef,
+    value::Value,
 };
 use std::{
     cell::UnsafeCell,
+    fmt::Debug,
     ops::{Deref, DerefMut},
     rc::Rc,
 };
 
-pub type InternalReference = Rc<UnsafeCell<FenderValue>>;
+#[derive(Debug)]
+pub struct InternalReference(Rc<UnsafeCell<FenderValue>>);
 
-#[derive(Clone, Debug)]
+impl Clone for InternalReference {
+    fn clone(&self) -> Self {
+        Self::new((**self).clone())
+    }
+}
+
+impl InternalReference {
+    pub fn new(value: FenderValue) -> Self {
+        Self(Rc::new(UnsafeCell::new(value)))
+    }
+}
+
+impl Deref for InternalReference {
+    type Target = FenderValue;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { &*self.0.get() }
+    }
+}
+
+impl DerefMut for InternalReference {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { self.0.get().as_mut().unwrap() }
+    }
+}
+
+impl PartialEq for InternalReference {
+    fn eq(&self, other: &Self) -> bool {
+        &**self == &**other
+    }
+}
+
+#[derive(Clone, PartialEq)]
 pub enum FenderReference {
     FRef(InternalReference),
     FRaw(FenderValue),
 }
 
 impl FenderReference {
-    pub fn assign(&self, val: FenderReference) {
-        use FenderReference::*;
-
-        let val = match val {
-            FRef(ref_val) => unsafe { ref_val.get().as_ref().unwrap().clone() },
-            FRaw(val) => val,
-        };
-
-        match self {
-            FRef(v) => unsafe {
-                *v.get() = val;
-            },
-            FRaw(_) => unreachable!(),
-        };
-    }
-
     pub fn get_pass_object(&self) -> FenderReference {
         if self.get_type_id().is_primitive() {
             self.deep_clone()
@@ -44,7 +66,7 @@ impl FenderReference {
 
     pub fn deep_clone(&self) -> FenderReference {
         // depending on how we use this it should be a `FRaw` instead of `FRef`
-        FenderReference::FRef(Rc::new(UnsafeCell::new(self.deref().deep_clone())))
+        FenderReference::FRef(InternalReference::new(self.deref().deep_clone()))
     }
 
     pub fn dupe_reference(&self) -> FenderReference {
@@ -67,7 +89,7 @@ impl Deref for FenderReference {
     fn deref(&self) -> &Self::Target {
         match self {
             FenderReference::FRaw(v) => v,
-            FenderReference::FRef(v) => unsafe { v.get().as_ref().unwrap() },
+            FenderReference::FRef(v) => v,
         }
     }
 }
@@ -76,8 +98,32 @@ impl DerefMut for FenderReference {
     fn deref_mut(&mut self) -> &mut Self::Target {
         match self {
             FenderReference::FRaw(v) => v,
-            FenderReference::FRef(v) => unsafe { &mut *v.get() },
+            FenderReference::FRef(v) => v,
         }
+    }
+}
+
+impl From<FenderValue> for FenderReference {
+    fn from(value: FenderValue) -> Self {
+        FenderReference::FRaw(value)
+    }
+}
+
+impl From<FenderValue> for Expression<FenderTypeSystem> {
+    fn from(value: FenderValue) -> Self {
+        Expression::RawValue(value.into())
+    }
+}
+
+impl From<FunctionRef<FenderTypeSystem>> for FenderReference {
+    fn from(value: FunctionRef<FenderTypeSystem>) -> Self {
+        FenderReference::FRaw(FenderValue::Function(value))
+    }
+}
+
+impl Debug for FenderReference {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        (**self).fmt(f)
     }
 }
 
@@ -102,14 +148,25 @@ impl Value for FenderReference {
     }
 
     fn dupe_ref(&self) -> Self {
-        todo!()
+        match self {
+            FenderReference::FRef(internal_ref) => FenderReference::FRef(InternalReference(internal_ref.0.clone())),
+            FenderReference::FRaw(_) => self.clone(),
+        }
     }
 
-    fn cast_to_function(&self) -> Option<&FunctionRef> {
+    fn cast_to_function(&self) -> Option<&FunctionRef<FenderTypeSystem>> {
         match &**self {
             FenderValue::Function(func) => Some(&func),
             _ => None,
         }
+    }
+
+    fn uninitialized_reference() -> Self {
+        FenderReference::FRef(InternalReference::new(FenderValue::Null))
+    }
+
+    fn assign(&mut self, value: FenderReference) {
+        *self.deref_mut() = (*value).clone();
     }
 }
 
@@ -173,6 +230,16 @@ impl BinaryOperator<FenderReference> for FenderBinaryOperator {
                 operand_b.get_type().to_string()
             ))),
 
+            (Gt, Int(a), Int(b)) => FRaw(Bool(a > b)),
+            (Gt, Float(a), Float(b)) => FRaw(Bool(a > b)),
+            (Gt, Int(a), Float(b)) => FRaw(Bool(*a as f64 > *b)),
+            (Gt, Float(a), Int(b)) => FRaw(Bool(*a > *b as f64)),
+            (Gt, _, _) => FRaw(Error(format!(
+                "Cannot compare {} and {}",
+                operand_a.get_type().to_string(),
+                operand_b.get_type().to_string()
+            ))),
+
             (And, Bool(a), Bool(b)) => FRaw(Bool(*a && *b)),
             (And, _, _) => FRaw(Error(format!(
                 "Cannot boolean and {} and {}",
@@ -186,18 +253,6 @@ impl BinaryOperator<FenderReference> for FenderBinaryOperator {
                 operand_a.get_type().to_string(),
                 operand_b.get_type().to_string()
             ))),
-        }
-    }
-
-    fn priority(&self) -> usize {
-        match self {
-            FenderBinaryOperator::Add => 0,
-            FenderBinaryOperator::Sub => 0,
-            FenderBinaryOperator::Div => 1,
-            FenderBinaryOperator::Mod => 1,
-            FenderBinaryOperator::Mul => 1,
-            FenderBinaryOperator::And => 2,
-            FenderBinaryOperator::Or => 2,
         }
     }
 }
