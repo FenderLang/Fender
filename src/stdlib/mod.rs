@@ -11,9 +11,9 @@ fndr_native_func!(if_func, |ctx, cond, if_true, if_false| {
         ))));
     };
     Ok(if *cond {
-        ctx.call_function(if_true.clone(), vec![])?
+        ctx.call(if_true, vec![])?
     } else {
-        ctx.call_function(if_false.clone(), vec![])?
+        ctx.call(if_false, vec![])?
     })
 });
 
