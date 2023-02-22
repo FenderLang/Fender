@@ -14,6 +14,7 @@ pub mod type_sys {
     pub mod type_system;
 }
 pub mod stdlib;
+pub mod lazy_cell;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FenderBinaryOperator {

@@ -1,42 +1,40 @@
-use std::error::Error;
+use fender::lazy_cell::LazyCell;
+use fender::FenderTypeSystem;
 use flux_bnf::lexer::{CullStrategy, Lexer};
 use flux_bnf::tokens::Token;
 use freight_vm::execution_engine::ExecutionEngine;
 use freight_vm::expression::Expression;
 use freight_vm::vm_writer::VMWriter;
-use fender::FenderTypeSystem;
+use std::error::Error;
 
-fn create_lexer() -> Lexer {
-    let mut lexer = flux_bnf::bnf::parse(include_str!("../fender.bnf")).expect("Invalid BNF");
-    lexer.set_unnamed_rule(CullStrategy::LiftChildren);
-    lexer.add_rule_for_names(vec![
-        "sep",
-        "lineSep",
-        "lineBreak",
-        "comment",
-    ], CullStrategy::DeleteAll);
-    lexer.add_rule_for_names(vec![
-        "or",
-        "and",
-        "pow",
-        "mul",
-        "add",
-        "cmp",
-        "range",
-    ], CullStrategy::LiftAtMost(1));
-    lexer
-}
+static LEXER: LazyCell<Lexer> = LazyCell::new(|| {
+    let mut lex = flux_bnf::bnf::parse(include_str!("../fender.bnf")).expect("Invalid BNF");
+    lex.set_unnamed_rule(CullStrategy::LiftChildren);
+    lex.add_rule_for_names(
+        vec!["sep", "lineSep", "lineBreak", "comment"],
+        CullStrategy::DeleteAll,
+    );
+    lex.add_rule_for_names(
+        vec!["or", "and", "pow", "mul", "add", "cmp", "range"],
+        CullStrategy::LiftAtMost(1),
+    );
+    lex.add_rule_for_names(vec!["term", "literal", "value"], CullStrategy::LiftChildren);
+    lex
+});
 
 pub(crate) fn create_vm(source: &str) -> Result<ExecutionEngine<FenderTypeSystem>, Box<dyn Error>> {
-    let lexer = create_lexer();
-    let root = lexer.tokenize(source)?;
+    let lex_read = LEXER.get();
+    let lex = lex_read.as_ref().unwrap();
+    let root = lex.tokenize(source)?;
     println!("{:#?}", root);
     todo!()
 }
 
-fn parse_expr(token: &Token, writer: &mut VMWriter<FenderTypeSystem>) -> Expression<FenderTypeSystem> {
+fn parse_expr(
+    token: &Token,
+    writer: &mut VMWriter<FenderTypeSystem>,
+) -> Expression<FenderTypeSystem> {
     match token.get_name().as_ref().unwrap() {
-
         _ => unreachable!(),
     }
     todo!()
