@@ -8,7 +8,6 @@ use freight_vm::{
     vm_writer::VMWriter,
 };
 
-#[allow(unused_variables)]
 fn main() {
     let mut writer: VMWriter<FenderTypeSystem> = VMWriter::new();
     let mut main = FunctionWriter::new(0);

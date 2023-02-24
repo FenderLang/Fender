@@ -28,13 +28,11 @@ term ::= (unaryOperator sep?)* value sep? tailOperationChain?
 lambdaParameter ::= "$"
 value ::= literal | enclosedExpr | name | lambdaParameter
 
-addOp ::= [-+]
-mulOp ::= [*/]
 cmpOp ::= ">=" | "<=" | "==" | "!=" | [<>]
 
 pow ::= delimitedList<term, "^", lineSep>
-mul ::= delimitedList<pow, mulOp, lineSep>
-add ::= delimitedList<mul, addOp, lineSep>
+mul ::= delimitedList<pow, [*/], lineSep>
+add ::= delimitedList<mul, [-+], lineSep>
 range ::= delimitedList<add, ".." "="?, lineSep>
 cmp ::= delimitedList<range, cmpOp, lineSep>
 and ::= delimitedList<cmp, "&&", lineSep>
@@ -44,7 +42,7 @@ alpha ::= [a-z] | [A-Z]
 alphanum ::= [a-z] | [A-Z] | [0-9] | "_"
 name ::= ("_" | alpha) alphanum*
 
-literal ::= float | int | boolean | string | list | map | closure
+literal ::= null | float | int | boolean | string | list | map | closure
 int ::= "-"? [0-9]+
 list ::= wrappedDelimitedList<"[", "]", expr, ",", lineSep>
 mapEntry ::= expr lineSep? ":" lineSep? expr
@@ -54,6 +52,7 @@ float ::= "-"? ([0-9]+)? "." [0-9]+
 string ::= "\"" (escapeSequence | [^"])* "\""
 escapeSequence ::= "\\" [^]
 boolean ::= "true" | "false"
+null ::= "null"
 
 invoke ::= invokeArgs | codeBody
 invokeArgs ::= wrappedDelimitedList<"(", ")", expr, ",", lineSep>
