@@ -1,30 +1,61 @@
 pub mod error;
 
 use fender::lazy_cell::LazyCell;
-use fender::{FenderBinaryOperator, FenderTypeSystem, FenderValue};
+use fender::{FenderBinaryOperator, FenderTypeSystem, FenderUnaryOperator, FenderValue};
 use flux_bnf::lexer::{CullStrategy, Lexer};
 use flux_bnf::tokens::Token;
 use freight_vm::execution_engine::ExecutionEngine;
 use freight_vm::expression::Expression;
 use freight_vm::vm_writer::VMWriter;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::error::Error;
+use std::rc::Rc;
 
 use self::error::InterpreterError;
 
+#[derive(Clone)]
 pub enum VariableType {
     Captured(usize),
     Stack(usize),
 }
 
-pub struct LexicalScope<'a> {
-    variables: HashMap<String, VariableType>,
-    parent: Option<Box<&'a mut LexicalScope<'a>>>,
+pub struct LexicalScope {
+    args: usize,
+    captures: RefCell<Vec<VariableType>>,
+    variables: RefCell<HashMap<String, VariableType>>,
+    parent: Option<Rc<LexicalScope>>,
 }
 
-impl<'a> LexicalScope<'a> {
-    pub fn resolve(&mut self, name: &str) -> Result<VariableType, InterpreterError> {
-        todo!()
+impl LexicalScope {
+    pub fn capture(&self, name: &str) -> Result<(), InterpreterError> {
+        let parent_var = self
+            .parent
+            .as_ref()
+            .and_then(|parent| parent.variables.borrow().get(name).cloned())
+            .ok_or_else(|| InterpreterError::UnresolvedName(name.to_string()))?;
+        let mut captures = self.captures.borrow_mut();
+        captures.push(parent_var);
+        self.variables
+            .borrow_mut()
+            .insert(name.to_string(), VariableType::Captured(captures.len()));
+        Ok(())
+    }
+
+    pub fn resolve_propagate(&self, name: &str) -> Result<VariableType, InterpreterError> {
+        let mut parent_scopes = vec![];
+        let mut cur = self;
+        while !cur.variables.borrow().contains_key(name) {
+            parent_scopes.push(cur);
+            match &cur.parent {
+                Some(parent) => cur = parent,
+                None => return Err(InterpreterError::UnresolvedName(name.to_string())),
+            }
+        }
+        for scope in parent_scopes.into_iter().rev() {
+            scope.capture(name)?;
+        }
+        Ok(self.variables.borrow()[name].clone())
     }
 }
 
@@ -53,11 +84,12 @@ pub(crate) fn create_vm(source: &str) -> Result<ExecutionEngine<FenderTypeSystem
 fn parse_binary_operation_token(
     token: &Token,
     writer: &mut VMWriter<FenderTypeSystem>,
-) -> Expression<FenderTypeSystem> {
+    scope: &mut LexicalScope,
+) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
     let l = &token.children[0];
     let r = &token.children[token.children.len() - 1];
     let op: String = (&l.source[l.range.end..r.range.start]).iter().collect();
-    parse_binary_operation(&op, l, r, writer)
+    parse_binary_operation(&op, l, r, writer, scope)
 }
 
 fn parse_binary_operation(
@@ -65,7 +97,8 @@ fn parse_binary_operation(
     l: &Token,
     r: &Token,
     writer: &mut VMWriter<FenderTypeSystem>,
-) -> Expression<FenderTypeSystem> {
+    scope: &mut LexicalScope,
+) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
     let operator = match op {
         "+" => FenderBinaryOperator::Add,
         "-" => FenderBinaryOperator::Sub,
@@ -76,10 +109,10 @@ fn parse_binary_operation(
         ">" => FenderBinaryOperator::Gt,
         _ => unreachable!(),
     };
-    Expression::BinaryOpEval(
+    Ok(Expression::BinaryOpEval(
         operator,
-        [parse_expr(l, writer), parse_expr(r, writer)].into(),
-    )
+        [parse_expr(l, writer, scope)?, parse_expr(r, writer, scope)?].into(),
+    ))
 }
 
 fn parse_value(
@@ -90,8 +123,8 @@ fn parse_value(
     Ok(match token.get_name().as_deref().unwrap() {
         "literal" => parse_literal(&token.children[0], writer)?,
         "lambdaParamer" => Expression::Variable(0),
-        "enclosedExpr" => parse_expr(&token.children[0], writer),
-        "name" => match scope.resolve(&token.get_match())? {
+        "enclosedExpr" => parse_expr(&token.children[0], writer, scope)?,
+        "name" => match scope.resolve_propagate(&token.get_match())? {
             VariableType::Captured(addr) => Expression::CapturedValue(addr),
             VariableType::Stack(addr) => Expression::Variable(addr),
         },
@@ -99,29 +132,53 @@ fn parse_value(
     })
 }
 
+fn parse_term(
+    token: &Token,
+    writer: &mut VMWriter<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+    let value = token.children_named("value").next().unwrap();
+    let mut value = parse_value(value, writer, scope)?;
+    if let Some("tailOperationChain") = token.children[token.children.len() - 1]
+        .get_name()
+        .as_deref()
+    {
+        todo!()
+    }
+    if let Some("unaryOperator") = token.children[0].get_name().as_deref() {
+        let op = match &*token.children[0].get_match() {
+            "-" => FenderUnaryOperator::Neg,
+            "!" => FenderUnaryOperator::BoolNeg,
+            _ => unreachable!(),
+        };
+        value = Expression::UnaryOpEval(op, value.into());
+    }
+    Ok(value)
+}
+
 fn parse_literal(
     token: &Token,
     _writer: &mut VMWriter<FenderTypeSystem>,
 ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
-    match token.get_name().as_deref().unwrap() {
+    Ok(match token.get_name().as_deref().unwrap() {
         "int" => FenderValue::Int(token.get_match().parse()?),
         "float" => FenderValue::Float(token.get_match().parse()?),
         "boolean" => FenderValue::Bool(token.get_match().parse()?),
         "null" => FenderValue::Null,
         _ => unreachable!(),
-    };
-    todo!()
+    }.into())
 }
 
 fn parse_expr(
     token: &Token,
     writer: &mut VMWriter<FenderTypeSystem>,
-) -> Expression<FenderTypeSystem> {
-    match token.get_name().as_deref().unwrap() {
+    scope: &mut LexicalScope,
+) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+    Ok(match token.get_name().as_deref().unwrap() {
         "add" | "mul" | "pow" | "range" | "cmp" | "or" | "and" => {
-            parse_binary_operation_token(token, writer)
+            parse_binary_operation_token(token, writer, scope)?
         }
+        "term" => parse_term(token, writer, scope)?,
         _ => unreachable!(),
-    };
-    todo!()
+    })
 }
