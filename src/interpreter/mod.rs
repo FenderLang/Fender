@@ -1,7 +1,9 @@
 pub mod error;
 
 use fender::lazy_cell::LazyCell;
-use fender::{FenderBinaryOperator, FenderTypeSystem, FenderUnaryOperator, FenderValue};
+use fender::{
+    operators::FenderBinaryOperator, operators::FenderUnaryOperator, FenderTypeSystem, FenderValue,
+};
 use flux_bnf::lexer::{CullStrategy, Lexer};
 use flux_bnf::tokens::Token;
 use freight_vm::execution_engine::ExecutionEngine;
@@ -102,7 +104,7 @@ fn code_body_uses_lambda_parameter(token: &Token) -> bool {
                 if code_body_uses_lambda_parameter(child) {
                     return true;
                 }
-            },
+            }
         }
     }
     false
@@ -176,14 +178,21 @@ fn parse_binary_operation(
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
 ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+    use FenderBinaryOperator::*;
     let operator = match op {
-        "+" => FenderBinaryOperator::Add,
-        "-" => FenderBinaryOperator::Sub,
-        "*" => FenderBinaryOperator::Mul,
-        "/" => FenderBinaryOperator::Div,
-        "&&" => FenderBinaryOperator::And,
-        "||" => FenderBinaryOperator::Or,
-        ">" => FenderBinaryOperator::Gt,
+        "+" => Add,
+        "-" => Sub,
+        "*" => Mul,
+        "/" => Div,
+        "&&" => And,
+        "||" => Or,
+        ">" => Gt,
+        "<" => Lt,
+        "<=" => Le,
+        ">=" => Ge,
+        "==" => Eq,
+        "!=" => Ne,
+        "%" => Mod,
         _ => unreachable!(),
     };
     Ok(Expression::BinaryOpEval(

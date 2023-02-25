@@ -1,12 +1,5 @@
-use crate::{
-    FenderBinaryOperator, FenderTypeId, FenderTypeSystem, FenderUnaryOperator, FenderValue,
-};
-use freight_vm::{
-    expression::Expression,
-    function::FunctionRef,
-    operators::{binary::BinaryOperator, unary::UnaryOperator},
-    value::Value,
-};
+use crate::{FenderTypeId, FenderTypeSystem, FenderValue};
+use freight_vm::{expression::Expression, function::FunctionRef, value::Value};
 use std::{
     cell::UnsafeCell,
     fmt::Debug,
@@ -149,7 +142,9 @@ impl Value for FenderReference {
 
     fn dupe_ref(&self) -> Self {
         match self {
-            FenderReference::FRef(internal_ref) => FenderReference::FRef(InternalReference(internal_ref.0.clone())),
+            FenderReference::FRef(internal_ref) => {
+                FenderReference::FRef(InternalReference(internal_ref.0.clone()))
+            }
             FenderReference::FRaw(_) => self.clone(),
         }
     }
