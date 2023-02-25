@@ -71,7 +71,7 @@ static LEXER: LazyCell<Lexer> = LazyCell::new(|| {
     let mut lex = flux_bnf::bnf::parse(include_str!("../../fender.bnf")).expect("Invalid BNF");
     lex.set_unnamed_rule(CullStrategy::LiftChildren);
     lex.add_rule_for_names(
-        vec!["sep", "lineSep", "lineBreak", "comment"],
+        vec!["sep", "lineSep", "lineBreak", "comment", "cmpOp"],
         CullStrategy::DeleteAll,
     );
     lex.add_rule_for_names(
@@ -153,7 +153,7 @@ fn parse_code_body(
     token: &Token,
     writer: &mut VMWriter<FenderTypeSystem>,
     new_scope: &mut LexicalScope,
-    ) -> Result<FunctionRef<FenderTypeSystem>, Box<dyn Error>> {
+) -> Result<FunctionRef<FenderTypeSystem>, Box<dyn Error>> {
     let mut function = FunctionWriter::new(new_scope.args);
     for statement in &token.children {
         let expr = parse_statement(statement, writer, new_scope, &mut function)?;
@@ -203,16 +203,9 @@ fn parse_statement(
     })
 }
 
-fn parse_binary_operation(
-    token: &Token,
-    writer: &mut VMWriter<FenderTypeSystem>,
-    scope: &mut LexicalScope,
-) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+fn parse_binary_operator(op: &str) -> FenderBinaryOperator {
     use FenderBinaryOperator::*;
-    let l = &token.children[0];
-    let r = &token.children[token.children.len() - 1];
-    let op: String = (&l.source[l.range.end..r.range.start]).iter().collect();
-    let operator = match &*op {
+    match op {
         "+" => Add,
         "-" => Sub,
         "*" => Mul,
@@ -227,11 +220,24 @@ fn parse_binary_operation(
         "!=" => Ne,
         "%" => Mod,
         _ => unreachable!(),
-    };
-    Ok(Expression::BinaryOpEval(
-        operator,
-        [parse_expr(l, writer, scope)?, parse_expr(r, writer, scope)?].into(),
-    ))
+    }
+}
+
+fn parse_binary_operation(
+    token: &Token,
+    writer: &mut VMWriter<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+    let mut left = parse_expr(&token.children[0], writer, scope)?;
+    let mut last_end = token.children[0].range.end;
+    for right in &token.children[1..] {
+        let op: String = right.source[last_end..right.range.start].iter().collect();
+        let op = parse_binary_operator(op.trim());
+        last_end = right.range.end;
+        let right = parse_expr(right, writer, scope)?;
+        left = Expression::BinaryOpEval(op, [left, right].into());
+    }
+    Ok(left)
 }
 
 fn parse_value(
