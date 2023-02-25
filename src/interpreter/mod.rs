@@ -265,7 +265,10 @@ fn parse_term(
         .get_name()
         .as_deref()
     {
-        todo!()
+        let tail_operation_chain = &token.children[token.children.len() - 1];
+        for tail_operation in &tail_operation_chain.children {
+            value = parse_tail_operation(tail_operation, value, writer, scope)?;
+        }
     }
     if let Some("unaryOperator") = token.children[0].get_name().as_deref() {
         let op = match &*token.children[0].get_match() {
