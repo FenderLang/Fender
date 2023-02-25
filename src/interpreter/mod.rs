@@ -8,7 +8,7 @@ use flux_bnf::lexer::{CullStrategy, Lexer};
 use flux_bnf::tokens::Token;
 use freight_vm::execution_engine::ExecutionEngine;
 use freight_vm::expression::{Expression, VariableType};
-use freight_vm::function::{FunctionRef, FunctionWriter};
+use freight_vm::function::{FunctionRef, FunctionType, FunctionWriter};
 use freight_vm::vm_writer::VMWriter;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -138,10 +138,13 @@ fn parse_closure(
             let args = parse_args(args);
             let mut new_scope = scope.child_scope(args.len());
             for (index, arg) in args.into_iter().enumerate() {
-                new_scope.variables.borrow_mut().insert(arg, VariableType::Stack(index));
+                new_scope
+                    .variables
+                    .borrow_mut()
+                    .insert(arg, VariableType::Stack(index));
             }
             parse_code_body(code_body, writer, &mut new_scope)
-        },
+        }
         _ => unreachable!(),
     }
 }
@@ -150,11 +153,15 @@ fn parse_code_body(
     token: &Token,
     writer: &mut VMWriter<FenderTypeSystem>,
     new_scope: &mut LexicalScope,
-) -> Result<FunctionRef<FenderTypeSystem>, Box<dyn Error>> {
+    ) -> Result<FunctionRef<FenderTypeSystem>, Box<dyn Error>> {
     let mut function = FunctionWriter::new(new_scope.args);
     for statement in &token.children {
         let expr = parse_statement(statement, writer, new_scope, &mut function)?;
         function.evaluate_expression(expr);
+    }
+    let captures = std::mem::take(&mut *new_scope.captures.borrow_mut());
+    if captures.len() > 0 {
+        function.set_captures(captures);
     }
     Ok(writer.include_function(function))
 }
@@ -246,9 +253,13 @@ fn parse_value(
             }
         }
         "closure" => {
-            let closure = parse_closure(token, writer, scope);
-
-        },
+            let closure = parse_closure(token, writer, scope)?;
+            let expr = match closure.function_type {
+                FunctionType::CapturingDef(_) => Expression::FunctionCapture(closure),
+                _ => FenderValue::Function(closure).into(),
+            };
+            expr
+        }
         _ => unreachable!(),
     })
 }
