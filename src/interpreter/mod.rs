@@ -93,12 +93,32 @@ pub(crate) fn create_vm(source: &str) -> Result<ExecutionEngine<FenderTypeSystem
     todo!()
 }
 
+fn code_body_uses_lambda_parameter(token: &Token) -> bool {
+    for child in &token.children {
+        match child.get_name().as_deref().unwrap() {
+            "lambdaParameter" => return true,
+            "codeBody" => return false,
+            _ => {
+                if code_body_uses_lambda_parameter(child) {
+                    return true;
+                }
+            },
+        }
+    }
+    false
+}
+
 fn parse_code_body(
     token: &Token,
     writer: &mut VMWriter<FenderTypeSystem>,
     new_scope: &mut LexicalScope,
 ) -> Result<FunctionRef<FenderTypeSystem>, Box<dyn Error>> {
-    todo!()
+    let mut function = FunctionWriter::new(new_scope.args);
+    for statement in &token.children {
+        let expr = parse_statement(statement, writer, new_scope, &mut function)?;
+        function.evaluate_expression(expr);
+    }
+    Ok(writer.include_function(function))
 }
 
 fn parse_statement(
@@ -106,10 +126,10 @@ fn parse_statement(
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
     function: &mut FunctionWriter<FenderTypeSystem>,
-) -> Result<Option<Expression<FenderTypeSystem>>, Box<dyn Error>> {
+) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
     let token = &token.children[0];
     Ok(match token.get_name().as_deref().unwrap() {
-        "expr" => Some(parse_expr(token, writer, scope)?),
+        "expr" => parse_expr(token, writer, scope)?,
         "assignment" => {
             let target = &token.children[0];
             let value = &token.children[token.children.len() - 1];
@@ -118,7 +138,7 @@ fn parse_statement(
             }
             let target = parse_expr(target, writer, scope)?;
             let value = parse_expr(value, writer, scope)?;
-            Some(Expression::AssignDynamic([target, value].into()))
+            Expression::AssignDynamic([target, value].into())
         }
         "declaration" => {
             let name = token.children[0].get_name().as_deref().unwrap();
@@ -132,8 +152,7 @@ fn parse_statement(
                 .variables
                 .borrow_mut()
                 .insert(name.to_string(), VariableType::Stack(var));
-            function.assign_value(var, expr);
-            None
+            Expression::AssignStack(var, expr.into())
         }
         _ => unreachable!(),
     })
