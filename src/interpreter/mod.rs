@@ -20,15 +20,25 @@ pub enum VariableType {
     Stack(usize),
 }
 
-pub struct LexicalScope {
+pub struct LexicalScope<'a> {
     globals: Rc<HashMap<String, usize>>,
     args: usize,
     captures: RefCell<Vec<VariableType>>,
     variables: RefCell<HashMap<String, VariableType>>,
-    parent: Option<Rc<LexicalScope>>,
+    parent: Option<Rc<&'a LexicalScope<'a>>>,
 }
 
-impl LexicalScope {
+impl<'a> LexicalScope<'a> {
+    pub fn child_scope(&self, args: usize) -> LexicalScope {
+        LexicalScope {
+            globals: self.globals.clone(),
+            args,
+            captures: vec![].into(),
+            variables: HashMap::new().into(),
+            parent: Some(Rc::new(self)),
+        }
+    }
+
     pub fn capture(&self, name: &str) -> Result<(), InterpreterError> {
         let parent_var = self
             .parent
@@ -133,7 +143,7 @@ fn parse_value(
                 VariableType::Captured(addr) => Expression::CapturedValue(addr),
                 VariableType::Stack(addr) => Expression::Variable(addr),
             }
-        },
+        }
         _ => unreachable!(),
     })
 }
@@ -172,7 +182,8 @@ fn parse_literal(
         "boolean" => FenderValue::Bool(token.get_match().parse()?),
         "null" => FenderValue::Null,
         _ => unreachable!(),
-    }.into())
+    }
+    .into())
 }
 
 fn parse_expr(
