@@ -13,7 +13,8 @@ statement ::= (import | functionDeclaration | structDeclaration | declaration | 
 return ::= "pass" | "return" ("@" name)?
 returnStatement ::= return (lineSep expr)?
 declaration ::= "$" sep? name sep? "=" lineSep? expr
-assignment ::= expr sep? [-+/*]? "=" lineSep? expr
+assignOp ::= [-+/*]
+assignment ::= expr sep? assignOp? "=" lineSep? expr
 importPath ::= [^: \t\n]+
 import ::= "import" sep ("*" sep?)? importPath (":" name)? (sep importAs)?
 importAs ::= "as" sep name

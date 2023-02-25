@@ -6,6 +6,7 @@ use flux_bnf::lexer::{CullStrategy, Lexer};
 use flux_bnf::tokens::Token;
 use freight_vm::execution_engine::ExecutionEngine;
 use freight_vm::expression::Expression;
+use freight_vm::function::{FunctionRef, FunctionWriter};
 use freight_vm::vm_writer::VMWriter;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -90,6 +91,52 @@ pub(crate) fn create_vm(source: &str) -> Result<ExecutionEngine<FenderTypeSystem
     let root = lex.tokenize(source)?;
     println!("{:#?}", root);
     todo!()
+}
+
+fn parse_code_body(
+    token: &Token,
+    writer: &mut VMWriter<FenderTypeSystem>,
+    new_scope: &mut LexicalScope,
+) -> Result<FunctionRef<FenderTypeSystem>, Box<dyn Error>> {
+    todo!()
+}
+
+fn parse_statement(
+    token: &Token,
+    writer: &mut VMWriter<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+    function: &mut FunctionWriter<FenderTypeSystem>,
+) -> Result<Option<Expression<FenderTypeSystem>>, Box<dyn Error>> {
+    let token = &token.children[0];
+    Ok(match token.get_name().as_deref().unwrap() {
+        "expr" => Some(parse_expr(token, writer, scope)?),
+        "assignment" => {
+            let target = &token.children[0];
+            let value = &token.children[token.children.len() - 1];
+            if token.children_named("assignOp").count() > 0 {
+                unimplemented!()
+            }
+            let target = parse_expr(target, writer, scope)?;
+            let value = parse_expr(value, writer, scope)?;
+            Some(Expression::AssignDynamic([target, value].into()))
+        }
+        "declaration" => {
+            let name = token.children[0].get_name().as_deref().unwrap();
+            if scope.variables.borrow().contains_key(name) {
+                return Err(InterpreterError::DuplicateName(name.to_string()).into());
+            }
+            let var = function.create_variable();
+            let expr = &token.children[1];
+            let expr = parse_expr(expr, writer, scope)?;
+            scope
+                .variables
+                .borrow_mut()
+                .insert(name.to_string(), VariableType::Stack(var));
+            function.assign_value(var, expr);
+            None
+        }
+        _ => unreachable!(),
+    })
 }
 
 fn parse_binary_operation_token(
