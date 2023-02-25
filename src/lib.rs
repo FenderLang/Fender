@@ -13,26 +13,9 @@ pub mod type_sys {
     pub mod type_id;
     pub mod type_system;
 }
-pub mod stdlib;
 pub mod lazy_cell;
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum FenderBinaryOperator {
-    Add,
-    Sub,
-    Div,
-    Mod,
-    Mul,
-    And,
-    Or,
-    Gt,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum FenderUnaryOperator {
-    Neg,
-    BoolNeg,
-}
+pub mod operators;
+pub mod stdlib;
 
 #[macro_export]
 macro_rules! count {
