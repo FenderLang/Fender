@@ -160,26 +160,16 @@ fn parse_statement(
     })
 }
 
-fn parse_binary_operation_token(
+fn parse_binary_operation(
     token: &Token,
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
 ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+    use FenderBinaryOperator::*;
     let l = &token.children[0];
     let r = &token.children[token.children.len() - 1];
     let op: String = (&l.source[l.range.end..r.range.start]).iter().collect();
-    parse_binary_operation(&op, l, r, writer, scope)
-}
-
-fn parse_binary_operation(
-    op: &str,
-    l: &Token,
-    r: &Token,
-    writer: &mut VMWriter<FenderTypeSystem>,
-    scope: &mut LexicalScope,
-) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
-    use FenderBinaryOperator::*;
-    let operator = match op {
+    let operator = match &*op {
         "+" => Add,
         "-" => Sub,
         "*" => Mul,
@@ -309,7 +299,7 @@ fn parse_expr(
 ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
     Ok(match token.get_name().as_deref().unwrap() {
         "add" | "mul" | "pow" | "range" | "cmp" | "or" | "and" => {
-            parse_binary_operation_token(token, writer, scope)?
+            parse_binary_operation(token, writer, scope)?
         }
         "term" => parse_term(token, writer, scope)?,
         _ => unreachable!(),
