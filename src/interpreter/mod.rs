@@ -133,19 +133,60 @@ fn parse_value(
 ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
     Ok(match token.get_name().as_deref().unwrap() {
         "literal" => parse_literal(&token.children[0], writer)?,
-        "lambdaParamer" => Expression::Variable(0),
+        "lambdaParamer" => Expression::stack(0),
         "enclosedExpr" => parse_expr(&token.children[0], writer, scope)?,
         "name" => {
             if let Some(addr) = scope.globals.get(&token.get_match()) {
                 return Ok(Expression::Global(*addr));
             }
             match scope.resolve_propagate(&token.get_match())? {
-                VariableType::Captured(addr) => Expression::CapturedValue(addr),
-                VariableType::Stack(addr) => Expression::Variable(addr),
+                VariableType::Captured(addr) => Expression::captured(addr),
+                VariableType::Stack(addr) => Expression::stack(addr),
             }
         }
         _ => unreachable!(),
     })
+}
+
+fn parse_invoke_args(
+    token: &Token,
+    writer: &mut VMWriter<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+) -> Result<Vec<Expression<FenderTypeSystem>>, Box<dyn Error>> {
+    let token = &token.children[0];
+    match token.get_name().as_deref().unwrap() {
+        "invokeArgs" => token
+            .children_named("expr")
+            .map(|arg| parse_expr(arg, writer, scope))
+            .collect::<Result<Vec<_>, _>>(),
+        "codeBody" => todo!(),
+        _ => unreachable!(),
+    }
+}
+
+fn parse_tail_operation(
+    token: &Token,
+    expr: Expression<FenderTypeSystem>,
+    writer: &mut VMWriter<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+    match token.get_name().as_deref().unwrap() {
+        "invoke" => {
+            let args = parse_invoke_args(token, writer, scope)?;
+            Ok(Expression::DynamicFunctionCall(expr.into(), args))
+        }
+        "receiverCall" => {
+            let name = token.children[0].get_match();
+            let function = match scope.resolve_propagate(&name)? {
+                VariableType::Captured(addr) => Expression::captured(addr),
+                VariableType::Stack(addr) => Expression::stack(addr),
+            };
+            let mut args = parse_invoke_args(&token.children[1], writer, scope)?;
+            args.insert(0, expr);
+            Ok(Expression::DynamicFunctionCall(function.into(), args))
+        }
+        _ => unreachable!(),
+    }
 }
 
 fn parse_term(
