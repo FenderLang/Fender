@@ -7,7 +7,7 @@ use fender::{
 use flux_bnf::lexer::{CullStrategy, Lexer};
 use flux_bnf::tokens::Token;
 use freight_vm::execution_engine::ExecutionEngine;
-use freight_vm::expression::Expression;
+use freight_vm::expression::{Expression, VariableType};
 use freight_vm::function::{FunctionRef, FunctionWriter};
 use freight_vm::vm_writer::VMWriter;
 use std::cell::RefCell;
@@ -16,12 +16,6 @@ use std::error::Error;
 use std::rc::Rc;
 
 use self::error::InterpreterError;
-
-#[derive(Clone)]
-pub enum VariableType {
-    Captured(usize),
-    Stack(usize),
-}
 
 pub struct LexicalScope<'a> {
     globals: Rc<HashMap<String, usize>>,
@@ -108,6 +102,48 @@ fn code_body_uses_lambda_parameter(token: &Token) -> bool {
         }
     }
     false
+}
+
+fn parse_args(token: &Token) -> Vec<String> {
+    let mut arg_names = vec![];
+    for arg in &token.children {
+        if arg.children.len() == 2 {
+            unimplemented!();
+        }
+        let name = arg.children[0].get_name().clone().unwrap();
+        arg_names.push(name);
+    }
+    arg_names
+}
+
+fn parse_closure(
+    token: &Token,
+    writer: &mut VMWriter<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+) -> Result<FunctionRef<FenderTypeSystem>, Box<dyn Error>> {
+    match token.children.len() {
+        1 => {
+            let code_body = &token.children[0];
+            let arg_count = if code_body_uses_lambda_parameter(code_body) {
+                1
+            } else {
+                0
+            };
+            let mut new_scope = scope.child_scope(arg_count);
+            parse_code_body(code_body, writer, &mut new_scope)
+        }
+        2 => {
+            let args = &token.children[0];
+            let code_body = &token.children[1];
+            let args = parse_args(args);
+            let mut new_scope = scope.child_scope(args.len());
+            for (index, arg) in args.into_iter().enumerate() {
+                new_scope.variables.borrow_mut().insert(arg, VariableType::Stack(index));
+            }
+            parse_code_body(code_body, writer, &mut new_scope)
+        },
+        _ => unreachable!(),
+    }
 }
 
 fn parse_code_body(
@@ -209,6 +245,10 @@ fn parse_value(
                 VariableType::Stack(addr) => Expression::stack(addr),
             }
         }
+        "closure" => {
+            let closure = parse_closure(token, writer, scope);
+
+        },
         _ => unreachable!(),
     })
 }
