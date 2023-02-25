@@ -21,6 +21,7 @@ pub enum VariableType {
 }
 
 pub struct LexicalScope {
+    globals: Rc<HashMap<String, usize>>,
     args: usize,
     captures: RefCell<Vec<VariableType>>,
     variables: RefCell<HashMap<String, VariableType>>,
@@ -124,9 +125,14 @@ fn parse_value(
         "literal" => parse_literal(&token.children[0], writer)?,
         "lambdaParamer" => Expression::Variable(0),
         "enclosedExpr" => parse_expr(&token.children[0], writer, scope)?,
-        "name" => match scope.resolve_propagate(&token.get_match())? {
-            VariableType::Captured(addr) => Expression::CapturedValue(addr),
-            VariableType::Stack(addr) => Expression::Variable(addr),
+        "name" => {
+            if let Some(addr) = scope.globals.get(&token.get_match()) {
+                return Ok(Expression::Global(*addr));
+            }
+            match scope.resolve_propagate(&token.get_match())? {
+                VariableType::Captured(addr) => Expression::CapturedValue(addr),
+                VariableType::Stack(addr) => Expression::Variable(addr),
+            }
         },
         _ => unreachable!(),
     })
