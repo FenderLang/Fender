@@ -133,6 +133,7 @@ impl Value for FenderReference {
             FenderValue::Null => &FenderTypeId::Null,
             FenderValue::Ref(_) => &FenderTypeId::Reference,
             FenderValue::Function(_) => &FenderTypeId::Function,
+            FenderValue::String(_) => &FenderTypeId::String,
         }
     }
 

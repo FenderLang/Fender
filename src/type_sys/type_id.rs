@@ -3,6 +3,7 @@ pub enum FenderTypeId {
     Int,
     Float,
     Bool,
+    String,
     Error,
     Null,
     Reference,
@@ -19,6 +20,7 @@ impl FenderTypeId {
             FenderTypeId::Null => true,
             FenderTypeId::Reference => false,
             FenderTypeId::Function => true,
+            FenderTypeId::String => true,
         }
     }
 }
@@ -33,6 +35,7 @@ impl ToString for FenderTypeId {
             FenderTypeId::Null => "Null",
             FenderTypeId::Reference => "Reference",
             FenderTypeId::Function => "Function",
+            FenderTypeId::String => "String",
         }
         .to_owned()
     }

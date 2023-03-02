@@ -7,7 +7,7 @@ use fender::{
 use flux_bnf::lexer::{CullStrategy, Lexer};
 use flux_bnf::tokens::Token;
 use freight_vm::execution_engine::ExecutionEngine;
-use freight_vm::expression::{Expression, VariableType};
+use freight_vm::expression::{Expression, NativeFunction, VariableType};
 use freight_vm::function::{FunctionRef, FunctionType, FunctionWriter};
 use freight_vm::vm_writer::VMWriter;
 use std::cell::RefCell;
@@ -51,6 +51,9 @@ impl<'a> LexicalScope<'a> {
     }
 
     pub fn resolve_propagate(&self, name: &str) -> Result<VariableType, InterpreterError> {
+        if let Some(var) = self.globals.get(name) {
+            return Ok(VariableType::Global(*var));
+        }
         let mut parent_scopes = vec![];
         let mut cur = self;
         while !cur.variables.borrow().contains_key(name) {
@@ -71,7 +74,7 @@ static LEXER: LazyCell<Lexer> = LazyCell::new(|| {
     let mut lex = flux_bnf::bnf::parse(include_str!("../../fender.bnf")).expect("Invalid BNF");
     lex.set_unnamed_rule(CullStrategy::LiftChildren);
     lex.add_rule_for_names(
-        vec!["sep", "lineSep", "lineBreak", "comment", "cmpOp"],
+        vec!["sep", "lineSep", "lineBreak", "comment", "cmpOp", "newLine", "break", "alpha", "alphanum"],
         CullStrategy::DeleteAll,
     );
     lex.add_rule_for_names(
@@ -85,8 +88,43 @@ pub(crate) fn create_vm(source: &str) -> Result<ExecutionEngine<FenderTypeSystem
     let lex_read = LEXER.get();
     let lex = lex_read.as_ref().unwrap();
     let root = lex.tokenize(source)?;
-    println!("{:#?}", root);
-    todo!()
+    parse_main_function(&root)
+}
+
+fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem>, Box<dyn Error>> {
+    let mut vm = VMWriter::new();
+    let mut main = FunctionWriter::new(0);
+    let mut globals = HashMap::new();
+    for t in token.children.iter() {
+        let child = &t.children[0];
+        if child.get_name().as_deref().unwrap() == "declaration" {
+            let name = child.children[0].get_match();
+            globals.insert(name, vm.create_global());
+        }
+    }
+    let print_ref = vm.include_native_function::<1>(NativeFunction::new(fender::stdlib::print_func));
+    let print_global = vm.create_global();
+    globals.insert("print".to_string(), print_global);
+    main.evaluate_expression(Expression::AssignGlobal(
+        print_global,
+        Box::new(FenderValue::Function(print_ref).into()),
+    ));
+    let mut scope = LexicalScope {
+        globals: Rc::new(globals),
+        args: 0,
+        captures: Default::default(),
+        variables: Default::default(),
+        parent: None,
+    };
+    let statements = token
+        .children.iter()
+        .map(|t| parse_statement(t, &mut vm, &mut scope, &mut main))
+        .collect::<Result<Vec<_>, _>>()?;
+    statements
+        .into_iter()
+        .for_each(|s| main.evaluate_expression(s));
+    let main_ref = vm.include_function(main);
+    Ok(vm.finish(main_ref))
 }
 
 fn code_body_uses_lambda_parameter(token: &Token) -> bool {
@@ -186,8 +224,8 @@ fn parse_statement(
             Expression::AssignDynamic([target, value].into())
         }
         "declaration" => {
-            let name = token.children[0].get_name().as_deref().unwrap();
-            if scope.variables.borrow().contains_key(name) {
+            let name = token.children[0].get_match();
+            if scope.variables.borrow().contains_key(&name) {
                 return Err(InterpreterError::DuplicateName(name.to_string()).into());
             }
             let var = function.create_variable();
@@ -245,8 +283,8 @@ fn parse_value(
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
 ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
-    Ok(match token.get_name().as_deref().unwrap() {
-        "literal" => parse_literal(&token.children[0], writer)?,
+    Ok(match token.children[0].get_name().as_deref().unwrap() {
+        "literal" => parse_literal(&token.children[0], writer, scope)?,
         "lambdaParamer" => Expression::stack(0),
         "enclosedExpr" => parse_expr(&token.children[0], writer, scope)?,
         "name" => {
@@ -256,15 +294,8 @@ fn parse_value(
             match scope.resolve_propagate(&token.get_match())? {
                 VariableType::Captured(addr) => Expression::captured(addr),
                 VariableType::Stack(addr) => Expression::stack(addr),
+                VariableType::Global(addr) => Expression::Global(addr),
             }
-        }
-        "closure" => {
-            let closure = parse_closure(token, writer, scope)?;
-            let expr = match closure.function_type {
-                FunctionType::CapturingDef(_) => Expression::FunctionCapture(closure),
-                _ => FenderValue::Function(closure).into(),
-            };
-            expr
         }
         _ => unreachable!(),
     })
@@ -280,7 +311,7 @@ fn parse_invoke_args(
         "invokeArgs" => token
             .children_named("expr")
             .map(|arg| parse_expr(arg, writer, scope))
-            .collect::<Result<Vec<_>, _>>(),
+            .collect(),
         "codeBody" => todo!(),
         _ => unreachable!(),
     }
@@ -292,6 +323,7 @@ fn parse_tail_operation(
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
 ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+    let token = &token.children[0];
     match token.get_name().as_deref().unwrap() {
         "invoke" => {
             let args = parse_invoke_args(token, writer, scope)?;
@@ -302,6 +334,7 @@ fn parse_tail_operation(
             let function = match scope.resolve_propagate(&name)? {
                 VariableType::Captured(addr) => Expression::captured(addr),
                 VariableType::Stack(addr) => Expression::stack(addr),
+                VariableType::Global(addr) => Expression::Global(addr),
             };
             let mut args = parse_invoke_args(&token.children[1], writer, scope)?;
             args.insert(0, expr);
@@ -340,16 +373,31 @@ fn parse_term(
 
 fn parse_literal(
     token: &Token,
-    _writer: &mut VMWriter<FenderTypeSystem>,
+    writer: &mut VMWriter<FenderTypeSystem>,
+    scope: &mut LexicalScope,
 ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+    let token = &token.children[0];
     Ok(match token.get_name().as_deref().unwrap() {
-        "int" => FenderValue::Int(token.get_match().parse()?),
-        "float" => FenderValue::Float(token.get_match().parse()?),
-        "boolean" => FenderValue::Bool(token.get_match().parse()?),
-        "null" => FenderValue::Null,
+        "int" => FenderValue::Int(token.get_match().parse()?).into(),
+        "float" => FenderValue::Float(token.get_match().parse()?).into(),
+        "boolean" => FenderValue::Bool(token.get_match().parse()?).into(),
+        "string" => FenderValue::String(parse_string(token)).into(),
+        "null" => FenderValue::Null.into(),
+        "closure" => {
+            let closure = parse_closure(token, writer, scope)?;
+            let expr = match closure.function_type {
+                FunctionType::CapturingDef(_) => Expression::FunctionCapture(closure),
+                _ => FenderValue::Function(closure).into(),
+            };
+            expr
+        }
         _ => unreachable!(),
-    }
-    .into())
+    })
+}
+
+fn parse_string(token: &Token) -> String {
+    // TODO: Handle escape sequences
+    token.children.iter().map(|t| t.get_match()).collect()
 }
 
 fn parse_expr(
@@ -357,6 +405,7 @@ fn parse_expr(
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
 ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+    let token = &token.children[0];
     Ok(match token.get_name().as_deref().unwrap() {
         "add" | "mul" | "pow" | "range" | "cmp" | "or" | "and" => {
             parse_binary_operation(token, writer, scope)?

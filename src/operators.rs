@@ -107,7 +107,6 @@ bool_op_func!(and, &&);
 impl BinaryOperator<FenderReference> for FenderBinaryOperator {
     fn apply_2(&self, a: &FenderReference, b: &FenderReference) -> FenderReference {
         use FenderBinaryOperator::*;
-
         match self {
             Add => add(a, b),
             Sub => sub(a, b),
