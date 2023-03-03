@@ -145,7 +145,7 @@ fn parse_args(token: &Token) -> Vec<String> {
         if arg.children.len() == 2 {
             unimplemented!();
         }
-        let name = arg.children[0].get_name().clone().unwrap();
+        let name = arg.children[0].get_match();
         arg_names.push(name);
     }
     arg_names
@@ -214,7 +214,7 @@ fn parse_statement(
         "assignment" => {
             let target = &token.children[0];
             let value = &token.children[token.children.len() - 1];
-            if token.direct_children_named("assignOp").count() > 0 {
+            if token.children_named("assignOp").count() > 0 {
                 unimplemented!()
             }
             let target = parse_expr(target, writer, scope)?;
@@ -311,7 +311,7 @@ fn parse_invoke_args(
     let token = &token.children[0];
     match token.get_name().as_deref().unwrap() {
         "invokeArgs" => token
-            .direct_children_named("expr")
+            .children_named("expr")
             .map(|arg| parse_expr(arg, writer, scope))
             .collect(),
         "codeBody" => todo!(),
@@ -351,7 +351,7 @@ fn parse_term(
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
 ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
-    let value = token.direct_children_named("value").next().unwrap();
+    let value = token.children_named("value").next().unwrap();
     let mut value = parse_value(value, writer, scope)?;
     if let Some("tailOperationChain") = token.children[token.children.len() - 1]
         .get_name()
