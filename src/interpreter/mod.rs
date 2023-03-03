@@ -97,7 +97,7 @@ fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem
     let mut globals = HashMap::new();
     for t in token.children.iter() {
         let child = &t.children[0];
-        if child.get_name().as_deref().unwrap() == "declaration" {
+        if let Some("declaration") = child.get_name().as_deref() {
             let name = child.children[0].get_match();
             globals.insert(name, vm.create_global());
         }
@@ -116,13 +116,10 @@ fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem
         variables: Default::default(),
         parent: None,
     };
-    let statements = token
-        .children.iter()
-        .map(|t| parse_statement(t, &mut vm, &mut scope, &mut main))
-        .collect::<Result<Vec<_>, _>>()?;
-    statements
-        .into_iter()
-        .for_each(|s| main.evaluate_expression(s));
+    for statement in &token.children {
+        let statement = parse_statement(statement, &mut vm, &mut scope, &mut main, true)?;
+        main.evaluate_expression(statement);
+    }
     let main_ref = vm.include_function(main);
     Ok(vm.finish(main_ref))
 }
@@ -194,7 +191,7 @@ fn parse_code_body(
 ) -> Result<FunctionRef<FenderTypeSystem>, Box<dyn Error>> {
     let mut function = FunctionWriter::new(new_scope.args);
     for statement in &token.children {
-        let expr = parse_statement(statement, writer, new_scope, &mut function)?;
+        let expr = parse_statement(statement, writer, new_scope, &mut function, false)?;
         function.evaluate_expression(expr);
     }
     let captures = std::mem::take(&mut *new_scope.captures.borrow_mut());
@@ -209,6 +206,7 @@ fn parse_statement(
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
     function: &mut FunctionWriter<FenderTypeSystem>,
+    use_globals: bool,
 ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
     let token = &token.children[0];
     Ok(match token.get_name().as_deref().unwrap() {
@@ -216,14 +214,21 @@ fn parse_statement(
         "assignment" => {
             let target = &token.children[0];
             let value = &token.children[token.children.len() - 1];
-            if token.children_named("assignOp").count() > 0 {
+            if token.direct_children_named("assignOp").count() > 0 {
                 unimplemented!()
             }
             let target = parse_expr(target, writer, scope)?;
             let value = parse_expr(value, writer, scope)?;
             Expression::AssignDynamic([target, value].into())
         }
-        "declaration" => {
+        "declaration" if use_globals => {
+            let name = token.children[0].get_match();
+            let var = scope.globals.get(&name).copied().ok_or_else(|| InterpreterError::UnresolvedName(name.to_string()))?;
+            let expr = &token.children[1];
+            let expr = parse_expr(expr, writer, scope)?;
+            Expression::AssignGlobal(var, expr.into())
+        }
+        "declaration" if !use_globals => {
             let name = token.children[0].get_match();
             if scope.variables.borrow().contains_key(&name) {
                 return Err(InterpreterError::DuplicateName(name.to_string()).into());
@@ -288,13 +293,10 @@ fn parse_value(
         "lambdaParameter" => Expression::stack(0),
         "enclosedExpr" => parse_expr(&token.children[0], writer, scope)?,
         "name" => {
-            if let Some(addr) = scope.globals.get(&token.get_match()) {
-                return Ok(Expression::Global(*addr));
-            }
             match scope.resolve_propagate(&token.get_match())? {
                 VariableType::Captured(addr) => Expression::captured(addr),
                 VariableType::Stack(addr) => Expression::stack(addr),
-                VariableType::Global(addr) => Expression::Global(addr),
+                VariableType::Global(addr) => Expression::global(addr),
             }
         }
         _ => unreachable!(),
@@ -309,7 +311,7 @@ fn parse_invoke_args(
     let token = &token.children[0];
     match token.get_name().as_deref().unwrap() {
         "invokeArgs" => token
-            .children_named("expr")
+            .direct_children_named("expr")
             .map(|arg| parse_expr(arg, writer, scope))
             .collect(),
         "codeBody" => todo!(),
@@ -334,7 +336,7 @@ fn parse_tail_operation(
             let function = match scope.resolve_propagate(&name)? {
                 VariableType::Captured(addr) => Expression::captured(addr),
                 VariableType::Stack(addr) => Expression::stack(addr),
-                VariableType::Global(addr) => Expression::Global(addr),
+                VariableType::Global(addr) => Expression::global(addr),
             };
             let mut args = parse_invoke_args(&token.children[1], writer, scope)?;
             args.insert(0, expr);
@@ -349,7 +351,7 @@ fn parse_term(
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
 ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
-    let value = token.children_named("value").next().unwrap();
+    let value = token.direct_children_named("value").next().unwrap();
     let mut value = parse_value(value, writer, scope)?;
     if let Some("tailOperationChain") = token.children[token.children.len() - 1]
         .get_name()
