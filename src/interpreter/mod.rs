@@ -285,7 +285,7 @@ fn parse_value(
 ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
     Ok(match token.children[0].get_name().as_deref().unwrap() {
         "literal" => parse_literal(&token.children[0], writer, scope)?,
-        "lambdaParamer" => Expression::stack(0),
+        "lambdaParameter" => Expression::stack(0),
         "enclosedExpr" => parse_expr(&token.children[0], writer, scope)?,
         "name" => {
             if let Some(addr) = scope.globals.get(&token.get_match()) {
