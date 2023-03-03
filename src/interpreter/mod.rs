@@ -1,7 +1,7 @@
 pub mod error;
 
-use fender::lazy_cell::LazyCell;
-use fender::{
+use crate::lazy_cell::LazyCell;
+use crate::{
     operators::FenderBinaryOperator, operators::FenderUnaryOperator, FenderTypeSystem, FenderValue,
 };
 use flux_bnf::lexer::{CullStrategy, Lexer};
@@ -95,7 +95,7 @@ static LEXER: LazyCell<Lexer> = LazyCell::new(|| {
     lex
 });
 
-pub(crate) fn create_vm(source: &str) -> Result<ExecutionEngine<FenderTypeSystem>, Box<dyn Error>> {
+pub fn create_vm(source: &str) -> Result<ExecutionEngine<FenderTypeSystem>, Box<dyn Error>> {
     let lex_read = LEXER.get();
     let lex = lex_read.as_ref().unwrap();
     let root = lex.tokenize(source)?;
@@ -114,7 +114,7 @@ fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem
         }
     }
     let print_ref =
-        vm.include_native_function::<1>(NativeFunction::new(fender::stdlib::print_func));
+        vm.include_native_function::<1>(NativeFunction::new(crate::stdlib::print_func));
     let print_global = vm.create_global();
     globals.insert("print".to_string(), print_global);
     main.evaluate_expression(Expression::AssignGlobal(

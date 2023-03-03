@@ -1,6 +1,6 @@
 use fender::{
     stdlib::{if_func, print_func},
-    FenderBinaryOperator, FenderReference, FenderTypeSystem, FenderValue,
+    operators::FenderBinaryOperator, FenderReference, FenderTypeSystem, FenderValue,
 };
 use freight_vm::{
     expression::{Expression, NativeFunction},
@@ -37,7 +37,7 @@ fn main() {
         vec![
             Expression::BinaryOpEval(
                 FenderBinaryOperator::Gt,
-                [Expression::Variable(n), FenderValue::Int(1).into()].into(),
+                [Expression::stack(n), FenderValue::Int(1).into()].into(),
             ),
             Expression::RawValue(FenderReference::FRaw(FenderValue::Function(run_if_true))),
             Expression::RawValue(FenderReference::FRaw(FenderValue::Function(run_if_false))),

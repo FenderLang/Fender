@@ -16,6 +16,9 @@ pub mod type_sys {
 pub mod lazy_cell;
 pub mod operators;
 pub mod stdlib;
+pub mod interpreter;
+#[cfg(test)]
+mod test;
 
 #[macro_export]
 macro_rules! count {
