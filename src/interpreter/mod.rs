@@ -46,7 +46,7 @@ impl<'a> LexicalScope<'a> {
         captures.push(parent_var);
         self.variables
             .borrow_mut()
-            .insert(name.to_string(), VariableType::Captured(captures.len()));
+            .insert(name.to_string(), VariableType::Captured(captures.len() - 1));
         Ok(())
     }
 
