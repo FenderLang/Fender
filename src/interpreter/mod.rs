@@ -5,6 +5,7 @@ use fender::{
     operators::FenderBinaryOperator, operators::FenderUnaryOperator, FenderTypeSystem, FenderValue,
 };
 use flux_bnf::lexer::{CullStrategy, Lexer};
+use flux_bnf::tokens::iterators::ignore_iter::IgnoreTokensIteratorExt;
 use flux_bnf::tokens::Token;
 use freight_vm::execution_engine::ExecutionEngine;
 use freight_vm::expression::{Expression, NativeFunction, VariableType};
@@ -137,9 +138,8 @@ fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem
 
 fn code_body_uses_lambda_parameter(token: &Token) -> bool {
     token
-        .recursive_children()
-        .ignore("codeBody")
-        .filter(|t| t.get_name().as_deref() == Some("lambdaParameter"))
+        .recursive_children_named("lambdaParameter")
+        .ignore_token("codeBody")
         .next()
         .is_some()
 }
