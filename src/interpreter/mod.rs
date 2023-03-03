@@ -74,7 +74,17 @@ static LEXER: LazyCell<Lexer> = LazyCell::new(|| {
     let mut lex = flux_bnf::bnf::parse(include_str!("../../fender.bnf")).expect("Invalid BNF");
     lex.set_unnamed_rule(CullStrategy::LiftChildren);
     lex.add_rule_for_names(
-        vec!["sep", "lineSep", "lineBreak", "comment", "cmpOp", "newLine", "break", "alpha", "alphanum"],
+        vec![
+            "sep",
+            "lineSep",
+            "lineBreak",
+            "comment",
+            "cmpOp",
+            "newLine",
+            "break",
+            "alpha",
+            "alphanum",
+        ],
         CullStrategy::DeleteAll,
     );
     lex.add_rule_for_names(
@@ -102,7 +112,8 @@ fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem
             globals.insert(name, vm.create_global());
         }
     }
-    let print_ref = vm.include_native_function::<1>(NativeFunction::new(fender::stdlib::print_func));
+    let print_ref =
+        vm.include_native_function::<1>(NativeFunction::new(fender::stdlib::print_func));
     let print_global = vm.create_global();
     globals.insert("print".to_string(), print_global);
     main.evaluate_expression(Expression::AssignGlobal(
@@ -125,18 +136,12 @@ fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem
 }
 
 fn code_body_uses_lambda_parameter(token: &Token) -> bool {
-    for child in &token.children {
-        match child.get_name().as_deref().unwrap() {
-            "lambdaParameter" => return true,
-            "codeBody" => return false,
-            _ => {
-                if code_body_uses_lambda_parameter(child) {
-                    return true;
-                }
-            }
-        }
-    }
-    false
+    token
+        .recursive_children()
+        .ignore("codeBody")
+        .filter(|t| t.get_name().as_deref() == Some("lambdaParameter"))
+        .next()
+        .is_some()
 }
 
 fn parse_args(token: &Token) -> Vec<String> {
@@ -223,7 +228,11 @@ fn parse_statement(
         }
         "declaration" if use_globals => {
             let name = token.children[0].get_match();
-            let var = scope.globals.get(&name).copied().ok_or_else(|| InterpreterError::UnresolvedName(name.to_string()))?;
+            let var = scope
+                .globals
+                .get(&name)
+                .copied()
+                .ok_or_else(|| InterpreterError::UnresolvedName(name.to_string()))?;
             let expr = &token.children[1];
             let expr = parse_expr(expr, writer, scope)?;
             Expression::AssignGlobal(var, expr.into())
@@ -292,13 +301,11 @@ fn parse_value(
         "literal" => parse_literal(&token.children[0], writer, scope)?,
         "lambdaParameter" => Expression::stack(0),
         "enclosedExpr" => parse_expr(&token.children[0], writer, scope)?,
-        "name" => {
-            match scope.resolve_propagate(&token.get_match())? {
-                VariableType::Captured(addr) => Expression::captured(addr),
-                VariableType::Stack(addr) => Expression::stack(addr),
-                VariableType::Global(addr) => Expression::global(addr),
-            }
-        }
+        "name" => match scope.resolve_propagate(&token.get_match())? {
+            VariableType::Captured(addr) => Expression::captured(addr),
+            VariableType::Stack(addr) => Expression::stack(addr),
+            VariableType::Global(addr) => Expression::global(addr),
+        },
         _ => unreachable!(),
     })
 }
