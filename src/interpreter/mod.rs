@@ -405,12 +405,12 @@ fn parse_expr(
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
 ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
-    let token = &token.children[0];
     Ok(match token.get_name().as_deref().unwrap() {
         "add" | "mul" | "pow" | "range" | "cmp" | "or" | "and" => {
             parse_binary_operation(token, writer, scope)?
         }
         "term" => parse_term(token, writer, scope)?,
+        "expr" => parse_expr(&token.children[0], writer, scope)?,
         _ => unreachable!(),
     })
 }
