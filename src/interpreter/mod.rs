@@ -410,7 +410,7 @@ fn parse_expr(
             parse_binary_operation(token, writer, scope)?
         }
         "term" => parse_term(token, writer, scope)?,
-        "expr" => parse_expr(&token.children[0], writer, scope)?,
+        "expr" | "enclosedExpr" => parse_expr(&token.children[0], writer, scope)?,
         _ => unreachable!(),
     })
 }
