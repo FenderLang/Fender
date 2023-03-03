@@ -18,6 +18,6 @@ fndr_native_func!(if_func, |ctx, cond, if_true, if_false| {
 });
 
 fndr_native_func!(print_func, |_, item| {
-    println!("{:?}", *item);
+    println!("{}", item.to_string());
     Ok(Default::default())
 });

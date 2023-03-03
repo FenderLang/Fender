@@ -7,6 +7,7 @@ pub enum FenderValue {
     Ref(InternalReference),
     Int(i64),
     Float(f64),
+    String(String),
     Bool(bool),
     Error(String),
     Function(FunctionRef<FenderTypeSystem>),
@@ -24,6 +25,7 @@ impl FenderValue {
             FenderValue::Error(_) => FenderTypeId::Error,
             FenderValue::Null => FenderTypeId::Null,
             FenderValue::Function(_) => FenderTypeId::Function,
+            FenderValue::String(_) => FenderTypeId::String,
         }
     }
 
@@ -36,5 +38,20 @@ impl FenderValue {
 
     pub fn deep_clone(&self) -> FenderValue {
         todo!()
+    }
+}
+
+impl ToString for FenderValue {
+    fn to_string(&self) -> String {
+        match self {
+            FenderValue::Ref(val) => val.to_string(),
+            FenderValue::Int(i) => i.to_string(),
+            FenderValue::Float(f) => f.to_string(),
+            FenderValue::String(s) => s.clone(),
+            FenderValue::Bool(b) => b.to_string(),
+            FenderValue::Error(e) => e.clone(),
+            FenderValue::Function(_) => "Function".to_string(),
+            FenderValue::Null => "null".to_string(),
+        }
     }
 }

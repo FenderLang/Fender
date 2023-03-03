@@ -1,0 +1,76 @@
+delimitedList<elem, delim, whitespace> ::= elem (whitespace? delim whitespace? elem)*
+wrappedDelimitedList<begin, end, elem, delim, whitespace> ::= begin whitespace? delimitedList<elem, delim, whitespace>? whitespace? end
+
+sep ::= [ \t]+
+newLine ::= "\r"? "\n"
+break ::= sep? ((";" | comment? newLine) sep?)+
+lineBreak ::= sep? comment? (newLine sep?)+
+lineSep ::= (lineBreak | sep)+
+comment ::= "#" [^\n]*
+
+root ::= break? (statement break)* statement? break?
+statement ::= (import | functionDeclaration | structDeclaration | declaration | assignment | returnStatement | expr) sep? comment?
+return ::= "pass" | "return" ("@" name)?
+returnStatement ::= return (lineSep expr)?
+declaration ::= "$" sep? name sep? "=" lineSep? expr
+assignOp ::= [-+/*]
+assignment ::= expr sep? assignOp? "=" lineSep? expr
+importPath ::= [^: \t\n]+
+import ::= "import" sep ("*" sep?)? importPath (":" name)? (sep importAs)?
+importAs ::= "as" sep name
+
+binaryOperator ::= "||" | "&&" | "==" | "<=" | ">=" | ".." "="? | [-+*/^<>]
+unaryOperator ::= [-!]
+
+expr ::= label? or
+label ::= "`" name lineSep
+enclosedExpr ::= "(" lineSep? expr lineSep? ")"
+term ::= (unaryOperator sep?)* value sep? tailOperationChain?
+lambdaParameter ::= "$"
+value ::= literal | enclosedExpr | name | lambdaParameter
+
+cmpOp ::= ">=" | "<=" | "==" | "!=" | [<>]
+
+pow ::= delimitedList<term, "^", lineSep>
+mul ::= delimitedList<pow, [*/], lineSep>
+add ::= delimitedList<mul, [-+], lineSep>
+range ::= delimitedList<add, ".." "="?, lineSep>
+cmp ::= delimitedList<range, cmpOp, lineSep>
+and ::= delimitedList<cmp, "&&", lineSep>
+or ::= delimitedList<and, "||", lineSep>
+
+alpha ::= [a-z] | [A-Z]
+alphanum ::= [a-z] | [A-Z] | [0-9] | "_"
+name ::= ("_" | alpha) alphanum*
+
+literal ::= null | float | int | boolean | string | list | map | closure
+int ::= "-"? [0-9]+
+list ::= wrappedDelimitedList<"[", "]", expr, ",", lineSep>
+mapEntry ::= expr lineSep? ":" lineSep? expr
+emptyMap ::= "[" lineSep? ":" lineSep? "]"
+map ::= emptyMap | wrappedDelimitedList<"[", "]", mapEntry, ",", lineSep>
+float ::= "-"? ([0-9]+)? "." [0-9]+
+strChar ::= [^"]
+string ::= "\"" (escapeSequence | strChar)* "\""
+escapeSequence ::= "\\" [^]
+boolean ::= "true" | "false"
+null ::= "null"
+
+invoke ::= invokeArgs | codeBody
+invokeArgs ::= wrappedDelimitedList<"(", ")", expr, ",", lineSep>
+
+structBody ::= wrappedDelimitedList<"{", "}", arg, ",", lineSep>
+structDeclaration ::= "struct" sep? name lineSep? structBody
+
+arg ::= name (sep? typeAnnotation)?
+typeAnnotation ::= ":" lineSep? name
+codeBody ::= "{" break? (statement break)* statement? break? "}"
+args ::= wrappedDelimitedList<"(", ")", arg, ",", lineSep>
+closure ::= args? lineSep? codeBody
+functionDeclaration ::= "fn" sep? name lineSep? args lineSep? ("=" lineSep? expr | codeBody)
+
+fieldAccess ::= ":" lineSep? name
+receiverCall ::= "." lineSep? name sep? invoke
+index ::= "[" expr "]"
+tailOperation ::= invoke | receiverCall | index | fieldAccess
+tailOperationChain ::= tailOperation (lineSep? tailOperation)*

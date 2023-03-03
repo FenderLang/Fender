@@ -1,12 +1,5 @@
-use crate::{
-    FenderBinaryOperator, FenderTypeId, FenderTypeSystem, FenderUnaryOperator, FenderValue,
-};
-use freight_vm::{
-    expression::Expression,
-    function::FunctionRef,
-    operators::{binary::BinaryOperator, unary::UnaryOperator},
-    value::Value,
-};
+use crate::{FenderTypeId, FenderTypeSystem, FenderValue};
+use freight_vm::{expression::Expression, function::FunctionRef, value::Value};
 use std::{
     cell::UnsafeCell,
     fmt::Debug,
@@ -140,6 +133,7 @@ impl Value for FenderReference {
             FenderValue::Null => &FenderTypeId::Null,
             FenderValue::Ref(_) => &FenderTypeId::Reference,
             FenderValue::Function(_) => &FenderTypeId::Function,
+            FenderValue::String(_) => &FenderTypeId::String,
         }
     }
 
@@ -149,7 +143,9 @@ impl Value for FenderReference {
 
     fn dupe_ref(&self) -> Self {
         match self {
-            FenderReference::FRef(internal_ref) => FenderReference::FRef(InternalReference(internal_ref.0.clone())),
+            FenderReference::FRef(internal_ref) => {
+                FenderReference::FRef(InternalReference(internal_ref.0.clone()))
+            }
             FenderReference::FRaw(_) => self.clone(),
         }
     }
@@ -167,117 +163,5 @@ impl Value for FenderReference {
 
     fn assign(&mut self, value: FenderReference) {
         *self.deref_mut() = (*value).clone();
-    }
-}
-
-impl BinaryOperator<FenderReference> for FenderBinaryOperator {
-    fn apply_2(&self, operand_a: &FenderReference, operand_b: &FenderReference) -> FenderReference {
-        use FenderBinaryOperator::*;
-        use FenderReference::*;
-        use FenderValue::*;
-
-        let value_a = operand_a.deref();
-        let value_b = operand_b.deref();
-
-        match (self, value_a, value_b) {
-            (Add, Int(a), Int(b)) => FRaw(Int(a + b)),
-            (Add, Float(a), Float(b)) => FRaw(Float(a + b)),
-            (Add, Int(a), Float(b)) => FRaw(Float(*a as f64 + b)),
-            (Add, Float(a), Int(b)) => FRaw(Float(a + *b as f64)),
-            (Add, _, _) => FRaw(Error(format!(
-                "Cannot add {} and {}",
-                operand_a.get_type().to_string(),
-                operand_b.get_type().to_string()
-            ))),
-
-            (Sub, Int(a), Int(b)) => FRaw(Int(a - b)),
-            (Sub, Float(a), Float(b)) => FRaw(Float(a - b)),
-            (Sub, Int(a), Float(b)) => FRaw(Float(*a as f64 - b)),
-            (Sub, Float(a), Int(b)) => FRaw(Float(a - *b as f64)),
-            (Sub, _, _) => FRaw(Error(format!(
-                "Cannot subtract {} and {}",
-                operand_a.get_type().to_string(),
-                operand_b.get_type().to_string()
-            ))),
-
-            (Mul, Int(a), Int(b)) => FRaw(Int(a * b)),
-            (Mul, Float(a), Float(b)) => FRaw(Float(a * b)),
-            (Mul, Int(a), Float(b)) => FRaw(Float(*a as f64 * b)),
-            (Mul, Float(a), Int(b)) => FRaw(Float(a * *b as f64)),
-            (Mul, _, _) => FRaw(Error(format!(
-                "Cannot multiply {} and {}",
-                operand_a.get_type().to_string(),
-                operand_b.get_type().to_string()
-            ))),
-
-            (Div, Int(a), Int(b)) => FRaw(Int(a / b)),
-            (Div, Float(a), Float(b)) => FRaw(Float(a / b)),
-            (Div, Int(a), Float(b)) => FRaw(Float(*a as f64 / b)),
-            (Div, Float(a), Int(b)) => FRaw(Float(a / *b as f64)),
-            (Div, _, _) => FRaw(Error(format!(
-                "Cannot divide {} and {}",
-                operand_a.get_type().to_string(),
-                operand_b.get_type().to_string()
-            ))),
-
-            (Mod, Int(a), Int(b)) => FRaw(Int(a % b)),
-            (Mod, Float(a), Float(b)) => FRaw(Float(a % b)),
-            (Mod, Int(a), Float(b)) => FRaw(Float(*a as f64 % b)),
-            (Mod, Float(a), Int(b)) => FRaw(Float(a % *b as f64)),
-            (Mod, _, _) => FRaw(Error(format!(
-                "Cannot modulus {} and {}",
-                operand_a.get_type().to_string(),
-                operand_b.get_type().to_string()
-            ))),
-
-            (Gt, Int(a), Int(b)) => FRaw(Bool(a > b)),
-            (Gt, Float(a), Float(b)) => FRaw(Bool(a > b)),
-            (Gt, Int(a), Float(b)) => FRaw(Bool(*a as f64 > *b)),
-            (Gt, Float(a), Int(b)) => FRaw(Bool(*a > *b as f64)),
-            (Gt, _, _) => FRaw(Error(format!(
-                "Cannot compare {} and {}",
-                operand_a.get_type().to_string(),
-                operand_b.get_type().to_string()
-            ))),
-
-            (And, Bool(a), Bool(b)) => FRaw(Bool(*a && *b)),
-            (And, _, _) => FRaw(Error(format!(
-                "Cannot boolean and {} and {}",
-                operand_a.get_type().to_string(),
-                operand_b.get_type().to_string()
-            ))),
-
-            (Or, Bool(a), Bool(b)) => FRaw(Bool(*a || *b)),
-            (Or, _, _) => FRaw(Error(format!(
-                "Cannot boolean or {} and {}",
-                operand_a.get_type().to_string(),
-                operand_b.get_type().to_string()
-            ))),
-        }
-    }
-}
-
-impl UnaryOperator<FenderReference> for crate::FenderUnaryOperator {
-    fn apply_1(&self, operand: &FenderReference) -> FenderReference {
-        use FenderReference::*;
-        use FenderUnaryOperator::*;
-        use FenderValue::*;
-
-        let val = operand.deref();
-
-        match (self, val) {
-            (Neg, Int(val)) => FRaw(Int(-val)),
-            (Neg, Float(val)) => FRaw(Float(-val)),
-            (Neg, _) => FRaw(Error(format!(
-                "Cannot negate {}",
-                operand.get_type().to_string()
-            ))),
-
-            (BoolNeg, Bool(val)) => FRaw(Bool(!val)),
-            (BoolNeg, _) => FRaw(Error(format!(
-                "Cannot boolean-negate {}",
-                operand.get_type().to_string()
-            ))),
-        }
     }
 }

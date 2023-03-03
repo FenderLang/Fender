@@ -1,0 +1,6 @@
+{
+   "Hello, world!".print();
+   {
+      $.print()
+   }("Hi 2")
+}()
