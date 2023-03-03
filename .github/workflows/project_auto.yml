@@ -3,7 +3,10 @@ on:
   issues:
     type:
       - opened
-      
+  pull_request:
+    types:
+      - opened
+
 jobs:
   add-to-project:
     name: Add issue to project
@@ -17,7 +20,7 @@ jobs:
           private_key: ${{ secrets.APP_PEM }}
 
       - name: add to project
-        env: 
+        env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
           ORGANIZATION: FenderLang
           PROJECT_NUMBER: 1
