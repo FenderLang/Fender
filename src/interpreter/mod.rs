@@ -2,6 +2,7 @@ pub mod error;
 
 use crate::lazy_cell::LazyCell;
 use crate::operators::FenderInitializer;
+use crate::stdlib;
 use crate::{
     operators::FenderBinaryOperator, operators::FenderUnaryOperator, FenderTypeSystem, FenderValue,
 };
@@ -9,7 +10,7 @@ use flux_bnf::lexer::{CullStrategy, Lexer};
 use flux_bnf::tokens::iterators::ignore_iter::IgnoreTokensIteratorExt;
 use flux_bnf::tokens::Token;
 use freight_vm::execution_engine::ExecutionEngine;
-use freight_vm::expression::{Expression, NativeFunction, VariableType};
+use freight_vm::expression::{Expression, VariableType};
 use freight_vm::function::{FunctionRef, FunctionType, FunctionWriter};
 use freight_vm::vm_writer::VMWriter;
 use std::cell::RefCell;
@@ -114,14 +115,7 @@ fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem
             globals.insert(name, vm.create_global());
         }
     }
-    let print_ref =
-        vm.include_native_function::<1>(NativeFunction::new(crate::stdlib::print_func));
-    let print_global = vm.create_global();
-    globals.insert("print".to_string(), print_global);
-    main.evaluate_expression(Expression::AssignGlobal(
-        print_global,
-        Box::new(FenderValue::Function(print_ref).into()),
-    ));
+    stdlib::loader::detect_load(token, &mut globals, &mut main, &mut vm);
     let mut scope = LexicalScope {
         globals: Rc::new(globals),
         args: 0,
@@ -240,9 +234,12 @@ fn parse_statement(
         }
         "declaration" if !use_globals => {
             let name = token.children[0].get_match();
-            if scope.variables.borrow().contains_key(&name) {
+            let variables = scope.variables.borrow();
+            let existing = variables.get(&name);
+            if matches!(existing, Some(VariableType::Stack(_) | VariableType::Captured(_))) {
                 return Err(InterpreterError::DuplicateName(name.to_string()).into());
             }
+            drop(variables);
             let var = function.create_variable();
             let expr = &token.children[1];
             let expr = parse_expr(expr, writer, scope)?;
