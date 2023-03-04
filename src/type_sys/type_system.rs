@@ -1,5 +1,6 @@
 use super::type_id::FenderTypeId;
 use crate::operators::FenderBinaryOperator;
+use crate::operators::FenderInitializer;
 use crate::operators::FenderUnaryOperator;
 use crate::FenderReference;
 
@@ -13,4 +14,5 @@ impl TypeSystem for FenderTypeSystem {
     type BinaryOp = FenderBinaryOperator;
     type UnaryOp = FenderUnaryOperator;
     type TypeId = FenderTypeId;
+    type Init = FenderInitializer;
 }

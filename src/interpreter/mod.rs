@@ -1,6 +1,7 @@
 pub mod error;
 
 use crate::lazy_cell::LazyCell;
+use crate::operators::FenderInitializer;
 use crate::{
     operators::FenderBinaryOperator, operators::FenderUnaryOperator, FenderTypeSystem, FenderValue,
 };
@@ -391,6 +392,7 @@ fn parse_literal(
         "float" => FenderValue::Float(token.get_match().parse()?).into(),
         "boolean" => FenderValue::Bool(token.get_match().parse()?).into(),
         "string" => FenderValue::String(parse_string(token)).into(),
+        "list" => parse_list(token, writer, scope)?,
         "null" => FenderValue::Null.into(),
         "closure" => {
             let closure = parse_closure(token, writer, scope)?;
@@ -402,6 +404,18 @@ fn parse_literal(
         }
         _ => unreachable!(),
     })
+}
+
+fn parse_list(
+        token: &Token,
+        writer: &mut VMWriter<FenderTypeSystem>,
+        scope: &mut LexicalScope,
+        ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+    let mut values = vec![];
+    for child in &token.children {
+        values.push(parse_expr(child, writer, scope)?);
+    }
+    Ok(Expression::Initialize(FenderInitializer::List, values))
 }
 
 fn parse_string(token: &Token) -> String {
