@@ -32,7 +32,7 @@ value ::= literal | enclosedExpr | name | lambdaParameter
 cmpOp ::= ">=" | "<=" | "==" | "!=" | [<>]
 
 pow ::= delimitedList<term, "^", lineSep>
-mul ::= delimitedList<pow, [*/], lineSep>
+mul ::= delimitedList<pow, [*%/], lineSep>
 add ::= delimitedList<mul, [-+], lineSep>
 range ::= delimitedList<add, ".." "="?, lineSep>
 cmp ::= delimitedList<range, cmpOp, lineSep>
