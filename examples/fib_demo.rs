@@ -15,7 +15,7 @@ fn main() {
     let fib_ref = writer.create_global();
 
     let mut run_if_true = FunctionWriter::new_capturing(0, vec![VariableType::Stack(0)]);
-    run_if_true.return_expression(Expression::BinaryOpEval(
+    run_if_true.evaluate_expression(Expression::BinaryOpEval(
         FenderBinaryOperator::Add,
         [
             Expression::DynamicFunctionCall(
@@ -46,18 +46,18 @@ fn main() {
     let run_if_true = writer.include_function(run_if_true);
 
     let mut run_if_false = FunctionWriter::new_capturing(0, vec![VariableType::Stack(0)]);
-    run_if_false.return_expression(Expression::captured(0));
+    run_if_false.evaluate_expression(Expression::captured(0));
     let run_if_false = writer.include_function(run_if_false);
 
     let mut fib = FunctionWriter::new(1);
-    let n = fib.argument_stack_offset(0);
-    fib.return_expression(Expression::NativeFunctionCall(
+
+    fib.evaluate_expression(Expression::NativeFunctionCall(
         NativeFunction::new(if_func),
         vec![
             Expression::BinaryOpEval(
                 FenderBinaryOperator::Gt,
                 [
-                    Expression::stack(n),
+                    Expression::stack(0),
                     Expression::RawValue(FenderReference::FRaw(FenderValue::Int(1))),
                 ]
                 .into(),

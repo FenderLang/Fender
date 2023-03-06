@@ -16,13 +16,13 @@ fn main() {
     let fib_ref = main.create_variable();
 
     let mut run_if_true = FunctionWriter::new(0);
-    run_if_true.return_expression(Expression::RawValue(FenderReference::FRaw(
+    run_if_true.evaluate_expression(Expression::RawValue(FenderReference::FRaw(
         FenderValue::Int(100),
     )));
     let run_if_true = writer.include_function(run_if_true);
 
     let mut run_if_false = FunctionWriter::new(0);
-    run_if_false.return_expression(Expression::RawValue(FenderReference::FRaw(
+    run_if_false.evaluate_expression(Expression::RawValue(FenderReference::FRaw(
         FenderValue::Int(0),
     )));
     let run_if_false = writer.include_function(run_if_false);
@@ -31,23 +31,24 @@ fn main() {
     //    let print_func = writer.include_native_function(print_func);
 
     let mut fib = FunctionWriter::new(1);
-    let n = fib.argument_stack_offset(0);
-    fib.return_expression(Expression::NativeFunctionCall(
+    fib.evaluate_expression(Expression::NativeFunctionCall(
         NativeFunction::new(if_func),
         vec![
             Expression::BinaryOpEval(
                 FenderBinaryOperator::Gt,
-                [Expression::stack(n), FenderValue::Int(1).into()].into(),
+                [Expression::stack(0), FenderValue::Int(1).into()].into(),
             ),
             Expression::RawValue(FenderReference::FRaw(FenderValue::Function(run_if_true))),
             Expression::RawValue(FenderReference::FRaw(FenderValue::Function(run_if_false))),
         ],
     ));
     let fib = writer.include_function(fib);
-    main.assign_value(
-        fib_ref,
-        Expression::RawValue(FenderReference::FRaw(FenderValue::Function(fib.clone()))),
-    );
+    let var = main.create_variable();
+    // main.assign_value(
+    //     fib_ref,
+    //     Expression::RawValue(FenderReference::FRaw(FenderValue::Function(fib.clone()))),
+    // );
+    
     main.evaluate_expression(Expression::NativeFunctionCall(
         NativeFunction::new(print_func),
         vec![Expression::StaticFunctionCall(

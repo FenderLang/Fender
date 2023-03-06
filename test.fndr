@@ -1,6 +1,17 @@
 {
-   "Hello, world!".print();
+   "Hello, world!".println();
    {
-      $.print()
+      $.println()
    }("Hi 2")
+
 }()
+
+$sayHello = {
+   print("Hello ")
+   $.println()
+   "How are you?".println()
+}
+println("what's your name?")
+$name = readLine()
+
+name.sayHello()
