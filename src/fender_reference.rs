@@ -42,7 +42,7 @@ impl PartialEq for InternalReference {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone)]
 pub enum FenderReference {
     FRef(InternalReference),
     FRaw(FenderValue),
@@ -67,6 +67,12 @@ impl FenderReference {
             FenderReference::FRef(_) => self.clone(),
             FenderReference::FRaw(_) => unreachable!(),
         }
+    }
+}
+
+impl PartialEq for FenderReference {
+    fn eq(&self, other: &Self) -> bool {
+        **self == **other
     }
 }
 
@@ -134,6 +140,7 @@ impl Value for FenderReference {
             FenderValue::Ref(_) => &FenderTypeId::Reference,
             FenderValue::Function(_) => &FenderTypeId::Function,
             FenderValue::String(_) => &FenderTypeId::String,
+            FenderValue::List(_) => &FenderTypeId::List,
         }
     }
 

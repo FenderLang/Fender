@@ -1,8 +1,6 @@
 use std::fs;
 use std::path::Path;
-
-pub mod interpreter;
-pub mod lazy_cell;
+use fender::interpreter;
 
 fn main() {
     let file = std::env::args().nth(1).unwrap();

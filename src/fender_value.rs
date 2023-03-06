@@ -1,6 +1,6 @@
 use freight_vm::function::FunctionRef;
 
-use crate::{fender_reference::InternalReference, FenderTypeId, FenderTypeSystem};
+use crate::{fender_reference::InternalReference, FenderReference, FenderTypeId, FenderTypeSystem};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum FenderValue {
@@ -11,6 +11,7 @@ pub enum FenderValue {
     Bool(bool),
     Error(String),
     Function(FunctionRef<FenderTypeSystem>),
+    List(Vec<FenderReference>),
     #[default]
     Null,
 }
@@ -26,6 +27,7 @@ impl FenderValue {
             FenderValue::Null => FenderTypeId::Null,
             FenderValue::Function(_) => FenderTypeId::Function,
             FenderValue::String(_) => FenderTypeId::String,
+            FenderValue::List(_) => FenderTypeId::List,
         }
     }
 
@@ -52,6 +54,13 @@ impl ToString for FenderValue {
             FenderValue::Error(e) => e.clone(),
             FenderValue::Function(_) => "Function".to_string(),
             FenderValue::Null => "null".to_string(),
+            FenderValue::List(list) => format!(
+                "[{}]",
+                list.iter()
+                    .map(|e| e.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
         }
     }
 }

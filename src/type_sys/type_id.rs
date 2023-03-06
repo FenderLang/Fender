@@ -8,34 +8,39 @@ pub enum FenderTypeId {
     Null,
     Reference,
     Function,
+    List,
 }
 
 impl FenderTypeId {
     pub fn is_primitive(&self) -> bool {
+        use FenderTypeId::*;
         match self {
-            FenderTypeId::Int => true,
-            FenderTypeId::Float => true,
-            FenderTypeId::Bool => true,
-            FenderTypeId::Error => false,
-            FenderTypeId::Null => true,
-            FenderTypeId::Reference => false,
-            FenderTypeId::Function => true,
-            FenderTypeId::String => true,
+            Int => true,
+            Float => true,
+            Bool => true,
+            Error => false,
+            Null => true,
+            Reference => false,
+            Function => true,
+            String => true,
+            List => false,
         }
     }
 }
 
 impl ToString for FenderTypeId {
     fn to_string(&self) -> String {
+        use FenderTypeId::*;
         match self {
-            FenderTypeId::Int => "Int",
-            FenderTypeId::Float => "Float",
-            FenderTypeId::Bool => "Bool",
-            FenderTypeId::Error => "Error",
-            FenderTypeId::Null => "Null",
-            FenderTypeId::Reference => "Reference",
-            FenderTypeId::Function => "Function",
-            FenderTypeId::String => "String",
+            Int => "Int",
+            Float => "Float",
+            Bool => "Bool",
+            Error => "Error",
+            Null => "Null",
+            Reference => "Reference",
+            Function => "Function",
+            String => "String",
+            List => "List",
         }
         .to_owned()
     }
