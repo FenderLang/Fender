@@ -1,5 +1,7 @@
 use crate::{fndr_native_func, FenderValue, FenderReference};
 
+pub mod loader;
+
 fndr_native_func!(if_func, |ctx, cond, if_true, if_false| {
     use FenderValue::*;
     let (Bool(cond), Function(if_true), Function(if_false)) = (&*cond, &*if_true, &*if_false) else {

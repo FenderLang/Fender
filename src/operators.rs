@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use freight_vm::{
-    operators::{binary::BinaryOperator, unary::UnaryOperator},
+    operators::{BinaryOperator, UnaryOperator, Initializer},
     value::Value,
 };
 
@@ -28,6 +28,11 @@ pub enum FenderBinaryOperator {
 pub enum FenderUnaryOperator {
     Neg,
     BoolNeg,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FenderInitializer {
+    List,
 }
 
 macro_rules! num_op_func {
@@ -146,6 +151,14 @@ impl UnaryOperator<FenderReference> for FenderUnaryOperator {
                 "Cannot boolean-negate {}",
                 operand.get_type().to_string()
             ))),
+        }
+    }
+}
+
+impl Initializer<FenderReference> for FenderInitializer {
+    fn initialize(&self, values: Vec<FenderReference>) -> FenderReference {
+        match self {
+            Self::List => FenderValue::List(values).into(),
         }
     }
 }

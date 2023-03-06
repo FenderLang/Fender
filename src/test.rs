@@ -1,4 +1,4 @@
-use crate::{interpreter::create_vm, FenderReference, FenderValue, FenderTypeId};
+use crate::{interpreter::create_vm, FenderReference, FenderTypeId, FenderValue};
 
 fn run(source: &str) -> FenderReference {
     create_vm(source).unwrap().run().unwrap()
@@ -46,4 +46,25 @@ fn test_variables() {
 fn test_capture() {
     assert_eq!(*run("{$x = 10; {x}()}()"), FenderValue::Int(10));
     assert_eq!(*run("{$x = 10; {x = x / 2}(); x}()"), FenderValue::Int(5));
+}
+
+#[test]
+fn test_lists() {
+    assert_eq!(
+        *run("[1, 2, 3]"),
+        FenderValue::List(vec![
+            FenderValue::Int(1).into(),
+            FenderValue::Int(2).into(),
+            FenderValue::Int(3).into(),
+        ])
+    );
+    assert_eq!(
+        *run("$x = 4; [1, 2, 3, x]"),
+        FenderValue::List(vec![
+            FenderValue::Int(1).into(),
+            FenderValue::Int(2).into(),
+            FenderValue::Int(3).into(),
+            FenderValue::Int(4).into(),
+        ])
+    );
 }
