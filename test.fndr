@@ -15,3 +15,20 @@ println("what's your name?")
 $name = readLine()
 
 name.sayHello()
+
+println("hello"[5])
+
+$helloList = ["h","e","l","l","o"]
+
+println(helloList[1])
+
+$tmp = helloList[0]
+tmp = 2
+
+println(tmp)
+
+helloList[1] = 4
+
+println(helloList)
+
+println("hi" == "hi")

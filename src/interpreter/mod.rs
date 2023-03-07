@@ -236,7 +236,10 @@ fn parse_statement(
             let name = token.children[0].get_match();
             let variables = scope.variables.borrow();
             let existing = variables.get(&name);
-            if matches!(existing, Some(VariableType::Stack(_) | VariableType::Captured(_))) {
+            if matches!(
+                existing,
+                Some(VariableType::Stack(_) | VariableType::Captured(_))
+            ) {
                 return Err(InterpreterError::DuplicateName(name.to_string()).into());
             }
             drop(variables);
@@ -347,6 +350,13 @@ fn parse_tail_operation(
             args.insert(0, expr);
             Ok(Expression::DynamicFunctionCall(function.into(), args))
         }
+        "index" => {
+            let pos = parse_expr(&token.children[0], writer, scope)?;
+            Ok(Expression::BinaryOpEval(
+                FenderBinaryOperator::Index,
+                [expr, pos].into(),
+            ))
+        }
         _ => unreachable!(),
     }
 }
@@ -404,10 +414,10 @@ fn parse_literal(
 }
 
 fn parse_list(
-        token: &Token,
-        writer: &mut VMWriter<FenderTypeSystem>,
-        scope: &mut LexicalScope,
-        ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+    token: &Token,
+    writer: &mut VMWriter<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
     let mut values = vec![];
     for child in &token.children {
         values.push(parse_expr(child, writer, scope)?);

@@ -13,10 +13,10 @@ pub mod type_sys {
     pub mod type_id;
     pub mod type_system;
 }
+pub mod interpreter;
 pub mod lazy_cell;
 pub mod operators;
 pub mod stdlib;
-pub mod interpreter;
 #[cfg(test)]
 mod test;
 
