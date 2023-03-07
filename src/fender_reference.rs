@@ -12,7 +12,8 @@ pub struct InternalReference(Rc<UnsafeCell<FenderValue>>);
 
 impl Clone for InternalReference {
     fn clone(&self) -> Self {
-        Self::new((**self).clone())
+        // InternalReference(Rc::clone(&self.0))
+        InternalReference::new((**self).clone())
     }
 }
 

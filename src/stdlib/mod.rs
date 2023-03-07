@@ -34,7 +34,20 @@ fndr_native_func!(read_line_func, |ctx| {
 
     let mut buf = std::string::String::new();
     match std::io::stdin().read_line(&mut buf) {
-        Ok(_) => Ok(FenderReference::FRaw(String(buf))),
-        Err(e) => Ok(FenderReference::FRaw(Error(e.to_string()))),
+        Ok(_) => Ok(String(buf).into()),
+        Err(e) => Ok(Error(e.to_string()).into()),
     }
+});
+
+fndr_native_func!(get_raw_func, |ctx, item| {
+    Ok(item.unwrap_value().into())
+});
+
+fndr_native_func!(len_func, |ctx, item| {
+    use FenderValue::*;
+    Ok(match item.len() {
+        Ok(len) => Int(len as i64),
+        Err(e_str) => Error(e_str),
+    }
+    .into())
 });
