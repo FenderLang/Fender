@@ -39,9 +39,7 @@ fndr_native_func!(read_line_func, |ctx| {
     }
 });
 
-fndr_native_func!(get_raw_func, |ctx, item| {
-    Ok(item.unwrap_value().into())
-});
+fndr_native_func!(get_raw_func, |ctx, item| Ok(item.unwrap_value().into()));
 
 fndr_native_func!(len_func, |ctx, item| {
     use FenderValue::*;

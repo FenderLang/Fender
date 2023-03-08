@@ -58,6 +58,20 @@ impl FenderValue {
         })
     }
 
+    pub fn is_empty(&self) -> Result<bool, String>{
+        Ok(match self {
+            FenderValue::Ref(v) => v.is_empty()?,
+            FenderValue::String(s) => s.is_empty(),
+            FenderValue::List(v) => v.is_empty(),
+            e => {
+                return Err(format!(
+                    "cannot get length of type {}",
+                    e.get_type_id().to_string()
+                ))
+            }
+        })
+    }
+
     /// return a raw `FenderValue` unwrapping all references
     pub fn unwrap_value(&self) -> FenderValue {
         match self {

@@ -6,8 +6,7 @@ $quickSort = (array, lower, upper){
    $i = lower
    $j = upper
 
-   println(["i:", i, " j:", j, "  array:", array])
-
+   
 
    $pivot = array[(lower + upper) / 2]
    while({i <= j}, {
@@ -19,7 +18,7 @@ $quickSort = (array, lower, upper){
          array[j] = tmp
          i = i + 1
          j = j - 1
-      }, {})
+      },{})
    })
    if(lower < j, {array = quickSort(array, lower, j)}, {})
    if(i < upper, {array = quickSort(array, i, upper)},{})
@@ -27,7 +26,7 @@ $quickSort = (array, lower, upper){
 }
 
 
-$nums = [10, 8, 7, 9, 1, 5]
+$nums = [10, 8, 7, 9, 1, 54, 2, 57, 68, 1113, 670]
 
 nums.println()
-quickSort(nums, 0, 5).println()
+quickSort(nums, 0, nums.len()-1).println()
