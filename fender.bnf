@@ -1,14 +1,14 @@
 delimitedList<elem, delim, whitespace> ::= elem (whitespace? delim whitespace? elem)*
 wrappedDelimitedList<begin, end, elem, delim, whitespace> ::= begin whitespace? delimitedList<elem, delim, whitespace>? whitespace? end
 
-sep ::= [ \t]+
-newLine ::= "\r"? "\n"
-break ::= sep? ((";" | comment? newLine) sep?)+
-lineBreak ::= sep? comment? (newLine sep?)+
-lineSep ::= (lineBreak | sep)+
+sep! ::= [ \t]+
+newLine! ::= "\r"? "\n"
+break! ::= sep? ((";" | comment? newLine) sep?)+
+lineBreak! ::= sep? comment? (newLine sep?)+
+lineSep! ::= (lineBreak | sep)+
 comment ::= "#" [^\n]*
 
-root ::= break? (statement break)* statement? break?
+root! ::= break? (statement break)* statement? break?
 statement ::= (import | functionDeclaration | structDeclaration | declaration | assignment | returnStatement | expr) sep? comment?
 return ::= "pass" | "return" ("@" name)?
 returnStatement ::= return (lineSep expr)?
@@ -31,13 +31,13 @@ value ::= literal | enclosedExpr | name | lambdaParameter
 
 cmpOp ::= ">=" | "<=" | "==" | "!=" | [<>]
 
-pow ::= delimitedList<term, "^", lineSep>
-mul ::= delimitedList<pow, [*%/], lineSep>
-add ::= delimitedList<mul, [-+], lineSep>
-range ::= delimitedList<add, ".." "="?, lineSep>
-cmp ::= delimitedList<range, cmpOp, lineSep>
-and ::= delimitedList<cmp, "&&", lineSep>
-or ::= delimitedList<and, "||", lineSep>
+pow! ::= delimitedList<term, "^", lineSep>
+mul! ::= delimitedList<pow, [*%/], lineSep>
+add! ::= delimitedList<mul, [-+], lineSep>
+range! ::= delimitedList<add, ".." "="?, lineSep>
+cmp! ::= delimitedList<range, cmpOp, lineSep>
+and! ::= delimitedList<cmp, "&&", lineSep>
+or! ::= delimitedList<and, "||", lineSep>
 
 alpha ::= [a-z] | [A-Z]
 alphanum ::= [a-z] | [A-Z] | [0-9] | "_"
