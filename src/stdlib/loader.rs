@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{stdlib, FenderValue};
-use flux_bnf::tokens::Token;
+use flux_bnf::tokens::{Token, iterators::SelectTokens};
 use freight_vm::{
     expression::{Expression, NativeFunction},
     function::FunctionWriter,
@@ -17,7 +17,7 @@ pub fn detect_load(
     main: &mut FunctionWriter<FenderTypeSystem>,
     vm: &mut VMWriter<FenderTypeSystem>,
 ) {
-    for name in token.recursive_children_named("name") {
+    for name in token.rec_iter().select_token("name") {
         let name = name.get_match();
         let function = get_stdlib_function(&name);
         let Some((function, args)) = function else { continue };

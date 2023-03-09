@@ -38,6 +38,7 @@ fn test_closures() {
 #[test]
 fn test_variables() {
     assert_eq!(*run("$x = 4; x"), FenderValue::Int(4));
+    assert_eq!(*run("$x = 4; $y = x / 2; y"), FenderValue::Int(2));
     assert_eq!(*run("$add = (a, b) {a + b}; 4.add(5)"), FenderValue::Int(9));
     assert_eq!(*run("$abc = 4; abc = abc + 1; abc"), FenderValue::Int(5));
 }
@@ -46,6 +47,13 @@ fn test_variables() {
 fn test_capture() {
     assert_eq!(*run("{$x = 10; {x}()}()"), FenderValue::Int(10));
     assert_eq!(*run("{$x = 10; {x = x / 2}(); x}()"), FenderValue::Int(5));
+}
+
+fn test_return() {
+    assert_eq!(*run("return 2; 1"), FenderValue::Int(2));
+    assert_eq!(*run("{return 2; 1}()"), FenderValue::Int(2));
+    assert_eq!(*run("{{return 2; 1}()}()"), FenderValue::Int(2));
+    assert_eq!(*run("{$x = `test {return@test 2; 1}(); x + 1}()"), FenderValue::Int(3));
 }
 
 #[test]
