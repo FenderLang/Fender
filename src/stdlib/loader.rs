@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{stdlib, FenderValue};
-use flux_bnf::tokens::Token;
+use flux_bnf::tokens::{iterators::SelectTokens, Token};
 use freight_vm::{
     expression::{Expression, NativeFunction},
     function::FunctionWriter,
@@ -17,7 +17,7 @@ pub fn detect_load(
     main: &mut FunctionWriter<FenderTypeSystem>,
     vm: &mut VMWriter<FenderTypeSystem>,
 ) {
-    for name in token.recursive_children_named("name") {
+    for name in token.rec_iter().select_token("name") {
         let name = name.get_match();
         let function = get_stdlib_function(&name);
         let Some((function, args)) = function else { continue };
@@ -37,6 +37,8 @@ pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSyste
         "println" => Some((NativeFunction::new(stdlib::println_func), 1)),
         "if" => Some((NativeFunction::new(stdlib::if_func), 3)),
         "readLine" => Some((NativeFunction::new(stdlib::read_line_func), 0)),
+        "raw" => Some((NativeFunction::new(stdlib::get_raw_func), 1)),
+        "len" => Some((NativeFunction::new(stdlib::len_func), 1)),
         _ => None,
     }
 }

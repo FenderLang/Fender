@@ -7,7 +7,7 @@ use crate::{
     operators::FenderBinaryOperator, operators::FenderUnaryOperator, FenderTypeSystem, FenderValue,
 };
 use flux_bnf::lexer::{CullStrategy, Lexer};
-use flux_bnf::tokens::iterators::ignore_iter::IgnoreTokensIteratorExt;
+use flux_bnf::tokens::iterators::{IgnoreTokens, SelectTokens};
 use flux_bnf::tokens::Token;
 use freight_vm::execution_engine::ExecutionEngine;
 use freight_vm::expression::{Expression, VariableType};
@@ -25,7 +25,7 @@ pub struct LexicalScope<'a> {
     args: usize,
     captures: RefCell<Vec<VariableType>>,
     variables: RefCell<HashMap<String, VariableType>>,
-    parent: Option<Rc<&'a LexicalScope<'a>>>,
+    parent: Option<&'a LexicalScope<'a>>,
 }
 
 impl<'a> LexicalScope<'a> {
@@ -35,7 +35,7 @@ impl<'a> LexicalScope<'a> {
             args,
             captures: vec![].into(),
             variables: HashMap::new().into(),
-            parent: Some(Rc::new(self)),
+            parent: Some(self),
         }
     }
 
@@ -133,8 +133,9 @@ fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem
 
 fn code_body_uses_lambda_parameter(token: &Token) -> bool {
     token
-        .recursive_children_named("lambdaParameter")
+        .rec_iter()
         .ignore_token("codeBody")
+        .select_token("lambdaParameter")
         .next()
         .is_some()
 }
@@ -159,11 +160,7 @@ fn parse_closure(
     match token.children.len() {
         1 => {
             let code_body = &token.children[0];
-            let arg_count = if code_body_uses_lambda_parameter(code_body) {
-                1
-            } else {
-                0
-            };
+            let arg_count = code_body_uses_lambda_parameter(code_body) as usize;
             let mut new_scope = scope.child_scope(arg_count);
             parse_code_body(code_body, writer, &mut new_scope)
         }
@@ -195,7 +192,7 @@ fn parse_code_body(
         function.evaluate_expression(expr);
     }
     let captures = std::mem::take(&mut *new_scope.captures.borrow_mut());
-    if captures.len() > 0 {
+    if captures.is_empty() {
         function.set_captures(captures);
     }
     Ok(writer.include_function(function))
@@ -403,11 +400,10 @@ fn parse_literal(
         "null" => FenderValue::Null.into(),
         "closure" => {
             let closure = parse_closure(token, writer, scope)?;
-            let expr = match closure.function_type {
+            match closure.function_type {
                 FunctionType::CapturingDef(_) => Expression::FunctionCapture(closure),
                 _ => FenderValue::Function(closure).into(),
-            };
-            expr
+            }
         }
         _ => unreachable!(),
     })
