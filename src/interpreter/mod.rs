@@ -220,7 +220,7 @@ fn parse_code_body(
         function.evaluate_expression(expr);
     }
     let captures = std::mem::take(&mut *new_scope.captures.borrow_mut());
-    if captures.len() > 0 {
+    if !captures.is_empty(){
         function.set_captures(captures);
     }
     Ok(writer.include_function(function, new_scope.return_target))
