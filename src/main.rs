@@ -1,6 +1,6 @@
+use fender::interpreter;
 use std::fs;
 use std::path::Path;
-use fender::interpreter;
 
 fn main() {
     let file = std::env::args().nth(1).unwrap();

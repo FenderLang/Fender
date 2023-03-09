@@ -34,7 +34,9 @@ pub fn detect_load(
 pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSystem>, usize)> {
     match name {
         "print" => Some((NativeFunction::new(stdlib::print_func), 1)),
+        "println" => Some((NativeFunction::new(stdlib::println_func), 1)),
         "if" => Some((NativeFunction::new(stdlib::if_func), 3)),
+        "readLine" => Some((NativeFunction::new(stdlib::read_line_func), 0)),
         _ => None,
     }
 }

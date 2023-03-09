@@ -135,6 +135,7 @@ impl Value for FenderReference {
             FenderValue::Int(_) => &FenderTypeId::Int,
             FenderValue::Float(_) => &FenderTypeId::Float,
             FenderValue::Bool(_) => &FenderTypeId::Bool,
+            FenderValue::Char(_) => &FenderTypeId::Char,
             FenderValue::Error(_) => &FenderTypeId::Error,
             FenderValue::Null => &FenderTypeId::Null,
             FenderValue::Ref(_) => &FenderTypeId::Reference,
@@ -170,5 +171,32 @@ impl Value for FenderReference {
 
     fn assign(&mut self, value: FenderReference) {
         *self.deref_mut() = (*value).clone();
+    }
+}
+
+impl From<FenderReference> for InternalReference {
+    fn from(value: FenderReference) -> Self {
+        match value {
+            FenderReference::FRef(val) => val.clone(),
+            FenderReference::FRaw(val) => InternalReference::new(val),
+        }
+    }
+}
+
+impl From<FenderReference> for FenderValue {
+    fn from(value: FenderReference) -> Self {
+        match value {
+            FenderReference::FRef(val) => val.deref().clone(),
+            FenderReference::FRaw(val) => val,
+        }
+    }
+}
+
+impl<'a> From<&'a FenderReference> for &'a FenderValue {
+    fn from(value: &'a FenderReference) -> Self {
+        match value {
+            FenderReference::FRef(val) => &*val,
+            FenderReference::FRaw(val) => val,
+        }
     }
 }

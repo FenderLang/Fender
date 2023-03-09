@@ -13,10 +13,10 @@ pub mod type_sys {
     pub mod type_id;
     pub mod type_system;
 }
+pub mod interpreter;
 pub mod lazy_cell;
 pub mod operators;
 pub mod stdlib;
-pub mod interpreter;
 #[cfg(test)]
 mod test;
 
@@ -32,6 +32,7 @@ macro_rules! count {
 #[macro_export]
 macro_rules! fndr_native_func {
     ($name:ident, | $ctx:tt $(, $($arg:pat_param),*)? | $body:expr) => {
+        #[allow(unused_variables)]
         pub fn $name($ctx: &mut freight_vm::execution_engine::ExecutionEngine<$crate::type_sys::type_system::FenderTypeSystem>, args: Vec<$crate::fender_reference::FenderReference>) -> Result<$crate::fender_reference::FenderReference, freight_vm::error::FreightError> {
             const _ARG_COUNT: usize = $crate::count!($($($arg),*)?);
             $(

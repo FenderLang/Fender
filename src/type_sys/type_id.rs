@@ -9,6 +9,7 @@ pub enum FenderTypeId {
     Reference,
     Function,
     List,
+    Char,
 }
 
 impl FenderTypeId {
@@ -24,6 +25,7 @@ impl FenderTypeId {
             Function => true,
             String => true,
             List => false,
+            Char => true,
         }
     }
 }
@@ -41,6 +43,7 @@ impl ToString for FenderTypeId {
             Function => "Function",
             String => "String",
             List => "List",
+            Char => "Char",
         }
         .to_owned()
     }
