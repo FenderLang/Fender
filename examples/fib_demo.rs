@@ -15,7 +15,7 @@ fn main() {
     let fib_ref = writer.create_global();
 
     let mut run_if_true = FunctionWriter::new_capturing(0, vec![VariableType::Stack(0)]);
-    run_if_true.return_expression(Expression::BinaryOpEval(
+    run_if_true.evaluate_expression(Expression::BinaryOpEval(
         FenderBinaryOperator::Add,
         [
             Expression::DynamicFunctionCall(
@@ -43,21 +43,20 @@ fn main() {
         ]
         .into(),
     ));
-    let run_if_true = writer.include_function(run_if_true);
+    let run_if_true = writer.include_function(run_if_true, 0);
 
     let mut run_if_false = FunctionWriter::new_capturing(0, vec![VariableType::Stack(0)]);
-    run_if_false.return_expression(Expression::captured(0));
-    let run_if_false = writer.include_function(run_if_false);
+    run_if_false.evaluate_expression(Expression::captured(0));
+    let run_if_false = writer.include_function(run_if_false, 0);
 
     let mut fib = FunctionWriter::new(1);
-    let n = fib.argument_stack_offset(0);
-    fib.return_expression(Expression::NativeFunctionCall(
+    fib.evaluate_expression(Expression::NativeFunctionCall(
         NativeFunction::new(if_func),
         vec![
             Expression::BinaryOpEval(
                 FenderBinaryOperator::Gt,
                 [
-                    Expression::stack(n),
+                    Expression::stack(0),
                     Expression::RawValue(FenderReference::FRaw(FenderValue::Int(1))),
                 ]
                 .into(),
@@ -67,7 +66,7 @@ fn main() {
             Expression::FunctionCapture(run_if_false),
         ],
     ));
-    let fib = writer.include_function(fib);
+    let fib = writer.include_function(fib, 0);
     main.evaluate_expression(Expression::AssignGlobal(
         fib_ref,
         Box::new(FenderValue::Function(fib.clone()).into()),
@@ -81,7 +80,7 @@ fn main() {
             ))],
         )],
     ));
-    let main = writer.include_function(main);
+    let main = writer.include_function(main, 0);
     let mut vm = writer.finish(main);
     vm.run().unwrap();
 }

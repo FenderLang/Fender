@@ -13,7 +13,7 @@ use freight_vm::expression::{Expression, VariableType};
 use freight_vm::function::{FunctionRef, FunctionType, FunctionWriter};
 use freight_vm::vm_writer::VMWriter;
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::rc::Rc;
 
@@ -135,6 +135,8 @@ fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem
         .rec_iter()
         .select_token("label")
         .map(|t| t.children[0].get_match())
+        .collect::<HashSet<_>>()
+        .into_iter()
         .enumerate()
         .map(|(i, name)| (name, i))
         .collect();
