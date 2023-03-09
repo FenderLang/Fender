@@ -12,7 +12,7 @@ pub struct InternalReference(Rc<UnsafeCell<FenderValue>>);
 
 impl Clone for InternalReference {
     fn clone(&self) -> Self {
-        Self::new((**self).clone())
+        InternalReference::new((**self).clone())
     }
 }
 
@@ -38,7 +38,7 @@ impl DerefMut for InternalReference {
 
 impl PartialEq for InternalReference {
     fn eq(&self, other: &Self) -> bool {
-        &**self == &**other
+        **self == **other
     }
 }
 
@@ -135,6 +135,7 @@ impl Value for FenderReference {
             FenderValue::Int(_) => &FenderTypeId::Int,
             FenderValue::Float(_) => &FenderTypeId::Float,
             FenderValue::Bool(_) => &FenderTypeId::Bool,
+            FenderValue::Char(_) => &FenderTypeId::Char,
             FenderValue::Error(_) => &FenderTypeId::Error,
             FenderValue::Null => &FenderTypeId::Null,
             FenderValue::Ref(_) => &FenderTypeId::Reference,
@@ -159,7 +160,7 @@ impl Value for FenderReference {
 
     fn cast_to_function(&self) -> Option<&FunctionRef<FenderTypeSystem>> {
         match &**self {
-            FenderValue::Function(func) => Some(&func),
+            FenderValue::Function(func) => Some(func),
             _ => None,
         }
     }
@@ -170,5 +171,32 @@ impl Value for FenderReference {
 
     fn assign(&mut self, value: FenderReference) {
         *self.deref_mut() = (*value).clone();
+    }
+}
+
+impl From<FenderReference> for InternalReference {
+    fn from(value: FenderReference) -> Self {
+        match value {
+            FenderReference::FRef(val) => val,
+            FenderReference::FRaw(val) => InternalReference::new(val),
+        }
+    }
+}
+
+impl From<FenderReference> for FenderValue {
+    fn from(value: FenderReference) -> Self {
+        match value {
+            FenderReference::FRef(val) => val.deref().clone(),
+            FenderReference::FRaw(val) => val,
+        }
+    }
+}
+
+impl<'a> From<&'a FenderReference> for &'a FenderValue {
+    fn from(value: &'a FenderReference) -> Self {
+        match value {
+            FenderReference::FRef(val) => val,
+            FenderReference::FRaw(val) => val,
+        }
     }
 }

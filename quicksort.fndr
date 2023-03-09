@@ -1,0 +1,32 @@
+$while = (bool, func){
+   if(bool(), {func(); while(bool, func)},{})
+}
+
+$quickSort = (array, lower, upper){
+   $i = lower
+   $j = upper
+
+   
+
+   $pivot = array[(lower + upper) / 2]
+   while({i <= j}, {
+      while({array[i] < pivot}, {i = i + 1})
+      while({array[j] > pivot}, {j = j - 1})
+      if(i <= j, {
+         $tmp = array[i]
+         array[i] = array[j]
+         array[j] = tmp
+         i = i + 1
+         j = j - 1
+      },{})
+   })
+   if(lower < j, {array = quickSort(array, lower, j)}, {})
+   if(i < upper, {array = quickSort(array, i, upper)},{})
+   array
+}
+
+
+$nums = [10, 8, 7, 9, 1, 54, 2, 57, 68, 1113, 670]
+
+nums.println()
+quickSort(nums, 0, nums.len()-1).println()

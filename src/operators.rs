@@ -1,11 +1,11 @@
 use std::ops::Deref;
 
 use freight_vm::{
-    operators::{BinaryOperator, UnaryOperator, Initializer},
+    operators::{BinaryOperator, Initializer, UnaryOperator},
     value::Value,
 };
 
-use crate::{FenderReference, FenderValue};
+use crate::{fender_reference::InternalReference, FenderReference, FenderValue};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FenderBinaryOperator {
@@ -22,6 +22,7 @@ pub enum FenderBinaryOperator {
     Le,
     Eq,
     Ne,
+    Index,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -95,37 +96,84 @@ macro_rules! bool_op_func {
     };
 }
 
-num_op_func!(add, +);
-num_op_func!(sub, -);
-num_op_func!(mul, *);
-num_op_func!(div, /);
-num_op_func!(rem, %);
-cmp_op_func!(gt, >);
-cmp_op_func!(ge, >=);
-cmp_op_func!(le, <=);
-cmp_op_func!(lt, <);
-cmp_op_func!(eq, ==);
-cmp_op_func!(ne, !=);
-bool_op_func!(or, ||);
-bool_op_func!(and, &&);
+num_op_func!(num_add, +);
+num_op_func!(num_sub, -);
+num_op_func!(num_mul, *);
+num_op_func!(num_div, /);
+num_op_func!(num_rem, %);
+cmp_op_func!(num_gt, >);
+cmp_op_func!(num_ge, >=);
+cmp_op_func!(num_le, <=);
+cmp_op_func!(num_lt, <);
+cmp_op_func!(num_eq, ==);
+cmp_op_func!(num_ne, !=);
+bool_op_func!(num_or, ||);
+bool_op_func!(num_and, &&);
+
+fn eq(a: &FenderReference, b: &FenderReference) -> FenderReference {
+    let a_val: &FenderValue = a.into();
+    let b_val: &FenderValue = b.into();
+    match (a_val, b_val) {
+        (FenderValue::String(a), FenderValue::String(b)) => FenderValue::Bool(a == b).into(),
+        _ => num_eq(a, b),
+    }
+}
+
+fn index_op(a: &FenderReference, b: &FenderReference) -> FenderReference {
+    let FenderValue::Int(pos) =  b.deref() else {
+                    return FenderReference::FRaw(FenderValue::Error(format!(
+                        "cannot index with `{}` type",
+                        b.get_real_type_id().to_string()
+                    )));
+                };
+
+    let len = match a.deref() {
+        FenderValue::String(s) => s.len(),
+        FenderValue::List(l) => l.len(),
+        _ => {
+            return FenderValue::Error(format!(
+                "cannot index with `{}` type",
+                a.get_real_type_id().to_string()
+            ))
+            .into();
+        }
+    };
+
+    let pos = if pos.is_negative() {
+        len - pos.unsigned_abs() as usize
+    } else {
+        pos.unsigned_abs() as usize
+    };
+
+    if pos >= len {
+        return FenderValue::Error(format!("trying to get index {pos} but length is {len}")).into();
+    }
+
+    match a.deref() {
+        FenderValue::String(s) => FenderValue::Char(s.chars().nth(pos).unwrap()).into(),
+        FenderValue::List(l) => l[pos].dupe_ref(),
+        _ => unreachable!(),
+    }
+}
 
 impl BinaryOperator<FenderReference> for FenderBinaryOperator {
     fn apply_2(&self, a: &FenderReference, b: &FenderReference) -> FenderReference {
         use FenderBinaryOperator::*;
         match self {
-            Add => add(a, b),
-            Sub => sub(a, b),
-            Mul => mul(a, b),
-            Div => div(a, b),
-            Mod => rem(a, b),
-            Gt => gt(a, b),
-            Lt => lt(a, b),
-            Le => le(a, b),
-            Ge => ge(a, b),
+            Add => num_add(a, b),
+            Sub => num_sub(a, b),
+            Mul => num_mul(a, b),
+            Div => num_div(a, b),
+            Mod => num_rem(a, b),
+            Gt => num_gt(a, b),
+            Lt => num_lt(a, b),
+            Le => num_le(a, b),
+            Ge => num_ge(a, b),
             Eq => eq(a, b),
-            Ne => ne(a, b),
-            And => and(a, b),
-            Or => or(a, b),
+            Ne => num_ne(a, b),
+            And => num_and(a, b),
+            Or => num_or(a, b),
+            Index => index_op(a, b),
         }
     }
 }
@@ -158,7 +206,13 @@ impl UnaryOperator<FenderReference> for FenderUnaryOperator {
 impl Initializer<FenderReference> for FenderInitializer {
     fn initialize(&self, values: Vec<FenderReference>) -> FenderReference {
         match self {
-            Self::List => FenderValue::List(values).into(),
+            Self::List => FenderValue::List(
+                values
+                    .into_iter()
+                    .map(|val| FenderReference::FRef(InternalReference::from(val)))
+                    .collect(),
+            )
+            .into(),
         }
     }
 }

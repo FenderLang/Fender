@@ -7,7 +7,8 @@ use crate::{
     operators::FenderBinaryOperator, operators::FenderUnaryOperator, FenderTypeSystem, FenderValue,
 };
 use flux_bnf::lexer::{CullStrategy, Lexer};
-use flux_bnf::tokens::{iterators::IgnoreTokens, iterators::SelectTokens, Token};
+use flux_bnf::tokens::iterators::{IgnoreTokens, SelectTokens};
+use flux_bnf::tokens::Token;
 use freight_vm::execution_engine::ExecutionEngine;
 use freight_vm::expression::{Expression, VariableType};
 use freight_vm::function::{FunctionRef, FunctionType, FunctionWriter};
@@ -187,11 +188,7 @@ fn parse_closure(
     match token.children.len() {
         1 => {
             let code_body = &token.children[0];
-            let arg_count = if code_body_uses_lambda_parameter(code_body) {
-                1
-            } else {
-                0
-            };
+            let arg_count = code_body_uses_lambda_parameter(code_body) as usize;
             let mut new_scope = scope.child_scope(arg_count, writer.create_return_target());
             parse_code_body(code_body, writer, &mut new_scope)
         }
@@ -223,7 +220,7 @@ fn parse_code_body(
         function.evaluate_expression(expr);
     }
     let captures = std::mem::take(&mut *new_scope.captures.borrow_mut());
-    if captures.len() > 0 {
+    if captures.is_empty() {
         function.set_captures(captures);
     }
     Ok(writer.include_function(function, new_scope.return_target))
@@ -412,6 +409,13 @@ fn parse_tail_operation(
             args.insert(0, expr);
             Ok(Expression::DynamicFunctionCall(function.into(), args))
         }
+        "index" => {
+            let pos = parse_expr(&token.children[0], writer, scope)?;
+            Ok(Expression::BinaryOpEval(
+                FenderBinaryOperator::Index,
+                [expr, pos].into(),
+            ))
+        }
         _ => unreachable!(),
     }
 }
@@ -458,11 +462,10 @@ fn parse_literal(
         "null" => FenderValue::Null.into(),
         "closure" => {
             let closure = parse_closure(token, writer, scope)?;
-            let expr = match closure.function_type {
+            match closure.function_type {
                 FunctionType::CapturingDef(_) => Expression::FunctionCapture(closure),
                 _ => FenderValue::Function(closure).into(),
-            };
-            expr
+            }
         }
         _ => unreachable!(),
     })
