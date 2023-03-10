@@ -9,9 +9,8 @@ lineSep! ::= (lineBreak | sep)+
 comment ::= "#" [^\n]*
 
 root! ::= break? (statement break)* statement? break?
-statement ::= (import | functionDeclaration | structDeclaration | declaration | assignment | returnStatement | expr) sep? comment?
-return ::= "pass" | "return" ("@" name)?
-returnStatement ::= return (lineSep expr)?
+statement ::= (import | functionDeclaration | structDeclaration | declaration | assignment | return | expr) sep? comment?
+return ::= "return" ("@" name)? (lineSep expr)?
 declaration ::= "$" sep? name sep? "=" lineSep? expr
 assignOp ::= [-+/*]
 assignment ::= expr sep? assignOp? "=" lineSep? expr
@@ -22,8 +21,8 @@ importAs ::= "as" sep name
 binaryOperator ::= "||" | "&&" | "==" | "<=" | ">=" | ".." "="? | [-+*/^<>]
 unaryOperator ::= [-!]
 
-expr ::= label? or
-label ::= "`" name lineSep
+expr ::= ("`" label lineSep?)? or
+label ::= "" name
 enclosedExpr ::= "(" lineSep? expr lineSep? ")"
 term ::= (unaryOperator sep?)* value sep? tailOperationChain?
 lambdaParameter ::= "$"
@@ -72,5 +71,5 @@ functionDeclaration ::= "fn" sep? name lineSep? args lineSep? ("=" lineSep? expr
 fieldAccess ::= ":" lineSep? name
 receiverCall ::= "." lineSep? name sep? invoke
 index ::= "[" expr "]"
-tailOperation ::= invoke | receiverCall | index | fieldAccess
-tailOperationChain ::= tailOperation (lineSep? tailOperation)*
+tailOperation ::= (sep? invoke) | (lineSep? (receiverCall | index | fieldAccess))
+tailOperationChain ::= tailOperation (tailOperation)*
