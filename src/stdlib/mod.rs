@@ -1,6 +1,6 @@
-use std::io::Write;
-
+use crate::fender_value::FenderValue::*;
 use crate::{fndr_native_func, FenderReference};
+use std::io::Write;
 
 pub mod loader;
 
