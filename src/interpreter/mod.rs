@@ -14,35 +14,40 @@ use freight_vm::expression::{Expression, VariableType};
 use freight_vm::function::{FunctionRef, FunctionType, FunctionWriter};
 use freight_vm::vm_writer::VMWriter;
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::rc::Rc;
 
 use self::error::InterpreterError;
 
+pub type InterpreterResult = Result<Expression<FenderTypeSystem>, Box<dyn Error>>;
+
 pub struct LexicalScope<'a> {
     globals: Rc<HashMap<String, usize>>,
+    labels: Rc<HashMap<String, usize>>,
     args: usize,
     captures: RefCell<Vec<VariableType>>,
     variables: RefCell<HashMap<String, VariableType>>,
     parent: Option<&'a LexicalScope<'a>>,
+    return_target: usize,
 }
 
 impl<'a> LexicalScope<'a> {
-    pub fn child_scope(&self, args: usize) -> LexicalScope {
+    pub fn child_scope(&self, args: usize, return_target: usize) -> LexicalScope {
         LexicalScope {
             globals: self.globals.clone(),
+            labels: self.labels.clone(),
             args,
             captures: vec![].into(),
             variables: HashMap::new().into(),
             parent: Some(self),
+            return_target,
         }
     }
 
     pub fn capture(&self, name: &str) -> Result<(), InterpreterError> {
         let parent_var = self
             .parent
-            .as_ref()
             .and_then(|parent| parent.variables.borrow().get(name).cloned())
             .ok_or_else(|| InterpreterError::UnresolvedName(name.to_string()))?;
         let mut captures = self.captures.borrow_mut();
@@ -70,6 +75,17 @@ impl<'a> LexicalScope<'a> {
             scope.capture(name)?;
         }
         Ok(self.variables.borrow()[name].clone())
+    }
+
+    pub fn top_level_return(&self) -> usize {
+        if self.parent.is_none() {
+            return 0;
+        }
+        let mut scope = self;
+        while scope.parent.and_then(|p| p.parent).is_some() {
+            scope = scope.parent.expect("Has parent");
+        }
+        scope.return_target
     }
 }
 
@@ -107,6 +123,7 @@ pub fn create_vm(source: &str) -> Result<ExecutionEngine<FenderTypeSystem>, Box<
 fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem>, Box<dyn Error>> {
     let mut vm = VMWriter::new();
     let mut main = FunctionWriter::new(0);
+    let main_return_target = vm.create_return_target();
     let mut globals = HashMap::new();
     for t in token.children.iter() {
         let child = &t.children[0];
@@ -115,19 +132,30 @@ fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem
             globals.insert(name, vm.create_global());
         }
     }
+    let labels = token
+        .rec_iter()
+        .select_token("label")
+        .map(|t| t.children[0].get_match())
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .enumerate()
+        .map(|(i, name)| (name, i))
+        .collect();
     stdlib::loader::detect_load(token, &mut globals, &mut main, &mut vm);
     let mut scope = LexicalScope {
         globals: Rc::new(globals),
+        labels: Rc::new(labels),
         args: 0,
         captures: Default::default(),
         variables: Default::default(),
         parent: None,
+        return_target: main_return_target,
     };
     for statement in &token.children {
         let statement = parse_statement(statement, &mut vm, &mut scope, &mut main, true)?;
         main.evaluate_expression(statement);
     }
-    let main_ref = vm.include_function(main);
+    let main_ref = vm.include_function(main, main_return_target);
     Ok(vm.finish(main_ref))
 }
 
@@ -161,14 +189,14 @@ fn parse_closure(
         1 => {
             let code_body = &token.children[0];
             let arg_count = code_body_uses_lambda_parameter(code_body) as usize;
-            let mut new_scope = scope.child_scope(arg_count);
+            let mut new_scope = scope.child_scope(arg_count, writer.create_return_target());
             parse_code_body(code_body, writer, &mut new_scope)
         }
         2 => {
             let args = &token.children[0];
             let code_body = &token.children[1];
             let args = parse_args(args);
-            let mut new_scope = scope.child_scope(args.len());
+            let mut new_scope = scope.child_scope(args.len(), writer.create_return_target());
             for (index, arg) in args.into_iter().enumerate() {
                 new_scope
                     .variables
@@ -192,10 +220,10 @@ fn parse_code_body(
         function.evaluate_expression(expr);
     }
     let captures = std::mem::take(&mut *new_scope.captures.borrow_mut());
-    if captures.is_empty() {
+    if !captures.is_empty() {
         function.set_captures(captures);
     }
-    Ok(writer.include_function(function))
+    Ok(writer.include_function(function, new_scope.return_target))
 }
 
 fn parse_statement(
@@ -204,20 +232,12 @@ fn parse_statement(
     scope: &mut LexicalScope,
     function: &mut FunctionWriter<FenderTypeSystem>,
     use_globals: bool,
-) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+) -> InterpreterResult {
     let token = &token.children[0];
     Ok(match token.get_name().as_deref().unwrap() {
         "expr" => parse_expr(token, writer, scope)?,
-        "assignment" => {
-            let target = &token.children[0];
-            let value = &token.children[token.children.len() - 1];
-            if token.children_named("assignOp").count() > 0 {
-                unimplemented!()
-            }
-            let target = parse_expr(target, writer, scope)?;
-            let value = parse_expr(value, writer, scope)?;
-            Expression::AssignDynamic([target, value].into())
-        }
+        "assignment" => parse_assignment(token, writer, scope)?,
+        "return" => parse_return(token, writer, scope)?,
         "declaration" if use_globals => {
             let name = token.children[0].get_match();
             let var = scope
@@ -253,6 +273,48 @@ fn parse_statement(
     })
 }
 
+fn parse_assignment(
+    token: &Token,
+    writer: &mut VMWriter<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+) -> InterpreterResult {
+    let target = &token.children[0];
+    let value = &token.children[token.children.len() - 1];
+    let op = token
+        .children_named("assignOp")
+        .next()
+        .map(|t| parse_binary_operator(&t.get_match()));
+    let target = parse_expr(target, writer, scope)?;
+    let value = parse_expr(value, writer, scope)?;
+    if let Some(_op) = op {
+        todo!()
+    }
+    Ok(Expression::AssignDynamic([target, value].into()))
+}
+
+fn parse_return(
+    token: &Token,
+    writer: &mut VMWriter<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+) -> InterpreterResult {
+    let name = token.children_named("name").next().map(|t| t.get_match());
+    let expr = token.children_named("expr").next();
+    let expr = if let Some(expr) = expr {
+        parse_expr(expr, writer, scope)?
+    } else {
+        FenderValue::Null.into()
+    };
+    if let Some(name) = name {
+        let label = scope
+            .labels
+            .get(&name)
+            .ok_or(InterpreterError::UnresolvedLabel(name))?;
+        Ok(Expression::Return(*label, expr.into()))
+    } else {
+        Ok(Expression::Return(scope.top_level_return(), expr.into()))
+    }
+}
+
 fn parse_binary_operator(op: &str) -> FenderBinaryOperator {
     use FenderBinaryOperator::*;
     match op {
@@ -277,7 +339,7 @@ fn parse_binary_operation(
     token: &Token,
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
-) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+) -> InterpreterResult {
     let mut left = parse_expr(&token.children[0], writer, scope)?;
     let mut last_end = token.children[0].range.end;
     for right in &token.children[1..] {
@@ -294,7 +356,7 @@ fn parse_value(
     token: &Token,
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
-) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+) -> InterpreterResult {
     Ok(match token.children[0].get_name().as_deref().unwrap() {
         "literal" => parse_literal(&token.children[0], writer, scope)?,
         "lambdaParameter" => Expression::stack(0),
@@ -329,7 +391,7 @@ fn parse_tail_operation(
     expr: Expression<FenderTypeSystem>,
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
-) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+) -> InterpreterResult {
     let token = &token.children[0];
     match token.get_name().as_deref().unwrap() {
         "invoke" => {
@@ -362,7 +424,7 @@ fn parse_term(
     token: &Token,
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
-) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+) -> InterpreterResult {
     let value = token.children_named("value").next().unwrap();
     let mut value = parse_value(value, writer, scope)?;
     if let Some("tailOperationChain") = token.children[token.children.len() - 1]
@@ -389,7 +451,7 @@ fn parse_literal(
     token: &Token,
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
-) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+) -> InterpreterResult {
     let token = &token.children[0];
     Ok(match token.get_name().as_deref().unwrap() {
         "int" => FenderValue::Int(token.get_match().parse()?).into(),
@@ -413,7 +475,7 @@ fn parse_list(
     token: &Token,
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
-) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+) -> InterpreterResult {
     let mut values = vec![];
     for child in &token.children {
         values.push(parse_expr(child, writer, scope)?);
@@ -430,13 +492,24 @@ fn parse_expr(
     token: &Token,
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
-) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+) -> InterpreterResult {
     Ok(match token.get_name().as_deref().unwrap() {
         "add" | "mul" | "pow" | "range" | "cmp" | "or" | "and" => {
             parse_binary_operation(token, writer, scope)?
         }
         "term" => parse_term(token, writer, scope)?,
-        "expr" | "enclosedExpr" => parse_expr(&token.children[0], writer, scope)?,
+        "expr" | "enclosedExpr" => {
+            let label = token.children_named("label").next().map(|t| t.get_match());
+            let mut expr = parse_expr(&token.children[label.iter().count()], writer, scope)?;
+            if let Some(label) = label {
+                let return_target = scope
+                    .labels
+                    .get(&label)
+                    .ok_or(InterpreterError::UnresolvedLabel(label))?;
+                expr = Expression::ReturnTarget(*return_target, expr.into());
+            }
+            expr
+        }
         _ => unreachable!(),
     })
 }
