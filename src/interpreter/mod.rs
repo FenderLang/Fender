@@ -276,7 +276,7 @@ fn parse_statement(
                 .insert(name.to_string(), VariableType::Stack(var));
             Expression::AssignStack(var, expr.into())
         }
-        n => unreachable!("{n}"),
+        name => unreachable!("{name}"),
     })
 }
 
@@ -338,7 +338,7 @@ fn parse_binary_operator(op: &str) -> FenderBinaryOperator {
         "==" => Eq,
         "!=" => Ne,
         "%" => Mod,
-        _ => unreachable!(),
+        op_str => unreachable!("{op_str}"),
     }
 }
 
@@ -373,7 +373,7 @@ fn parse_value(
             VariableType::Stack(addr) => Expression::stack(addr),
             VariableType::Global(addr) => Expression::global(addr),
         },
-        _ => unreachable!(),
+        name => unreachable!("{name}"),
     })
 }
 
@@ -392,7 +392,7 @@ fn parse_invoke_args(
             token, writer, scope,
         )?)
         .into()]),
-        _ => unreachable!(),
+        name => unreachable!("{name}"),
     }
 }
 
@@ -426,7 +426,7 @@ fn parse_tail_operation(
                 [expr, pos].into(),
             ))
         }
-        _ => unreachable!(),
+        name => unreachable!("{name}"),
     }
 }
 
@@ -450,7 +450,7 @@ fn parse_term(
         let op = match &*token.children[0].get_match() {
             "-" => FenderUnaryOperator::Neg,
             "!" => FenderUnaryOperator::BoolNeg,
-            _ => unreachable!(),
+            name => unreachable!("{name}"),
         };
         value = Expression::UnaryOpEval(op, value.into());
     }
@@ -477,7 +477,7 @@ fn parse_literal(
                 _ => FenderValue::Function(closure).into(),
             }
         }
-        _ => unreachable!(),
+        name => unreachable!("{name}"),
     })
 }
 
@@ -520,6 +520,6 @@ fn parse_expr(
             }
             expr
         }
-        _ => unreachable!(),
+        name => unreachable!("{name}"),
     })
 }
