@@ -56,6 +56,10 @@ fndr_native_func!(int_func, |ctx, item| {
             Ok(i) => Int(i).into(),
             _ => Error(format!("Invalid int string: {}", s)).into(),
         },
+        Int(val) => Int(*val).into(),
+        Float(val) => Int(*val as i64).into(),
+        Bool(val) => Int(*val as i64).into(),
+        Char(val) => Int(*val as i64).into(),
         _ => Error(format!(
             "Cannot convert {} to int",
             item.get_real_type_id().to_string()
@@ -63,3 +67,4 @@ fndr_native_func!(int_func, |ctx, item| {
         .into(),
     })
 });
+
