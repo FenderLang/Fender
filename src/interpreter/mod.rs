@@ -207,7 +207,7 @@ fn parse_closure(
                 .as_deref()
                 .map(|n| n == "codeBody")
                 .and_then(|b| b.then_some(token))
-                .unwrap_or(&token.children[0]);
+                .unwrap_or_else(|| &token.children[0]);
             let arg_count = code_body_uses_lambda_parameter(code_body) as usize;
             let mut new_scope = scope.child_scope(arg_count, writer.create_return_target());
             parse_code_body(code_body, writer, &mut new_scope)

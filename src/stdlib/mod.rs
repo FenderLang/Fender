@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use crate::{fndr_native_func, FenderReference, FenderValue};
 
 pub mod loader;
@@ -21,6 +23,8 @@ fndr_native_func!(if_func, |ctx, cond, if_true, if_false| {
 
 fndr_native_func!(print_func, |_, item| {
     print!("{}", item.to_string());
+    let mut lock = std::io::stdout().lock();
+    lock.flush();
     Ok(Default::default())
 });
 
