@@ -40,6 +40,8 @@ pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSyste
         "raw" => (NativeFunction::new(stdlib::get_raw_func), 1),
         "len" => (NativeFunction::new(stdlib::len_func), 1),
         "int" => (NativeFunction::new(stdlib::int_func), 1),
+        "read" => (NativeFunction::new(stdlib::read_func), 1),
+        "write" => (NativeFunction::new(stdlib::write_func), 2),
         _ => return None,
     })
 }

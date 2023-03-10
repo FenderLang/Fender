@@ -1,23 +1,25 @@
-use crate::fender_value::FenderValue::*;
-use crate::{fndr_native_func, FenderReference};
+use crate::fender_value::FenderValue::{self, *};
+use crate::fndr_native_func;
 use std::io::Write;
 
 pub mod loader;
 
 fndr_native_func!(if_func, |ctx, cond, if_true, if_false| {
-    let (Bool(cond), Function(if_true), Function(if_false)) = (&*cond, &*if_true, &*if_false) else {
-        return Ok(FenderReference::FRaw(Error(format!(
-                "Invalid argument types {:?} {:?} {:?}",
-            cond.get_type_id(),
-            if_true.get_type_id(),
-            if_false.get_type_id()
-        ))));
+    let Bool(cond) = *cond else{
+        return Ok(FenderValue::make_error(format!("`if` must be called with a condition value of type `Bool`\t`{:?}` was supplied", cond.get_type_id())).into());
     };
-    Ok(if *cond {
-        ctx.call(if_true, Vec::with_capacity(0))?
+
+    if cond {
+        Ok(match &*if_true {
+            Function(if_true) => ctx.call(if_true, Vec::with_capacity(0))?,
+            v => v.clone().into(),
+        })
     } else {
-        ctx.call(if_false, Vec::with_capacity(0))?
-    })
+        Ok(match &*if_false {
+            Function(if_false) => ctx.call(if_false, Vec::with_capacity(0))?,
+            v => v.clone().into(),
+        })
+    }
 });
 
 fndr_native_func!(print_func, |_, item| {
@@ -68,3 +70,22 @@ fndr_native_func!(int_func, |ctx, item| {
     })
 });
 
+fndr_native_func!(read_func, |ctx, file_name| {
+    let String(file_name) = &*file_name else {
+        return Ok(Error("file name must be of type `String`".into()).into());
+    };
+    Ok(match std::fs::read_to_string(file_name) {
+        Ok(s) => String(s).into(),
+        Err(e) => FenderValue::make_error(format!("failed to read file due to error: {e}")).into(),
+    })
+});
+
+fndr_native_func!(write_func, |ctx, data, file_name| {
+    let String(file_name) = &*file_name else {
+        return Ok(Error("file name must be of type `String`".into()).into());
+    };
+    Ok(match std::fs::write(file_name, data.to_string()) {
+        Ok(s) => Null.into(),
+        Err(e) => FenderValue::make_error(format!("failed to read file due to error: {e}")).into(),
+    })
+});

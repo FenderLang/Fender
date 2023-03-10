@@ -18,6 +18,10 @@ pub enum FenderValue {
 }
 
 impl FenderValue {
+    pub fn make_error<S: Into<String>>(e_body: S) -> FenderValue{
+        FenderValue::Error(e_body.into())
+    }
+
     pub fn get_type_id(&self) -> FenderTypeId {
         match self {
             FenderValue::Ref(_) => FenderTypeId::Reference,
@@ -90,7 +94,7 @@ impl ToString for FenderValue {
             FenderValue::Char(c) => c.to_string(),
             FenderValue::String(s) => s.clone(),
             FenderValue::Bool(b) => b.to_string(),
-            FenderValue::Error(e) => e.clone(),
+            FenderValue::Error(e) => format!("Error({e})"),
             FenderValue::Function(_) => "Function".to_string(),
             FenderValue::Null => "null".to_string(),
             FenderValue::List(list) => format!(

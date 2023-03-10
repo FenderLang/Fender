@@ -1,1 +1,1 @@
-{ {$} }
+"hello".write("test.txt")
