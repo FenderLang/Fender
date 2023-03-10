@@ -1,6 +1,7 @@
 use crate::fender_value::FenderValue::{self, *};
 use crate::fndr_native_func;
 use std::io::Write;
+use std::ops::DerefMut;
 
 pub mod loader;
 
@@ -34,7 +35,7 @@ fndr_native_func!(println_func, |_, item| {
     Ok(Default::default())
 });
 
-fndr_native_func!(read_line_func, |ctx| {
+fndr_native_func!(read_line_func, |_| {
     match std::io::stdin().lines().next() {
         Some(Ok(s)) => Ok(String(s).into()),
         Some(Err(e)) => Ok(Error(e.to_string()).into()),
@@ -42,9 +43,9 @@ fndr_native_func!(read_line_func, |ctx| {
     }
 });
 
-fndr_native_func!(get_raw_func, |ctx, item| Ok(item.unwrap_value().into()));
+fndr_native_func!(get_raw_func, |_, item| Ok(item.unwrap_value().into()));
 
-fndr_native_func!(len_func, |ctx, item| {
+fndr_native_func!(len_func, |_, item| {
     Ok(match item.len() {
         Ok(len) => Int(len as i64),
         Err(e_str) => Error(e_str),
@@ -52,7 +53,7 @@ fndr_native_func!(len_func, |ctx, item| {
     .into())
 });
 
-fndr_native_func!(int_func, |ctx, item| {
+fndr_native_func!(int_func, |_, item| {
     Ok(match &*item {
         String(s) => match s.parse() {
             Ok(i) => Int(i).into(),
@@ -70,7 +71,7 @@ fndr_native_func!(int_func, |ctx, item| {
     })
 });
 
-fndr_native_func!(read_func, |ctx, file_name| {
+fndr_native_func!(read_func, |_, file_name| {
     let String(file_name) = &*file_name else {
         return Ok(Error("file name must be of type `String`".into()).into());
     };
@@ -80,12 +81,36 @@ fndr_native_func!(read_func, |ctx, file_name| {
     })
 });
 
-fndr_native_func!(write_func, |ctx, data, file_name| {
+fndr_native_func!(write_func, |_, data, file_name| {
     let String(file_name) = &*file_name else {
         return Ok(Error("file name must be of type `String`".into()).into());
     };
     Ok(match std::fs::write(file_name, data.to_string()) {
         Ok(s) => Null.into(),
         Err(e) => FenderValue::make_error(format!("failed to read file due to error: {e}")).into(),
+    })
+});
+
+fndr_native_func!(swap_func, |_, mut variable, pos_a, pos_b| {
+    let (Int(pos_a), Int(pos_b)) =  (&*pos_a, &*pos_b) else{
+        return Ok(Error(format!(
+            "Swap indices must be of type Int, values provided were of following types ({:?}, {:?})",
+            pos_a.get_real_type_id(),
+            pos_b.get_real_type_id(),
+        ))
+        .into());
+    };
+
+    Ok(match variable.deref_mut() {
+        List(l) => {
+            l.swap(*pos_a as usize, *pos_b as usize);
+            List(l.to_vec()).into()
+        }
+
+        _ => Error(format!(
+            "Cannot call swap on value of type {:?}",
+            variable.get_real_type_id()
+        ))
+        .into(),
     })
 });

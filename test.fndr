@@ -1,1 +1,7 @@
-"hello".write("test.txt")
+
+
+$for = (n, body){(n >= 0).if({body(n);for(n-1, body)})}
+$list = [1,2,3,4,5]
+
+list.swap(1,2)
+list.println()
