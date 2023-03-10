@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use crate::{fndr_native_func, FenderReference, FenderValue};
 
 pub mod loader;
@@ -21,6 +23,8 @@ fndr_native_func!(if_func, |ctx, cond, if_true, if_false| {
 
 fndr_native_func!(print_func, |_, item| {
     print!("{}", item.to_string());
+    let mut lock = std::io::stdout().lock();
+    lock.flush();
     Ok(Default::default())
 });
 
@@ -31,11 +35,10 @@ fndr_native_func!(println_func, |_, item| {
 
 fndr_native_func!(read_line_func, |ctx| {
     use FenderValue::*;
-
-    let mut buf = std::string::String::new();
-    match std::io::stdin().read_line(&mut buf) {
-        Ok(_) => Ok(String(buf).into()),
-        Err(e) => Ok(Error(e.to_string()).into()),
+    match std::io::stdin().lines().next() {
+        Some(Ok(s)) => Ok(String(s).into()),
+        Some(Err(e)) => Ok(Error(e.to_string()).into()),
+        None => Ok(Error("End of file".to_string()).into()),
     }
 });
 
