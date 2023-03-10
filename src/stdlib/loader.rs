@@ -1,14 +1,11 @@
-use std::collections::HashMap;
-
-use crate::{stdlib, FenderValue};
+use crate::{fender_value::FenderValue, stdlib, type_sys::type_system::FenderTypeSystem};
 use flux_bnf::tokens::{iterators::SelectTokens, Token};
 use freight_vm::{
     expression::{Expression, NativeFunction},
     function::FunctionWriter,
     vm_writer::VMWriter,
 };
-
-use crate::FenderTypeSystem;
+use std::collections::HashMap;
 
 /// Detect which standard library functions are used and load them automatically
 pub fn detect_load(

@@ -1,11 +1,12 @@
-use std::ops::Deref;
-
+use crate::{
+    fender_reference::{FenderReference, InternalReference},
+    fender_value::FenderValue,
+};
 use freight_vm::{
     operators::{BinaryOperator, Initializer, UnaryOperator},
     value::Value,
 };
-
-use crate::{fender_reference::InternalReference, FenderReference, FenderValue};
+use std::ops::Deref;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FenderBinaryOperator {

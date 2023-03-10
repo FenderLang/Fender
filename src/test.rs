@@ -1,4 +1,7 @@
-use crate::{interpreter::create_vm, FenderReference, FenderTypeId, FenderValue};
+use crate::{
+    fender_reference::FenderReference, fender_value::FenderValue, interpreter::create_vm,
+    type_sys::type_id::FenderTypeId,
+};
 
 fn run(source: &str) -> FenderReference {
     create_vm(source).unwrap().run().unwrap()
@@ -49,6 +52,7 @@ fn test_capture() {
     assert_eq!(*run("{$x = 10; {x = x / 2}(); x}()"), FenderValue::Int(5));
 }
 
+#[test]
 fn test_return() {
     assert_eq!(*run("return 2; 1"), FenderValue::Int(2));
     assert_eq!(*run("{return 2; 1}()"), FenderValue::Int(2));

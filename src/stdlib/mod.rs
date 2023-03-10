@@ -1,7 +1,8 @@
-use crate::fender_value::FenderValue::{self, *};
-use crate::fndr_native_func;
-use std::io::Write;
-use std::ops::DerefMut;
+use crate::{
+    fender_value::FenderValue::{self, *},
+    fndr_native_func,
+};
+use std::{io::Write, ops::DerefMut};
 
 pub mod loader;
 

@@ -1,6 +1,8 @@
+use crate::{
+    fender_reference::{FenderReference, InternalReference},
+    type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
+};
 use freight_vm::function::FunctionRef;
-
-use crate::{fender_reference::InternalReference, FenderReference, FenderTypeId, FenderTypeSystem};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum FenderValue {
@@ -18,7 +20,7 @@ pub enum FenderValue {
 }
 
 impl FenderValue {
-    pub fn make_error<S: Into<String>>(e_body: S) -> FenderValue{
+    pub fn make_error<S: Into<String>>(e_body: S) -> FenderValue {
         FenderValue::Error(e_body.into())
     }
 

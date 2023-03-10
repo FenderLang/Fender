@@ -1,26 +1,30 @@
-pub mod error;
-
-use crate::lazy_cell::LazyCell;
-use crate::operators::FenderInitializer;
-use crate::stdlib;
-use crate::{
-    operators::FenderBinaryOperator, operators::FenderUnaryOperator, FenderTypeSystem, FenderValue,
-};
-use flux_bnf::lexer::{CullStrategy, Lexer};
-use flux_bnf::tokens::{
-    iterators::{IgnoreTokens, SelectTokens},
-    Token,
-};
-use freight_vm::execution_engine::ExecutionEngine;
-use freight_vm::expression::{Expression, VariableType};
-use freight_vm::function::{FunctionRef, FunctionType, FunctionWriter};
-use freight_vm::vm_writer::VMWriter;
-use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
-use std::error::Error;
-use std::rc::Rc;
-
 use self::error::InterpreterError;
+use crate::{
+    fender_value::FenderValue, lazy_cell::LazyCell, operators::FenderBinaryOperator,
+    operators::FenderInitializer, operators::FenderUnaryOperator, stdlib,
+    type_sys::type_system::FenderTypeSystem,
+};
+use flux_bnf::{
+    lexer::{CullStrategy, Lexer},
+    tokens::{
+        iterators::{IgnoreTokens, SelectTokens},
+        Token,
+    },
+};
+use freight_vm::{
+    execution_engine::ExecutionEngine,
+    expression::{Expression, VariableType},
+    function::{FunctionRef, FunctionType, FunctionWriter},
+    vm_writer::VMWriter,
+};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+    error::Error,
+    rc::Rc,
+};
+
+pub mod error;
 
 pub type InterpreterResult = Result<Expression<FenderTypeSystem>, Box<dyn Error>>;
 
