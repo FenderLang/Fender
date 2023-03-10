@@ -31,11 +31,10 @@ fndr_native_func!(println_func, |_, item| {
 
 fndr_native_func!(read_line_func, |ctx| {
     use FenderValue::*;
-
-    let mut buf = std::string::String::new();
-    match std::io::stdin().read_line(&mut buf) {
-        Ok(_) => Ok(String(buf).into()),
-        Err(e) => Ok(Error(e.to_string()).into()),
+    match std::io::stdin().lines().next() {
+        Some(Ok(s)) => Ok(String(s).into()),
+        Some(Err(e)) => Ok(Error(e.to_string()).into()),
+        None => Ok(Error("End of file".to_string()).into()),
     }
 });
 

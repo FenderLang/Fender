@@ -7,8 +7,10 @@ use crate::{
     operators::FenderBinaryOperator, operators::FenderUnaryOperator, FenderTypeSystem, FenderValue,
 };
 use flux_bnf::lexer::{CullStrategy, Lexer};
-use flux_bnf::tokens::iterators::{IgnoreTokens, SelectTokens};
-use flux_bnf::tokens::Token;
+use flux_bnf::tokens::{
+    iterators::{IgnoreTokens, SelectTokens},
+    Token,
+};
 use freight_vm::execution_engine::ExecutionEngine;
 use freight_vm::expression::{Expression, VariableType};
 use freight_vm::function::{FunctionRef, FunctionType, FunctionWriter};
@@ -185,14 +187,8 @@ fn parse_closure(
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
 ) -> Result<FunctionRef<FenderTypeSystem>, Box<dyn Error>> {
-    match token.children.len() {
-        1 => {
-            let code_body = &token.children[0];
-            let arg_count = code_body_uses_lambda_parameter(code_body) as usize;
-            let mut new_scope = scope.child_scope(arg_count, writer.create_return_target());
-            parse_code_body(code_body, writer, &mut new_scope)
-        }
-        2 => {
+    match token.matcher_name.as_deref().unwrap() {
+        "closure" if token.children.len() == 2 => {
             let args = &token.children[0];
             let code_body = &token.children[1];
             let args = parse_args(args);
@@ -203,6 +199,17 @@ fn parse_closure(
                     .borrow_mut()
                     .insert(arg, VariableType::Stack(index));
             }
+            parse_code_body(code_body, writer, &mut new_scope)
+        }
+        "closure" | "codeBody" => {
+            let code_body = token
+                .matcher_name
+                .as_deref()
+                .map(|n| n == "codeBody")
+                .and_then(|b| b.then_some(token))
+                .unwrap_or(&token.children[0]);
+            let arg_count = code_body_uses_lambda_parameter(code_body) as usize;
+            let mut new_scope = scope.child_scope(arg_count, writer.create_return_target());
             parse_code_body(code_body, writer, &mut new_scope)
         }
         _ => unreachable!(),
@@ -269,7 +276,7 @@ fn parse_statement(
                 .insert(name.to_string(), VariableType::Stack(var));
             Expression::AssignStack(var, expr.into())
         }
-        _ => unreachable!(),
+        n => unreachable!("{n}"),
     })
 }
 
@@ -381,7 +388,10 @@ fn parse_invoke_args(
             .children_named("expr")
             .map(|arg| parse_expr(arg, writer, scope))
             .collect(),
-        "codeBody" => todo!(),
+        "codeBody" => Ok(vec![FenderValue::Function(parse_closure(
+            token, writer, scope,
+        )?)
+        .into()]),
         _ => unreachable!(),
     }
 }
