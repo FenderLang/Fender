@@ -33,7 +33,12 @@ macro_rules! count {
 macro_rules! fndr_native_func {
     ($name:ident, | $ctx:tt $(, $($arg:pat_param),*)? | $body:expr) => {
         #[allow(unused_variables)]
-        pub fn $name($ctx: &mut freight_vm::execution_engine::ExecutionEngine<$crate::type_sys::type_system::FenderTypeSystem>, args: Vec<$crate::fender_reference::FenderReference>) -> Result<$crate::fender_reference::FenderReference, freight_vm::error::FreightError> {
+        pub fn $name(
+            $ctx: &mut freight_vm::execution_engine::ExecutionEngine<
+                $crate::type_sys::type_system::FenderTypeSystem
+            >,
+            args: Vec<$crate::fender_reference::FenderReference>,
+        ) -> Result<$crate::fender_reference::FenderReference, freight_vm::error::FreightError> {
             const _ARG_COUNT: usize = $crate::count!($($($arg),*)?);
             $(
                     let [$($arg),*]: [$crate::fender_reference::FenderReference; _ARG_COUNT]  = args.try_into().unwrap();
