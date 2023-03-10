@@ -53,7 +53,10 @@ fn test_return() {
     assert_eq!(*run("return 2; 1"), FenderValue::Int(2));
     assert_eq!(*run("{return 2; 1}()"), FenderValue::Int(2));
     assert_eq!(*run("{{return 2; 1}()}()"), FenderValue::Int(2));
-    assert_eq!(*run("{$x = `test {return@test 2; 1}(); x + 1}()"), FenderValue::Int(3));
+    assert_eq!(
+        *run("{$x = `test {return@test 2; 1}(); x + 1}()"),
+        FenderValue::Int(3)
+    );
 }
 
 #[test]

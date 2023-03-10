@@ -58,7 +58,7 @@ impl FenderValue {
         })
     }
 
-    pub fn is_empty(&self) -> Result<bool, String>{
+    pub fn is_empty(&self) -> Result<bool, String> {
         Ok(match self {
             FenderValue::Ref(v) => v.is_empty()?,
             FenderValue::String(s) => s.is_empty(),
