@@ -54,8 +54,12 @@ fndr_native_func!(int_func, |ctx, item| {
     Ok(match &*item {
         String(s) => match s.parse() {
             Ok(i) => Int(i).into(),
-            _ => Error(format!("Invalid int string: {}", s)).into()
+            _ => Error(format!("Invalid int string: {}", s)).into(),
         },
-        _ => Error(format!("Cannot convert {} to int", item.get_real_type_id().to_string())).into(),
+        _ => Error(format!(
+            "Cannot convert {} to int",
+            item.get_real_type_id().to_string()
+        ))
+        .into(),
     })
 });
