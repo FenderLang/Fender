@@ -73,7 +73,7 @@ impl<'a> LexicalScope<'a> {
                     } else {
                         return Err(InterpreterError::UnresolvedName(name.to_string()));
                     }
-                },
+                }
             }
         }
         for scope in parent_scopes.into_iter().rev() {
@@ -189,8 +189,8 @@ fn parse_closure(
     token: &Token,
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
-) -> Result<FunctionRef<FenderTypeSystem>, Box<dyn Error>> {
-    match token.matcher_name.as_deref().unwrap() {
+) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+    let function_ref = match token.matcher_name.as_deref().unwrap() {
         "closure" if token.children.len() == 2 => {
             let args = &token.children[0];
             let code_body = &token.children[1];
@@ -216,7 +216,11 @@ fn parse_closure(
             parse_code_body(code_body, writer, &mut new_scope)
         }
         _ => unreachable!(),
-    }
+    }?;
+    Ok(match &function_ref.function_type {
+        FunctionType::CapturingDef(_) => Expression::FunctionCapture(function_ref),
+        _ => FenderValue::Function(function_ref).into(),
+    })
 }
 
 fn parse_code_body(
@@ -391,10 +395,7 @@ fn parse_invoke_args(
             .children_named("expr")
             .map(|arg| parse_expr(arg, writer, scope))
             .collect(),
-        "codeBody" => Ok(vec![FenderValue::Function(parse_closure(
-            token, writer, scope,
-        )?)
-        .into()]),
+        "codeBody" => Ok(vec![parse_closure(token, writer, scope)?.into()]),
         name => unreachable!("{name}"),
     }
 }
@@ -473,13 +474,7 @@ fn parse_literal(
         "string" => FenderValue::String(parse_string(token)).into(),
         "list" => parse_list(token, writer, scope)?,
         "null" => FenderValue::Null.into(),
-        "closure" => {
-            let closure = parse_closure(token, writer, scope)?;
-            match closure.function_type {
-                FunctionType::CapturingDef(_) => Expression::FunctionCapture(closure),
-                _ => FenderValue::Function(closure).into(),
-            }
-        }
+        "closure" => parse_closure(token, writer, scope)?,
         name => unreachable!("{name}"),
     })
 }
