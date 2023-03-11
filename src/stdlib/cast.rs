@@ -22,3 +22,7 @@ fndr_native_func!(int_func, |_, item| {
         .into(),
     })
 });
+
+fndr_native_func!(str_func, |_, item| {
+    Ok(String(item.to_string()).into())
+});

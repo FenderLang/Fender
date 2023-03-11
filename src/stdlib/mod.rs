@@ -45,6 +45,7 @@ pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSyste
         "read" => (NativeFunction::new(io::read_func), 1),
         "write" => (NativeFunction::new(io::write_func), 2),
         "swap" => (NativeFunction::new(val_operation::swap_func), 3),
+        "str" => (NativeFunction::new(cast::str_func), 1),
         _ => return None,
     })
 }
