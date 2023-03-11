@@ -10,6 +10,7 @@ use std::collections::HashMap;
 pub mod cast;
 pub mod control_flow;
 pub mod io;
+pub mod system;
 pub mod val_operation;
 
 /// Detect which standard library functions are used and load them automatically
@@ -49,6 +50,7 @@ pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSyste
         "else" => (NativeFunction::new(control_flow::else_func), 2),
         "then" => (NativeFunction::new(control_flow::then_func), 2),
         "while" => (NativeFunction::new(control_flow::while_func), 2),
+        "shell" => (NativeFunction::new(system::shell_func), 3),
         _ => return None,
     })
 }

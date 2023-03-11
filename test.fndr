@@ -1,11 +1,1 @@
-$b = null
-
-b.then({println("is true")}).else({println("is false")})
-
-$msg = "hello"
-
-$t = msg[8].else("else msg")
-t.println()
-
-$i = 0
-while({i < 4}, {println("i is "+i);i = i + 1})
+shell("echo hello", "echo -n", "fish -c").println()
