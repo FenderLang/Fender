@@ -13,7 +13,7 @@ pub enum FenderTypeId {
 }
 
 impl FenderTypeId {
-    pub fn is_primitive(&self) -> bool {
+    pub fn is_value_type(&self) -> bool {
         use FenderTypeId::*;
         match self {
             Int => true,
@@ -23,7 +23,7 @@ impl FenderTypeId {
             Null => true,
             Reference => false,
             Function => true,
-            String => true,
+            String => false,
             List => false,
             Char => true,
         }

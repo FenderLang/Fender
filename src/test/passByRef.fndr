@@ -1,0 +1,39 @@
+$while = (cond, func) {
+    if(cond(), {func(); while(cond, func)}, {})
+}
+
+$then = (bool, func) {
+    if(bool, {[bool, func()]}, {[false]})
+}
+
+$else = (thenResult, func) {
+    if(thenResult[0], {thenResult[1]}, func)
+}
+
+$each = (list, func) {
+    $i = 0
+    while({i < list.len()}, {
+        func(list[i])
+        i = i + 1
+    })
+}
+
+$map = (list, func) {
+    $i = 0
+    while({i < list.len()}, {
+        list[i] = func(list[i])
+        i = i + 1
+    })
+    list
+}
+
+$fold = (list, accum, func) {
+    $i = 0
+    while({i < list.len()}, {
+        accum = func(accum, list[i])
+        i = i + 1
+    })
+    accum
+}
+
+["1", "4", "3"].map(int).fold(0, (a, b) {a + b})

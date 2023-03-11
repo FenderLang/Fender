@@ -79,3 +79,8 @@ fn test_lists() {
         ])
     );
 }
+
+#[test]
+fn pass_by_reference_test() {
+    assert_eq!(*run(include_str!("passByRef.fndr")), FenderValue::Int(8));
+}
