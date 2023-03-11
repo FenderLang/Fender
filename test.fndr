@@ -6,3 +6,6 @@ $msg = "hello"
 
 $t = msg[8].else("else msg")
 t.println()
+
+$i = 0
+while({i < 4}, {println("i is "+i);i = i + 1})

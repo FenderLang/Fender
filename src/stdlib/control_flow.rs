@@ -47,8 +47,33 @@ fndr_native_func!(then_func, |ctx, cond, body| {
             Bool(true)
         }
         b => Error(format!(
-            "then body expected, found {:?}; else will be run if called",b.get_type_id()
+            "then body expected, found {:?}; else will be run if called",
+            b.get_type_id()
         )),
     }
     .into())
+});
+
+fndr_native_func!(while_func, |ctx, cond, body| {
+    let (Function(cond), Function(body)) = (&*cond, &*body) else
+    {
+        return Ok(FenderValue::make_error(format!("while must take 2 expressions `{:?}` and `{:?}` were provided", cond.get_type_id(), body.get_type_id())).into());
+    };
+    loop {
+        let keep_run = match &*ctx.call(cond, Vec::with_capacity(0))? {
+            Bool(bool_val) => *bool_val,
+            v => {
+                return Ok(FenderValue::make_error(format!(
+                    "condition expression did not evaluate to a boolean value, ",
+                ))
+                .into());
+            }
+        };
+
+        if !keep_run {
+            return Ok(Null.into());
+        } else {
+            ctx.call(body, Vec::with_capacity(0))?;
+        }
+    }
 });
