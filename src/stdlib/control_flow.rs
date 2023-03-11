@@ -20,3 +20,35 @@ fndr_native_func!(if_func, |ctx, cond, if_true, if_false| {
         })
     }
 });
+
+fndr_native_func!(else_func, |ctx, cond, body| {
+    if !matches!(*cond, FenderValue::Null | FenderValue::Error(_)) {
+        return Ok(cond);
+    }
+
+    Ok(match &*body {
+        Function(f) => ctx.call(f, Vec::with_capacity(0))?,
+        _ => body,
+    })
+});
+
+fndr_native_func!(then_func, |ctx, cond, body| {
+    if matches!(*cond, FenderValue::Null | FenderValue::Error(_)) {
+        return Ok(cond);
+    }
+
+    if let FenderValue::Bool(false) = &*cond {
+        return Ok(Null.into());
+    }
+
+    Ok(match &*body {
+        Function(f) => {
+            ctx.call(f, Vec::with_capacity(0))?;
+            Bool(true)
+        }
+        b => Error(format!(
+            "then body expected, found {:?}; else will be run if called",b.get_type_id()
+        )),
+    }
+    .into())
+});

@@ -46,6 +46,8 @@ pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSyste
         "write" => (NativeFunction::new(io::write_func), 2),
         "swap" => (NativeFunction::new(val_operation::swap_func), 3),
         "str" => (NativeFunction::new(cast::str_func), 1),
+        "else" => (NativeFunction::new(control_flow::else_func), 2),
+        "then" => (NativeFunction::new(control_flow::then_func), 2),
         _ => return None,
     })
 }

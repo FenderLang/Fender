@@ -1,7 +1,8 @@
+$b = null
 
+b.then({println("is true")}).else({println("is false")})
 
-$for = (n, body){(n >= 0).if({body(n);for(n-1, body)})}
-$list = [1,2,3,4,5]
+$msg = "hello"
 
-list.swap(1,2)
-list.println()
+$t = msg[8].else("else msg")
+t.println()
