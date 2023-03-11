@@ -147,7 +147,7 @@ fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem
         .enumerate()
         .map(|(i, name)| (name, i))
         .collect();
-    stdlib::loader::detect_load(token, &mut globals, &mut main, &mut vm);
+    stdlib::detect_load(token, &mut globals, &mut main, &mut vm);
     let mut scope = LexicalScope {
         globals: Rc::new(globals),
         labels: Rc::new(labels),

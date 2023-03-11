@@ -1,117 +1,50 @@
-use crate::{
-    fender_value::FenderValue::{self, *},
-    fndr_native_func,
+use crate::{fender_value::FenderValue, type_sys::type_system::FenderTypeSystem};
+use flux_bnf::tokens::{iterators::SelectTokens, Token};
+use freight_vm::{
+    expression::{Expression, NativeFunction},
+    function::FunctionWriter,
+    vm_writer::VMWriter,
 };
-use std::{io::Write, ops::DerefMut};
+use std::collections::HashMap;
 
-pub mod loader;
+pub mod cast;
+pub mod control_flow;
+pub mod io;
+pub mod val_operation;
 
-fndr_native_func!(if_func, |ctx, cond, if_true, if_false| {
-    let Bool(cond) = *cond else{
-        return Ok(FenderValue::make_error(format!("`if` must be called with a condition value of type `Bool`\t`{:?}` was supplied", cond.get_type_id())).into());
-    };
-
-    if cond {
-        Ok(match &*if_true {
-            Function(if_true) => ctx.call(if_true, Vec::with_capacity(0))?,
-            v => v.clone().into(),
-        })
-    } else {
-        Ok(match &*if_false {
-            Function(if_false) => ctx.call(if_false, Vec::with_capacity(0))?,
-            v => v.clone().into(),
-        })
+/// Detect which standard library functions are used and load them automatically
+pub fn detect_load(
+    token: &Token,
+    globals: &mut HashMap<String, usize>,
+    main: &mut FunctionWriter<FenderTypeSystem>,
+    vm: &mut VMWriter<FenderTypeSystem>,
+) {
+    for name in token.rec_iter().select_token("name") {
+        let name = name.get_match();
+        let function = get_stdlib_function(&name);
+        let Some((function, args)) = function else { continue };
+        let native = vm.include_native_function(function, args);
+        let global = vm.create_global();
+        globals.insert(name, global);
+        main.evaluate_expression(Expression::AssignGlobal(
+            global,
+            Box::new(FenderValue::Function(native).into()),
+        ));
     }
-});
+}
 
-fndr_native_func!(print_func, |_, item| {
-    print!("{}", item.to_string());
-    let mut lock = std::io::stdout().lock();
-    let _ = lock.flush();
-    Ok(Default::default())
-});
-
-fndr_native_func!(println_func, |_, item| {
-    println!("{}", item.to_string());
-    Ok(Default::default())
-});
-
-fndr_native_func!(read_line_func, |_| {
-    match std::io::stdin().lines().next() {
-        Some(Ok(s)) => Ok(String(s).into()),
-        Some(Err(e)) => Ok(Error(e.to_string()).into()),
-        None => Ok(Error("End of file".to_string()).into()),
-    }
-});
-
-fndr_native_func!(get_raw_func, |_, item| Ok(item.unwrap_value().into()));
-
-fndr_native_func!(len_func, |_, item| {
-    Ok(match item.len() {
-        Ok(len) => Int(len as i64),
-        Err(e_str) => Error(e_str),
-    }
-    .into())
-});
-
-fndr_native_func!(int_func, |_, item| {
-    Ok(match &*item {
-        String(s) => match s.parse() {
-            Ok(i) => Int(i).into(),
-            _ => Error(format!("Invalid int string: {}", s)).into(),
-        },
-        Int(val) => Int(*val).into(),
-        Float(val) => Int(*val as i64).into(),
-        Bool(val) => Int(*val as i64).into(),
-        Char(val) => Int(*val as i64).into(),
-        _ => Error(format!(
-            "Cannot convert {} to int",
-            item.get_real_type_id().to_string()
-        ))
-        .into(),
+pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSystem>, usize)> {
+    Some(match name {
+        "print" => (NativeFunction::new(io::print_func), 1),
+        "println" => (NativeFunction::new(io::println_func), 1),
+        "if" => (NativeFunction::new(control_flow::if_func), 3),
+        "readLine" => (NativeFunction::new(io::read_line_func), 0),
+        "raw" => (NativeFunction::new(cast::get_raw_func), 1),
+        "len" => (NativeFunction::new(val_operation::len_func), 1),
+        "int" => (NativeFunction::new(cast::int_func), 1),
+        "read" => (NativeFunction::new(io::read_func), 1),
+        "write" => (NativeFunction::new(io::write_func), 2),
+        "swap" => (NativeFunction::new(val_operation::swap_func), 3),
+        _ => return None,
     })
-});
-
-fndr_native_func!(read_func, |_, file_name| {
-    let String(file_name) = &*file_name else {
-        return Ok(Error("file name must be of type `String`".into()).into());
-    };
-    Ok(match std::fs::read_to_string(file_name) {
-        Ok(s) => String(s).into(),
-        Err(e) => FenderValue::make_error(format!("failed to read file due to error: {e}")).into(),
-    })
-});
-
-fndr_native_func!(write_func, |_, data, file_name| {
-    let String(file_name) = &*file_name else {
-        return Ok(Error("file name must be of type `String`".into()).into());
-    };
-    Ok(match std::fs::write(file_name, data.to_string()) {
-        Ok(s) => Null.into(),
-        Err(e) => FenderValue::make_error(format!("failed to read file due to error: {e}")).into(),
-    })
-});
-
-fndr_native_func!(swap_func, |_, mut variable, pos_a, pos_b| {
-    let (Int(pos_a), Int(pos_b)) =  (&*pos_a, &*pos_b) else{
-        return Ok(Error(format!(
-            "Swap indices must be of type Int, values provided were of following types ({:?}, {:?})",
-            pos_a.get_real_type_id(),
-            pos_b.get_real_type_id(),
-        ))
-        .into());
-    };
-
-    Ok(match variable.deref_mut() {
-        List(l) => {
-            l.swap(*pos_a as usize, *pos_b as usize);
-            List(l.to_vec()).into()
-        }
-
-        _ => Error(format!(
-            "Cannot call swap on value of type {:?}",
-            variable.get_real_type_id()
-        ))
-        .into(),
-    })
-});
+}
