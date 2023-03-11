@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 use crate::{fender_value::FenderValue, type_sys::type_system::FenderTypeSystem};
 use flux_bnf::tokens::{iterators::SelectTokens, Token};
 use freight_vm::{
@@ -7,10 +8,15 @@ use freight_vm::{
 };
 use std::collections::HashMap;
 
+/// functions for converting fender values
 pub mod cast;
+/// conditional execution and branching
 pub mod control_flow;
+/// stdin, stdout, and file IO
 pub mod io;
+/// system interface
 pub mod system;
+/// modify and query existing values
 pub mod val_operation;
 
 /// Detect which standard library functions are used and load them automatically
@@ -34,6 +40,7 @@ pub fn detect_load(
     }
 }
 
+/// Get the native rust function to be called when `name` is called in fender
 pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSystem>, usize)> {
     Some(match name {
         "print" => (NativeFunction::new(io::print_func), 1),

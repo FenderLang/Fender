@@ -9,6 +9,7 @@ pub mod type_sys {
 pub mod interpreter;
 pub mod lazy_cell;
 pub mod operators;
+/// The freight standard library
 pub mod stdlib;
 #[cfg(test)]
 mod test;
@@ -24,8 +25,12 @@ macro_rules! count {
 
 #[macro_export]
 macro_rules! fndr_native_func {
-    ($name:ident, | $ctx:tt $(, $($arg:pat_param),*)? | $body:expr) => {
-        #[allow(unused_variables)]
+    (
+        $(#[$docs:meta])*
+        $name:ident, | $ctx:tt $(, $($arg:pat_param),*)? | $body:expr
+    ) => {
+        $(#[$docs])*
+        #[allow(unused)]
         pub fn $name(
             $ctx: &mut freight_vm::execution_engine::ExecutionEngine<
                 $crate::type_sys::type_system::FenderTypeSystem
