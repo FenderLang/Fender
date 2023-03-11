@@ -10,14 +10,8 @@ use std::{
     rc::Rc,
 };
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct InternalReference(Rc<UnsafeCell<FenderValue>>);
-
-impl Clone for InternalReference {
-    fn clone(&self) -> Self {
-        InternalReference::new((**self).clone())
-    }
-}
 
 impl InternalReference {
     pub fn new(value: FenderValue) -> Self {
@@ -45,7 +39,6 @@ impl PartialEq for InternalReference {
     }
 }
 
-#[derive(Clone)]
 pub enum FenderReference {
     FRef(InternalReference),
     FRaw(FenderValue),
@@ -53,22 +46,10 @@ pub enum FenderReference {
 
 impl FenderReference {
     pub fn get_pass_object(&self) -> FenderReference {
-        if self.get_type_id().is_primitive() {
+        if self.get_type_id().is_value_type() {
             self.deep_clone()
         } else {
-            self.dupe_reference()
-        }
-    }
-
-    pub fn deep_clone(&self) -> FenderReference {
-        // depending on how we use this it should be a `FRaw` instead of `FRef`
-        FenderReference::FRef(InternalReference::new(self.deref().deep_clone()))
-    }
-
-    pub fn dupe_reference(&self) -> FenderReference {
-        match self {
-            FenderReference::FRef(_) => self.clone(),
-            FenderReference::FRaw(_) => unreachable!(),
+            self.dupe_ref()
         }
     }
 }
@@ -129,6 +110,12 @@ impl Debug for FenderReference {
     }
 }
 
+impl Clone for FenderReference {
+    fn clone(&self) -> Self {
+        self.get_pass_object()
+    }
+}
+
 impl Value for FenderReference {
     type TS = FenderTypeSystem;
 
@@ -149,15 +136,18 @@ impl Value for FenderReference {
     }
 
     fn deep_clone(&self) -> Self {
-        todo!()
+        match self {
+            FenderReference::FRaw(v) => FenderReference::FRaw(v.deep_clone()),
+            FenderReference::FRef(r) => {
+                FenderReference::FRef(InternalReference::new(r.deep_clone()))
+            }
+        }
     }
 
     fn dupe_ref(&self) -> Self {
         match self {
-            FenderReference::FRef(internal_ref) => {
-                FenderReference::FRef(InternalReference(internal_ref.0.clone()))
-            }
-            FenderReference::FRaw(_) => self.clone(),
+            FenderReference::FRef(internal_ref) => FenderReference::FRef(internal_ref.clone()),
+            FenderReference::FRaw(_) => self.deep_clone(),
         }
     }
 
@@ -174,6 +164,13 @@ impl Value for FenderReference {
 
     fn assign(&mut self, value: FenderReference) {
         *self.deref_mut() = (*value).clone();
+    }
+
+    fn into_ref(self) -> Self {
+        match self {
+            FenderReference::FRef(_) => self,
+            FenderReference::FRaw(v) => FenderReference::FRef(InternalReference::new(v)),
+        }
     }
 }
 

@@ -2,7 +2,7 @@ use crate::{
     fender_reference::{FenderReference, InternalReference},
     type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
 };
-use freight_vm::function::FunctionRef;
+use freight_vm::{function::FunctionRef, value::Value};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum FenderValue {
@@ -47,7 +47,19 @@ impl FenderValue {
     }
 
     pub fn deep_clone(&self) -> FenderValue {
-        todo!()
+        use FenderValue::*;
+        match self {
+            Ref(v) => Ref(InternalReference::new(v.deep_clone())),
+            Int(i) => Int(*i),
+            Float(f) => Float(*f),
+            Char(c) => Char(*c),
+            String(s) => String(s.clone()),
+            Bool(b) => Bool(*b),
+            Error(e) => Error(e.clone()),
+            Function(f) => Function(f.clone()),
+            List(l) => List(l.iter().map(Value::deep_clone).collect()),
+            Null => Null,
+        }
     }
 
     pub fn len(&self) -> Result<usize, String> {
