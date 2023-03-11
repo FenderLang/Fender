@@ -2,9 +2,10 @@ use crate::{
     fender_value::FenderValue::{self, *},
     fndr_native_func,
 };
-use std::{io::Write, ops::DerefMut};
+use std::io::Write;
 
 
+// --- stdout ---
 
 fndr_native_func!(print_func, |_, item| {
     print!("{}", item.to_string());
@@ -18,6 +19,10 @@ fndr_native_func!(println_func, |_, item| {
     Ok(Default::default())
 });
 
+
+
+// --- stdin ---
+
 fndr_native_func!(read_line_func, |_| {
     match std::io::stdin().lines().next() {
         Some(Ok(s)) => Ok(String(s).into()),
@@ -25,6 +30,9 @@ fndr_native_func!(read_line_func, |_| {
         None => Ok(FenderValue::make_error("End of file".to_string()).into()),
     }
 });
+
+
+// --- file I/O ---
 
 fndr_native_func!(read_func, |_, file_name| {
     let String(file_name) = &*file_name else {

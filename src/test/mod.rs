@@ -88,3 +88,24 @@ fn test_lists() {
 fn pass_by_reference_test() {
     assert_eq!(*run(include_str!("passByRef.fndr")), FenderValue::Int(8));
 }
+
+#[test]
+fn run_quicksort_test() {
+    use FenderValue::Int;
+    assert_eq!(
+        *run(include_str!("quicksort.fndr")),
+        FenderValue::List(vec![
+            Int(1).into(),
+            Int(2).into(),
+            Int(7).into(),
+            Int(8).into(),
+            Int(9).into(),
+            Int(10).into(),
+            Int(54).into(),
+            Int(57).into(),
+            Int(68).into(),
+            Int(670).into(),
+            Int(1113).into()
+        ])
+    );
+}

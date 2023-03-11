@@ -2,8 +2,7 @@ use crate::{
     fender_value::FenderValue::{self, *},
     fndr_native_func,
 };
-use std::{io::Write, ops::DerefMut};
-
+use std::ops::DerefMut;
 
 fndr_native_func!(len_func, |_, item| {
     Ok(match item.len() {
@@ -15,7 +14,7 @@ fndr_native_func!(len_func, |_, item| {
 
 fndr_native_func!(swap_func, |_, mut variable, pos_a, pos_b| {
     let (Int(pos_a), Int(pos_b)) =  (&*pos_a, &*pos_b) else{
-        return Ok(Error(format!(
+        return Ok(FenderValue::make_error(format!(
             "Swap indices must be of type Int, values provided were of following types ({:?}, {:?})",
             pos_a.get_real_type_id(),
             pos_b.get_real_type_id(),
