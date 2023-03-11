@@ -1,1 +1,30 @@
-{ {$} }
+#!/home/redempt/rust/Fender/target/release/fender
+$while = (cond, func) {
+    if(cond(), {func(); while(cond, func)}, {})
+}
+
+$each = (str, func) {
+    $i = 0
+    while({i < str.len()}, {
+        func(str[i])
+        i = i + 1
+    })
+}
+
+$then = (cond, func) {
+    if(cond, {[true, func()]}, {[false]})
+}
+
+$else = (thenResult, func) {
+    if(thenResult[0], {thenResult[1]}, {func()})
+}
+
+$pussyMoneyWeed = (str) {
+    (str.len() > 8).then {
+        str.each {print("hello: "); $.println()}
+    }.else {
+        "your string is short and you are a pussy".println()
+    }
+}
+
+"hwfglbflgbfslgbsfgf".pussyMoneyWeed()

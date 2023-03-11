@@ -61,16 +61,19 @@ impl<'a> LexicalScope<'a> {
     }
 
     pub fn resolve_propagate(&self, name: &str) -> Result<VariableType, InterpreterError> {
-        if let Some(var) = self.globals.get(name) {
-            return Ok(VariableType::Global(*var));
-        }
         let mut parent_scopes = vec![];
         let mut cur = self;
         while !cur.variables.borrow().contains_key(name) {
             parent_scopes.push(cur);
             match &cur.parent {
                 Some(parent) => cur = parent,
-                None => return Err(InterpreterError::UnresolvedName(name.to_string())),
+                None => {
+                    if let Some(var) = self.globals.get(name) {
+                        return Ok(VariableType::Global(*var));
+                    } else {
+                        return Err(InterpreterError::UnresolvedName(name.to_string()));
+                    }
+                },
             }
         }
         for scope in parent_scopes.into_iter().rev() {
