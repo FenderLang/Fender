@@ -43,7 +43,7 @@ pub enum FenderReference {
 
 impl FenderReference {
     pub fn get_pass_object(&self) -> FenderReference {
-        if self.get_type_id().is_primitive() {
+        if self.get_type_id().is_value_type() {
             self.deep_clone()
         } else {
             self.dupe_ref()
