@@ -89,4 +89,5 @@ fn test_pass_by_reference() {
 fn test_format_strings() {
     assert_eq!(*run("$x = 4; \"x is equal to {x}\""), FenderValue::String("x is equal to 4".to_string()));
     assert_eq!(*run("$x = 4; \"one more than x is {x + 1}\""), FenderValue::String("one more than x is 5".to_string()));
+    assert_eq!(*run("\"\\n\\r\""), FenderValue::String("\n\r".to_string()));
 }
