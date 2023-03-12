@@ -467,7 +467,7 @@ fn parse_literal(
         "int" => FenderValue::Int(token.get_match().parse()?).into(),
         "float" => FenderValue::Float(token.get_match().parse()?).into(),
         "boolean" => FenderValue::Bool(token.get_match().parse()?).into(),
-        "string" => FenderValue::String(parse_string(token)).into(),
+        "string" => parse_string(token, writer, scope)?,
         "list" => parse_list(token, writer, scope)?,
         "null" => FenderValue::Null.into(),
         "closure" => {
@@ -493,9 +493,41 @@ fn parse_list(
     Ok(Expression::Initialize(FenderInitializer::List, values))
 }
 
-fn parse_string(token: &Token) -> String {
-    // TODO: Handle escape sequences
-    token.children.iter().map(|t| t.get_match()).collect()
+fn parse_string(token: &Token, writer: &mut VMWriter<FenderTypeSystem>, scope: &mut LexicalScope) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+    let mut exprs = vec![];
+    let mut str = String::new();
+    for child in &token.children {
+        match child.get_name().as_deref().unwrap() {
+            "strChar" => str.push(child.source[child.range.start]),
+            "escapeSequence" => str.push(parse_escape_seq(child)?),
+            "strExpr" => {
+                exprs.push(Expression::from(FenderValue::String(str)));
+                str = String::new();
+                exprs.push(parse_expr(&child.children[0], writer, scope)?);
+            }
+            name => unreachable!("{name}")
+        }
+    }
+    if exprs.is_empty() {
+        return Ok(FenderValue::String(str).into());
+    }
+    exprs.push(FenderValue::String(str).into());
+    Ok(Expression::Initialize(FenderInitializer::String, exprs))
+}
+
+fn parse_escape_seq(token: &Token) -> Result<char, Box<dyn Error>> {
+    let escape: Vec<_> = token.get_match().bytes().collect();
+    Ok(match escape[1] as char {
+        'n' => '\n',
+        'r' => '\r',
+        '"' => '"',
+        't' => '\t',
+        'u' => {
+            let code = String::from_utf8_lossy(&escape[2..]);
+            unsafe { char::from_u32_unchecked(u32::from_str_radix(&*code, 16)?) }
+        }
+        _ => escape[1] as char,
+    })
 }
 
 fn parse_expr(

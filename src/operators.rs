@@ -34,6 +34,7 @@ pub enum FenderUnaryOperator {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FenderInitializer {
     List,
+    String,
 }
 
 macro_rules! num_op_func {
@@ -213,6 +214,17 @@ impl Initializer<FenderReference> for FenderInitializer {
                     .collect(),
             )
             .into(),
+            Self::String => {
+                let mut collected = String::new();
+                for v in values {
+                    if let FenderValue::String(s) = &*v {
+                        collected.push_str(s);
+                    } else {
+                        collected.push_str(&v.to_string());
+                    }
+                }
+                FenderValue::String(collected).into()
+            },
         }
     }
 }
