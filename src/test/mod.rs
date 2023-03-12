@@ -81,6 +81,12 @@ fn test_lists() {
 }
 
 #[test]
-fn pass_by_reference_test() {
+fn test_pass_by_reference() {
     assert_eq!(*run(include_str!("passByRef.fndr")), FenderValue::Int(8));
+}
+
+#[test]
+fn test_format_strings() {
+    assert_eq!(*run("$x = 4; \"x is equal to {x}\""), FenderValue::String("x is equal to 4".to_string()));
+    assert_eq!(*run("$x = 4; \"one more than x is {x + 1}\""), FenderValue::String("one more than x is 5".to_string()));
 }
