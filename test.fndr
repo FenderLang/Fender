@@ -1,1 +1,1 @@
-{ {$} }
+shell("echo hello", "echo -n", "fish -c").println()

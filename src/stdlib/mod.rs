@@ -1,65 +1,63 @@
-use crate::fender_value::FenderValue::*;
-use crate::{fndr_native_func, FenderReference};
-use std::io::Write;
+#![deny(missing_docs)]
+use crate::{fender_value::FenderValue, type_sys::type_system::FenderTypeSystem};
+use flux_bnf::tokens::{iterators::SelectTokens, Token};
+use freight_vm::{
+    expression::{Expression, NativeFunction},
+    function::FunctionWriter,
+    vm_writer::VMWriter,
+};
+use std::collections::HashMap;
 
-pub mod loader;
+/// functions for converting fender values
+pub mod cast;
+/// conditional execution and branching
+pub mod control_flow;
+/// stdin, stdout, and file IO
+pub mod io;
+/// system interface
+pub mod system;
+/// modify and query existing values
+pub mod val_operation;
 
-fndr_native_func!(if_func, |ctx, cond, if_true, if_false| {
-    let (Bool(cond), Function(if_true), Function(if_false)) = (&*cond, &*if_true, &*if_false) else {
-        return Ok(FenderReference::FRaw(Error(format!(
-                "Invalid argument types {:?} {:?} {:?}",
-            cond.get_type_id(),
-            if_true.get_type_id(),
-            if_false.get_type_id()
-        ))));
-    };
-    Ok(if *cond {
-        ctx.call(if_true, Vec::with_capacity(0))?
-    } else {
-        ctx.call(if_false, Vec::with_capacity(0))?
-    })
-});
-
-fndr_native_func!(print_func, |_, item| {
-    print!("{}", item.to_string());
-    let mut lock = std::io::stdout().lock();
-    let _ = lock.flush();
-    Ok(Default::default())
-});
-
-fndr_native_func!(println_func, |_, item| {
-    println!("{}", item.to_string());
-    Ok(Default::default())
-});
-
-fndr_native_func!(read_line_func, |ctx| {
-    match std::io::stdin().lines().next() {
-        Some(Ok(s)) => Ok(String(s).into()),
-        Some(Err(e)) => Ok(Error(e.to_string()).into()),
-        None => Ok(Error("End of file".to_string()).into()),
+/// Detect which standard library functions are used and load them automatically
+pub fn detect_load(
+    token: &Token,
+    globals: &mut HashMap<String, usize>,
+    main: &mut FunctionWriter<FenderTypeSystem>,
+    vm: &mut VMWriter<FenderTypeSystem>,
+) {
+    for name in token.rec_iter().select_token("name") {
+        let name = name.get_match();
+        let function = get_stdlib_function(&name);
+        let Some((function, args)) = function else { continue };
+        let native = vm.include_native_function(function, args);
+        let global = vm.create_global();
+        globals.insert(name, global);
+        main.evaluate_expression(Expression::AssignGlobal(
+            global,
+            Box::new(FenderValue::Function(native).into()),
+        ));
     }
-});
+}
 
-fndr_native_func!(get_raw_func, |ctx, item| Ok(item.unwrap_value().into()));
-
-fndr_native_func!(len_func, |ctx, item| {
-    Ok(match item.len() {
-        Ok(len) => Int(len as i64),
-        Err(e_str) => Error(e_str),
-    }
-    .into())
-});
-
-fndr_native_func!(int_func, |ctx, item| {
-    Ok(match &*item {
-        String(s) => match s.parse() {
-            Ok(i) => Int(i).into(),
-            _ => Error(format!("Invalid int string: {}", s)).into(),
-        },
-        _ => Error(format!(
-            "Cannot convert {} to int",
-            item.get_real_type_id().to_string()
-        ))
-        .into(),
+/// Get the native rust function to be called when `name` is called in fender
+pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSystem>, usize)> {
+    Some(match name {
+        "print" => (NativeFunction::new(io::print_func), 1),
+        "println" => (NativeFunction::new(io::println_func), 1),
+        "if" => (NativeFunction::new(control_flow::if_func), 3),
+        "readLine" => (NativeFunction::new(io::read_line_func), 0),
+        "raw" => (NativeFunction::new(cast::get_raw_func), 1),
+        "len" => (NativeFunction::new(val_operation::len_func), 1),
+        "int" => (NativeFunction::new(cast::int_func), 1),
+        "read" => (NativeFunction::new(io::read_func), 1),
+        "write" => (NativeFunction::new(io::write_func), 2),
+        "swap" => (NativeFunction::new(val_operation::swap_func), 3),
+        "str" => (NativeFunction::new(cast::str_func), 1),
+        "else" => (NativeFunction::new(control_flow::else_func), 2),
+        "then" => (NativeFunction::new(control_flow::then_func), 2),
+        "while" => (NativeFunction::new(control_flow::while_func), 2),
+        "shell" => (NativeFunction::new(system::shell_func), 3),
+        _ => return None,
     })
-});
+}

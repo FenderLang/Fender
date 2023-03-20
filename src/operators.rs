@@ -1,11 +1,12 @@
-use std::ops::Deref;
-
+use crate::{
+    fender_reference::{FenderReference, InternalReference},
+    fender_value::FenderValue,
+};
 use freight_vm::{
     operators::{BinaryOperator, Initializer, UnaryOperator},
     value::Value,
 };
-
-use crate::{fender_reference::InternalReference, FenderReference, FenderValue};
+use std::ops::Deref;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FenderBinaryOperator {
@@ -119,6 +120,17 @@ fn eq(a: &FenderReference, b: &FenderReference) -> FenderReference {
     }
 }
 
+fn add(a: &FenderReference, b: &FenderReference) -> FenderReference {
+    let a_val: &FenderValue = a.into();
+    let b_val: &FenderValue = b.into();
+    match (a_val, b_val) {
+        (FenderValue::String(s), other) | (other, FenderValue::String(s)) => {
+            FenderValue::String(format!("{}{}", s, other.to_string())).into()
+        }
+        _ => num_add(a, b),
+    }
+}
+
 fn index_op(a: &FenderReference, b: &FenderReference) -> FenderReference {
     let FenderValue::Int(pos) =  b.deref() else {
                     return FenderReference::FRaw(FenderValue::Error(format!(
@@ -160,7 +172,7 @@ impl BinaryOperator<FenderReference> for FenderBinaryOperator {
     fn apply_2(&self, a: &FenderReference, b: &FenderReference) -> FenderReference {
         use FenderBinaryOperator::*;
         match self {
-            Add => num_add(a, b),
+            Add => add(a, b),
             Sub => num_sub(a, b),
             Mul => num_mul(a, b),
             Div => num_div(a, b),
