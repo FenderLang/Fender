@@ -95,6 +95,7 @@ fn test_pass_by_reference() {
         *run("$x = []; $f =(n) {n = 4}; f(x); x"),
         FenderValue::List(vec![])
     );
+    assert_eq!(*run("$x = []; $y = x; x = 4; y"), FenderValue::List(vec![]));
     assert_eq!(*run("{$y = 1; {y = 5}(); y}()"), FenderValue::Int(5));
 }
 
