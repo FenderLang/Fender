@@ -236,7 +236,7 @@ impl Initializer<FenderReference> for FenderInitializer {
                     }
                 }
                 FenderValue::String(collected).into()
-            },
+            }
         }
     }
 }

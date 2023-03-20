@@ -87,7 +87,8 @@ fndr_native_func!(
                 Bool(bool_val) => *bool_val,
                 v => {
                     return Ok(FenderValue::make_error(format!(
-                        "condition expression did not evaluate to a boolean value, found {:?}", v
+                        "condition expression did not evaluate to a boolean value, found {:?}",
+                        v
                     ))
                     .into());
                 }

@@ -6,7 +6,7 @@ use freight_vm::{
     function::FunctionWriter,
     vm_writer::VMWriter,
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// functions for converting fender values
 pub mod cast;
@@ -26,8 +26,12 @@ pub fn detect_load(
     main: &mut FunctionWriter<FenderTypeSystem>,
     vm: &mut VMWriter<FenderTypeSystem>,
 ) {
-    for name in token.rec_iter().select_token("name") {
-        let name = name.get_match();
+    let names: HashSet<_> = token
+        .rec_iter()
+        .select_token("name")
+        .map(|t| t.get_match())
+        .collect();
+    for name in names {
         let function = get_stdlib_function(&name);
         let Some((function, args)) = function else { continue };
         let native = vm.include_native_function(function, args);

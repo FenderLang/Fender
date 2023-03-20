@@ -65,16 +65,19 @@ impl<'a> LexicalScope<'a> {
     }
 
     pub fn resolve_propagate(&self, name: &str) -> Result<VariableType, InterpreterError> {
-        if let Some(var) = self.globals.get(name) {
-            return Ok(VariableType::Global(*var));
-        }
         let mut parent_scopes = vec![];
         let mut cur = self;
         while !cur.variables.borrow().contains_key(name) {
             parent_scopes.push(cur);
             match &cur.parent {
                 Some(parent) => cur = parent,
-                None => return Err(InterpreterError::UnresolvedName(name.to_string())),
+                None => {
+                    if let Some(var) = self.globals.get(name) {
+                        return Ok(VariableType::Global(*var));
+                    } else {
+                        return Err(InterpreterError::UnresolvedName(name.to_string()));
+                    }
+                }
             }
         }
         for scope in parent_scopes.into_iter().rev() {
@@ -190,8 +193,8 @@ fn parse_closure(
     token: &Token,
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
-) -> Result<FunctionRef<FenderTypeSystem>, Box<dyn Error>> {
-    match token.matcher_name.as_deref().unwrap() {
+) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+    let function_ref = match token.matcher_name.as_deref().unwrap() {
         "closure" if token.children.len() == 2 => {
             let args = &token.children[0];
             let code_body = &token.children[1];
@@ -217,7 +220,11 @@ fn parse_closure(
             parse_code_body(code_body, writer, &mut new_scope)
         }
         _ => unreachable!(),
-    }
+    }?;
+    Ok(match &function_ref.function_type {
+        FunctionType::CapturingDef(_) => Expression::FunctionCapture(function_ref),
+        _ => FenderValue::Function(function_ref).into(),
+    })
 }
 
 fn parse_code_body(
@@ -392,10 +399,7 @@ fn parse_invoke_args(
             .children_named("expr")
             .map(|arg| parse_expr(arg, writer, scope))
             .collect(),
-        "codeBody" => Ok(vec![FenderValue::Function(parse_closure(
-            token, writer, scope,
-        )?)
-        .into()]),
+        "codeBody" => Ok(vec![parse_closure(token, writer, scope)?]),
         name => unreachable!("{name}"),
     }
 }
@@ -474,13 +478,7 @@ fn parse_literal(
         "string" => parse_string(token, writer, scope)?,
         "list" => parse_list(token, writer, scope)?,
         "null" => FenderValue::Null.into(),
-        "closure" => {
-            let closure = parse_closure(token, writer, scope)?;
-            match closure.function_type {
-                FunctionType::CapturingDef(_) => Expression::FunctionCapture(closure),
-                _ => FenderValue::Function(closure).into(),
-            }
-        }
+        "closure" => parse_closure(token, writer, scope)?,
         name => unreachable!("{name}"),
     })
 }
@@ -497,7 +495,11 @@ fn parse_list(
     Ok(Expression::Initialize(FenderInitializer::List, values))
 }
 
-fn parse_string(token: &Token, writer: &mut VMWriter<FenderTypeSystem>, scope: &mut LexicalScope) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+fn parse_string(
+    token: &Token,
+    writer: &mut VMWriter<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
     let mut exprs = vec![];
     let mut str = String::new();
     for child in &token.children {
@@ -509,7 +511,7 @@ fn parse_string(token: &Token, writer: &mut VMWriter<FenderTypeSystem>, scope: &
                 str = String::new();
                 exprs.push(parse_expr(&child.children[0], writer, scope)?);
             }
-            name => unreachable!("{name}")
+            name => unreachable!("{name}"),
         }
     }
     if exprs.is_empty() {
@@ -528,7 +530,7 @@ fn parse_escape_seq(token: &Token) -> Result<char, Box<dyn Error>> {
         't' => '\t',
         'u' => {
             let code = String::from_utf8_lossy(&escape[2..]);
-            unsafe { char::from_u32_unchecked(u32::from_str_radix(&*code, 16)?) }
+            unsafe { char::from_u32_unchecked(u32::from_str_radix(&code, 16)?) }
         }
         _ => escape[1] as char,
     })
