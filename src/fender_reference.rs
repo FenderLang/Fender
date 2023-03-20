@@ -11,36 +11,36 @@ use std::{
 };
 
 #[derive(Clone, Debug)]
-pub struct InternalReference(Rc<UnsafeCell<FenderValue>>);
+pub struct InternalReference<T>(Rc<UnsafeCell<T>>);
 
-impl InternalReference {
-    pub fn new(value: FenderValue) -> Self {
+impl<T> InternalReference<T> {
+    pub fn new(value: T) -> Self {
         Self(Rc::new(UnsafeCell::new(value)))
     }
 }
 
-impl Deref for InternalReference {
-    type Target = FenderValue;
+impl<T> Deref for InternalReference<T> {
+    type Target = T;
 
     fn deref(&self) -> &Self::Target {
         unsafe { &*self.0.get() }
     }
 }
 
-impl DerefMut for InternalReference {
+impl<T> DerefMut for InternalReference<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe { self.0.get().as_mut().unwrap() }
     }
 }
 
-impl PartialEq for InternalReference {
+impl<T: PartialEq> PartialEq for InternalReference<T> {
     fn eq(&self, other: &Self) -> bool {
         **self == **other
     }
 }
 
 pub enum FenderReference {
-    FRef(InternalReference),
+    FRef(InternalReference<FenderValue>),
     FRaw(FenderValue),
 }
 
@@ -174,7 +174,7 @@ impl Value for FenderReference {
     }
 }
 
-impl From<FenderReference> for InternalReference {
+impl From<FenderReference> for InternalReference<FenderValue> {
     fn from(value: FenderReference) -> Self {
         match value {
             FenderReference::FRef(val) => val,
