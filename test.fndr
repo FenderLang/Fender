@@ -19,12 +19,12 @@ $else = (thenResult, func) {
     if(thenResult[0], {thenResult[1]}, {func()})
 }
 
-$pussyMoneyWeed = (str) {
+$testfunc = (str){
     (str.len() > 8).then {
         str.each {print("hello: "); $.println()}
     }.else {
-        "your string is short and you are a pussy".println()
+        "your string is short".println()
     }
 }
 
-"hwfglbflgbfslgbsfgf".pussyMoneyWeed()
+"this is a test string of a length".testfunc()

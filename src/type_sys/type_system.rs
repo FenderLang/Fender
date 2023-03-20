@@ -1,9 +1,8 @@
 use super::type_id::FenderTypeId;
-use crate::operators::FenderBinaryOperator;
-use crate::operators::FenderInitializer;
-use crate::operators::FenderUnaryOperator;
-use crate::FenderReference;
-
+use crate::{
+    fender_reference::FenderReference, operators::FenderBinaryOperator,
+    operators::FenderInitializer, operators::FenderUnaryOperator,
+};
 use freight_vm::TypeSystem;
 
 #[derive(PartialEq, Eq, Clone, Debug)]

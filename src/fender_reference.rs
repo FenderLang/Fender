@@ -1,4 +1,7 @@
-use crate::{FenderTypeId, FenderTypeSystem, FenderValue};
+use crate::{
+    fender_value::FenderValue,
+    type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
+};
 use freight_vm::{expression::Expression, function::FunctionRef, value::Value};
 use std::{
     cell::UnsafeCell,
