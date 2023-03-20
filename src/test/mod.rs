@@ -1,4 +1,7 @@
-use crate::{interpreter::create_vm, FenderReference, FenderTypeId, FenderValue};
+use crate::{
+    fender_reference::FenderReference, fender_value::FenderValue, interpreter::create_vm,
+    type_sys::type_id::FenderTypeId,
+};
 
 fn run(source: &str) -> FenderReference {
     create_vm(source).unwrap().run().unwrap()
@@ -49,6 +52,7 @@ fn test_capture() {
     assert_eq!(*run("{$x = 10; {x = x / 2}(); x}()"), FenderValue::Int(5));
 }
 
+#[test]
 fn test_return() {
     assert_eq!(*run("return 2; 1"), FenderValue::Int(2));
     assert_eq!(*run("{return 2; 1}()"), FenderValue::Int(2));
@@ -91,4 +95,26 @@ fn test_format_strings() {
     assert_eq!(*run("$x = 4; \"x is equal to {x}\""), FenderValue::String("x is equal to 4".to_string()));
     assert_eq!(*run("$x = 4; \"one more than x is {x + 1}\""), FenderValue::String("one more than x is 5".to_string()));
     assert_eq!(*run("\"\\n\\r\""), FenderValue::String("\n\r".to_string()));
+
+}
+
+#[test]
+fn run_quicksort_test() {
+    use FenderValue::Int;
+    assert_eq!(
+        *run(include_str!("quicksort.fndr")),
+        FenderValue::List(vec![
+            Int(1).into(),
+            Int(2).into(),
+            Int(7).into(),
+            Int(8).into(),
+            Int(9).into(),
+            Int(10).into(),
+            Int(54).into(),
+            Int(57).into(),
+            Int(68).into(),
+            Int(670).into(),
+            Int(1113).into()
+        ])
+    );
 }
