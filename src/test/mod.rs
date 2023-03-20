@@ -82,6 +82,10 @@ fn test_lists() {
             FenderValue::Int(4).into(),
         ])
     );
+    assert_eq!(
+        *run("$x = [1, 2, 3]; x[0] = 100; x[0]"),
+        FenderValue::Int(100)
+    );
 }
 
 #[test]
