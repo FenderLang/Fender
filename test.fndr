@@ -1,2 +1,2 @@
 #!/bin/fender
-"hello world\n".append("test.txt").println()
+rand().println()

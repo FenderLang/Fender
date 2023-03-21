@@ -66,3 +66,9 @@ fndr_native_func!(
         })
     }
 );
+
+fndr_native_func!(
+    /// Get random float between 0 and 1 
+    rand_func, |_| {
+    Ok(FenderValue::Float(rand::random()).into())
+});

@@ -65,6 +65,7 @@ pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSyste
         "shuffle" => (NativeFunction::new(val_operation::shuffle_func), 1),
         "getShuffled" => (NativeFunction::new(val_operation::get_shuffled_func), 1),
         "append" => (NativeFunction::new(io::append_func), 2),
+        "rand" => (NativeFunction::new(val_operation::rand_func), 0),
         _ => return None,
     })
 }
