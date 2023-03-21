@@ -3,6 +3,7 @@ use crate::{
     type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
 };
 use freight_vm::{function::FunctionRef, value::Value};
+use rand::{seq::SliceRandom, thread_rng};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum FenderValue {
@@ -71,6 +72,39 @@ impl FenderValue {
                 return Err(format!(
                     "cannot get length of type {}",
                     e.get_type_id().to_string()
+                ))
+            }
+        })
+    }
+
+    pub fn shuffle(&mut self) -> Result<&mut FenderValue, String> {
+        Ok(match self {
+            FenderValue::Ref(v) => v.shuffle()?,
+            FenderValue::List(v) => {
+                v.shuffle(&mut thread_rng());
+                self
+            }
+            e => {
+                return Err(format!(
+                    "shuffle() can only be called on type `List`, expected `List` found `{:?}`",
+                    e.get_type_id()
+                ))
+            }
+        })
+    }
+
+    pub fn get_shuffled(&self) -> Result<FenderValue, String> {
+        Ok(match self {
+            FenderValue::Ref(v) => v.get_shuffled()?,
+            FenderValue::List(v) => {
+                let mut list = v.clone();
+                list.shuffle(&mut thread_rng());
+                FenderValue::List(list)
+            }
+            e => {
+                return Err(format!(
+                    "shuffle() can only be called on type `List`, expected `List` found `{:?}`",
+                    e.get_type_id()
                 ))
             }
         })

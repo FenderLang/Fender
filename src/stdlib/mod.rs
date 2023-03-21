@@ -62,6 +62,8 @@ pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSyste
         "then" => (NativeFunction::new(control_flow::then_func), 2),
         "while" => (NativeFunction::new(control_flow::while_func), 2),
         "shell" => (NativeFunction::new(system::shell_func), 3),
+        "shuffle" => (NativeFunction::new(val_operation::shuffle_func), 1),
+        "getShuffled" => (NativeFunction::new(val_operation::get_shuffled_func), 1),
         _ => return None,
     })
 }

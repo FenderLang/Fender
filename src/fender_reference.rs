@@ -39,6 +39,7 @@ impl PartialEq for InternalReference {
     }
 }
 
+#[derive(Debug)]
 pub enum FenderReference {
     FRef(InternalReference),
     FRaw(FenderValue),
@@ -104,11 +105,6 @@ impl From<FunctionRef<FenderTypeSystem>> for FenderReference {
     }
 }
 
-impl Debug for FenderReference {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        (**self).fmt(f)
-    }
-}
 
 impl Clone for FenderReference {
     fn clone(&self) -> Self {

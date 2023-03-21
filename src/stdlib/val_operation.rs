@@ -43,3 +43,26 @@ fndr_native_func!(
         })
     }
 );
+
+fndr_native_func!(
+    /// Shuffles a list in place, also returns the resulting list
+    shuffle_func,
+    |_, mut list| {
+        Ok(match list.shuffle() {
+            Ok(v) => list,
+            Err(e) => FenderValue::make_error(e).into(),
+        })
+    }
+);
+
+fndr_native_func!(
+    /// Creates, and returns, a copy of the given list shuffled,
+    /// without modifying the original list
+    get_shuffled_func,
+    |_, mut list| {
+        Ok(match list.get_shuffled() {
+            Ok(v) => v.into(),
+            Err(e) => FenderValue::make_error(e).into(),
+        })
+    }
+);

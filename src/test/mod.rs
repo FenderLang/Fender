@@ -126,3 +126,26 @@ fn run_quicksort_test() {
         ])
     );
 }
+
+#[test]
+fn test_shuffle() {
+    // let input_list = (0..100).collect::<Vec<_>>();
+    // let test_prog = format!(
+    //     "$ordered = {:?}; $new = ordered.shuffle(); return [ordered, new]",
+    //     input_list
+    // );
+
+    // let results = match (*run(&test_prog)).clone(){
+    //     FenderValue::List(l) => (*l[0], *l[1]),
+    //     _ => unreachable!(),
+    // };
+    // let results = match results{
+    //     (FenderValue::List(a), FenderValue::List(b)) => (a.into_iter().map(|v| ), b),
+    //     _ => unreachable!()
+    // };
+
+
+    // -_- I hate this
+
+    // assert_ne!(results, (Fen));
+}
