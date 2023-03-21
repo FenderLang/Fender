@@ -2,17 +2,46 @@ use std::{error::Error, fmt::Display};
 
 #[derive(Debug)]
 pub enum InterpreterError {
-    UnresolvedName(String),
-    DuplicateName(String),
-    UnresolvedLabel(String),
+    UnresolvedName(String, usize),
+    DuplicateName(String, usize),
+    UnresolvedLabel(String, usize),
+}
+
+impl InterpreterError {
+    pub fn src_relative_string(&self, src: &str) -> String {
+        let (err_str, pos) = match self {
+            InterpreterError::UnresolvedName(name, pos) => {
+                (format!("Unresolved name `{name}`"), pos)
+            }
+            InterpreterError::DuplicateName(name, pos) => {
+                (format!("Unresolved name `{name}`"), pos)
+            }
+            InterpreterError::UnresolvedLabel(name, pos) => {
+                (format!("Unresolved name `{name}`"), pos)
+            }
+        };
+
+        let (line, col) = {
+            let src = &src[0..*pos].lines().collect::<Vec<_>>();
+            (src.len(), src[src.len() - 1].len())
+        };
+
+        format!("{err_str} at line: {line}  col: {col}")
+    }
 }
 
 impl Display for InterpreterError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::UnresolvedName(name) => write!(f, "Unresolved name `{}`", name),
-            Self::UnresolvedLabel(name) => write!(f, "Unresolved label `{}`", name),
-            Self::DuplicateName(name) => write!(f, "Duplicate name `{}`", name),
+            Self::UnresolvedName(name, pos) => {
+                write!(f, "Unresolved name `{}` at position {pos}", name)
+            }
+            Self::UnresolvedLabel(name, pos) => {
+                write!(f, "Unresolved label `{}` at position {pos}", name)
+            }
+            Self::DuplicateName(name, pos) => {
+                write!(f, "Duplicate name `{}` at position {pos}", name)
+            }
         }
     }
 }

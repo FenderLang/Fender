@@ -1,3 +1,2 @@
 #!/bin/fender
-$ordered = [1, 2, 3, 4, 5, 6]; $new = ordered.shuffle(); [ordered, new].println()
-# $new = ordered.getShuffled()
+"hello world\n".append("test.txt").println()
