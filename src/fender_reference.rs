@@ -11,52 +11,45 @@ use std::{
 };
 
 #[derive(Clone, Debug)]
-pub struct InternalReference<T>(Rc<UnsafeCell<T>>);
+pub struct InternalReference(Rc<UnsafeCell<FenderValue>>);
 
-impl<T> InternalReference<T> {
-    pub fn new(value: T) -> Self {
+impl InternalReference {
+    pub fn new(value: FenderValue) -> Self {
         Self(Rc::new(UnsafeCell::new(value)))
     }
 }
 
-impl<T> Deref for InternalReference<T> {
-    type Target = T;
+impl Deref for InternalReference {
+    type Target = FenderValue;
 
     fn deref(&self) -> &Self::Target {
         unsafe { &*self.0.get() }
     }
 }
 
-impl<T> DerefMut for InternalReference<T> {
+impl DerefMut for InternalReference {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe { self.0.get().as_mut().unwrap() }
     }
 }
 
-impl<T: PartialEq> PartialEq for InternalReference<T> {
+impl PartialEq for InternalReference {
     fn eq(&self, other: &Self) -> bool {
         **self == **other
     }
 }
 
 pub enum FenderReference {
-    FRef(InternalReference<FenderValue>),
+    FRef(InternalReference),
     FRaw(FenderValue),
-    FVar(InternalReference<FenderReference>),
 }
 
 impl FenderReference {
-    #[inline]
     pub fn get_pass_object(&self) -> FenderReference {
-        match self {
-            FenderReference::FVar(val) => val.get_pass_object(),
-            _ => {
-                if self.get_type_id().is_value_type() {
-                    self.deep_clone()
-                } else {
-                    self.dupe_ref()
-                }
-            }
+        if self.get_type_id().is_value_type() {
+            self.deep_clone()
+        } else {
+            self.dupe_ref()
         }
     }
 }
@@ -80,7 +73,6 @@ impl Deref for FenderReference {
         match self {
             FenderReference::FRaw(v) => v,
             FenderReference::FRef(v) => v,
-            FenderReference::FVar(v) => &*v,
         }
     }
 }
@@ -90,7 +82,6 @@ impl DerefMut for FenderReference {
         match self {
             FenderReference::FRaw(v) => v,
             FenderReference::FRef(v) => v,
-            FenderReference::FVar(v) => &mut *v,
         }
     }
 }
@@ -150,9 +141,6 @@ impl Value for FenderReference {
             FenderReference::FRef(r) => {
                 FenderReference::FRef(InternalReference::new(r.deep_clone()))
             }
-            FenderReference::FVar(r) => {
-                FenderReference::FVar(InternalReference::new(r.deep_clone()))
-            }
         }
     }
 
@@ -160,7 +148,6 @@ impl Value for FenderReference {
         match self {
             FenderReference::FRef(internal_ref) => FenderReference::FRef(internal_ref.clone()),
             FenderReference::FRaw(_) => self.deep_clone(),
-            FenderReference::FVar(fref) => FenderReference::FVar(fref.clone()),
         }
     }
 
@@ -172,7 +159,7 @@ impl Value for FenderReference {
     }
 
     fn uninitialized_reference() -> Self {
-        FenderReference::FVar(InternalReference::new(FenderValue::Null.into()))
+        FenderReference::FRef(InternalReference::new(FenderValue::Null))
     }
 
     fn assign(&mut self, value: FenderReference) {
@@ -181,18 +168,17 @@ impl Value for FenderReference {
 
     fn into_ref(self) -> Self {
         match self {
+            FenderReference::FRef(_) => self,
             FenderReference::FRaw(v) => FenderReference::FRef(InternalReference::new(v)),
-            _ => self,
         }
     }
 }
 
-impl From<FenderReference> for InternalReference<FenderValue> {
+impl From<FenderReference> for InternalReference {
     fn from(value: FenderReference) -> Self {
         match value {
             FenderReference::FRef(val) => val,
             FenderReference::FRaw(val) => InternalReference::new(val),
-            FenderReference::FVar(val) => InternalReference::new((&**val).clone()),
         }
     }
 }
@@ -202,7 +188,6 @@ impl From<FenderReference> for FenderValue {
         match value {
             FenderReference::FRef(val) => val.deref().clone(),
             FenderReference::FRaw(val) => val,
-            FenderReference::FVar(val) => val.deref().deref().clone(),
         }
     }
 }
@@ -212,7 +197,6 @@ impl<'a> From<&'a FenderReference> for &'a FenderValue {
         match value {
             FenderReference::FRef(val) => val,
             FenderReference::FRaw(val) => val,
-            FenderReference::FVar(val) => val,
         }
     }
 }

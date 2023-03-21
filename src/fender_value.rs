@@ -6,7 +6,7 @@ use freight_vm::{function::FunctionRef, value::Value};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum FenderValue {
-    Ref(InternalReference<FenderValue>),
+    Ref(InternalReference),
     Int(i64),
     Float(f64),
     Char(char),
