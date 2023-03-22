@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::{
     fender_value::FenderValue::{self, *},
     fndr_native_func,
@@ -29,12 +31,14 @@ fndr_native_func!(
     /// If called on `FenderValue::Null`, `FenderValue::Error`, or `FenderValue::Bool(false)` will evaluate and return `body`
     else_func,
     |ctx, cond, body| {
+        // dbg!(&cond.get_type_id());
         if !matches!(*cond, FenderValue::Null | FenderValue::Error(_)) {
             return Ok(cond);
         }
+        let v = cond.deref().clone();
 
         Ok(match &*body {
-            Function(f) => ctx.call(f, Vec::with_capacity(0))?,
+            Function(f) => ctx.call(f, vec![(v.into())])?,
             _ => body,
         })
     }
@@ -49,6 +53,8 @@ fndr_native_func!(
     then_func,
     |ctx, cond, body| {
         if matches!(*cond, FenderValue::Null | FenderValue::Error(_)) {
+            // dbg!("here");
+            // dbg!(cond.get_type_id());
             return Ok(cond);
         }
 
@@ -62,7 +68,7 @@ fndr_native_func!(
                 Bool(true)
             }
             b => Error(format!(
-                "then body expected, found {:?}; else will be run if called",
+                "then body expected, found {:?}; else will be run",
                 b.get_type_id()
             )),
         }
@@ -95,7 +101,7 @@ fndr_native_func!(
             };
 
             if !keep_run {
-                return Ok(Null.into());
+                return Ok(Bool(true).into());
             } else {
                 ctx.call(body, Vec::with_capacity(0))?;
             }

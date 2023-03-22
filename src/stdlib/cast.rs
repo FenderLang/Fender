@@ -36,3 +36,11 @@ fndr_native_func!(
     str_func,
     |_, item| { Ok(String(item.to_string()).into()) }
 );
+
+fndr_native_func!(
+    /// Cast `FenderValue` to `FenderValue::String`
+    to_bool_func,
+    |_, item| {
+        Ok(item.to_bool().into())
+    }
+);

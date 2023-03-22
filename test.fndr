@@ -1,2 +1,12 @@
 #!/bin/fender
-rand().println()
+
+$l = [1,2,3,4]
+while({l.len() != "boobs"}, {
+   l.pop().println()
+})
+.then({println("that's it, no more")})
+.else({"you had an error: {$}".println()})
+
+
+(1 != "1").bool().println()
+(1 == "1").bool().println()

@@ -68,7 +68,35 @@ fndr_native_func!(
 );
 
 fndr_native_func!(
-    /// Get random float between 0 and 1 
-    rand_func, |_| {
-    Ok(FenderValue::Float(rand::random()).into())
-});
+    /// Get random float between 0 and 1
+    rand_func,
+    |_| { Ok(FenderValue::Float(rand::random()).into()) }
+);
+
+fndr_native_func!(
+    /// Pushes a value to the end of a list
+    push_func,
+    |_, mut list, value| {
+        Ok(match list.push(value) {
+            Ok(_) => list,
+            Err(e) => FenderValue::make_error(e).into(),
+        })
+    }
+);
+
+fndr_native_func!(
+    /// Pops a value off the end of a list
+    pop_func,
+     |_, mut list| {
+        Ok(match list.pop() {
+            Ok(v) => v.into(),
+            Err(e) => FenderValue::make_error(e).into(),
+        })
+    }
+);
+
+// fndr_native_func!(
+//     ///
+//     _func, |_| {
+//     Ok(FenderValue::Float(rand::random()).into())
+// });
