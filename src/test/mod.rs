@@ -13,7 +13,7 @@ fn test_simple_values() {
     assert_eq!(*run("1.0"), FenderValue::Float(1.0));
     assert_eq!(
         *run("\"Hello, world!\""),
-        FenderValue::String("Hello, world!".to_string())
+        FenderValue::String("Hello, world!".to_string().into())
     );
     assert_eq!(*run("true"), FenderValue::Bool(true));
     assert_eq!(*run("false"), FenderValue::Bool(false));
@@ -67,20 +67,26 @@ fn test_return() {
 fn test_lists() {
     assert_eq!(
         *run("[1, 2, 3]"),
-        FenderValue::List(vec![
-            FenderValue::Int(1).into(),
-            FenderValue::Int(2).into(),
-            FenderValue::Int(3).into(),
-        ])
+        FenderValue::List(
+            vec![
+                FenderValue::Int(1).into(),
+                FenderValue::Int(2).into(),
+                FenderValue::Int(3).into(),
+            ]
+            .into()
+        )
     );
     assert_eq!(
         *run("$x = 4; [1, 2, 3, x]"),
-        FenderValue::List(vec![
-            FenderValue::Int(1).into(),
-            FenderValue::Int(2).into(),
-            FenderValue::Int(3).into(),
-            FenderValue::Int(4).into(),
-        ])
+        FenderValue::List(
+            vec![
+                FenderValue::Int(1).into(),
+                FenderValue::Int(2).into(),
+                FenderValue::Int(3).into(),
+                FenderValue::Int(4).into(),
+            ]
+            .into()
+        )
     );
     assert_eq!(
         *run("$x = [1, 2, 3]; x[0] = 100; x[0]"),
@@ -97,24 +103,33 @@ fn test_pass_by_reference() {
     );
     assert_eq!(
         *run("$x = []; $f =(n) {n = 4}; f(x); x"),
-        FenderValue::List(vec![])
+        FenderValue::List(vec![].into())
     );
-    assert_eq!(*run("$x = []; $y = x; x = 4; y"), FenderValue::List(vec![]));
+    assert_eq!(
+        *run("$x = []; $y = x; x = 4; y"),
+        FenderValue::List(vec![].into())
+    );
     assert_eq!(*run("{$y = 1; {y = 5}(); y}()"), FenderValue::Int(5));
-    assert_eq!(*run("$x = [1];$f = (n){ n[0] = 2 };f(x);x"), FenderValue::List(vec![FenderValue::Int(2).into()]));
+    assert_eq!(
+        *run("$x = [1];$f = (n){ n[0] = 2 };f(x);x"),
+        FenderValue::List(vec![FenderValue::Int(2).into()].into())
+    );
 }
 
 #[test]
 fn test_format_strings() {
     assert_eq!(
         *run("$x = 4; \"x is equal to {x}\""),
-        FenderValue::String("x is equal to 4".to_string())
+        FenderValue::String("x is equal to 4".to_string().into())
     );
     assert_eq!(
         *run("$x = 4; \"one more than x is {x + 1}\""),
-        FenderValue::String("one more than x is 5".to_string())
+        FenderValue::String("one more than x is 5".to_string().into())
     );
-    assert_eq!(*run("\"\\n\\r\""), FenderValue::String("\n\r".to_string()));
+    assert_eq!(
+        *run("\"\\n\\r\""),
+        FenderValue::String("\n\r".to_string().into())
+    );
 }
 
 #[test]
@@ -122,18 +137,21 @@ fn run_quicksort_test() {
     use FenderValue::Int;
     assert_eq!(
         *run(include_str!("quicksort.fndr")),
-        FenderValue::List(vec![
-            Int(1).into(),
-            Int(2).into(),
-            Int(7).into(),
-            Int(8).into(),
-            Int(9).into(),
-            Int(10).into(),
-            Int(54).into(),
-            Int(57).into(),
-            Int(68).into(),
-            Int(670).into(),
-            Int(1113).into()
-        ])
+        FenderValue::List(
+            vec![
+                Int(1).into(),
+                Int(2).into(),
+                Int(7).into(),
+                Int(8).into(),
+                Int(9).into(),
+                Int(10).into(),
+                Int(54).into(),
+                Int(57).into(),
+                Int(68).into(),
+                Int(670).into(),
+                Int(1113).into()
+            ]
+            .into()
+        )
     );
 }
