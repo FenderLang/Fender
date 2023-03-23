@@ -1,4 +1,4 @@
-use fender::interpreter::create_vm;
+use fender::interpreter::{self, create_vm};
 use std::env::args;
 
 fn main() {
@@ -7,7 +7,17 @@ fn main() {
     for arg in args {
         match get_fender_code(&arg) {
             Ok(source) => {
-                create_vm(source).unwrap().run().unwrap();
+                let mut vm = match interpreter::create_vm(&source) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error proccessing fender code: {}", e);
+                        continue;
+                    }
+                };
+                match vm.run() {
+                    Ok(v) => println!("\n\n\nEXECUTION OUTPUT:\n=====\n{:?}\n=====", v),
+                    Err(e) => eprintln!("Fender execution error: {}", e),
+                }
             }
             Err(e) => eprintln!("{e}"),
         }
