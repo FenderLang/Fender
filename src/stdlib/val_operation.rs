@@ -32,7 +32,7 @@ fndr_native_func!(
         Ok(match variable.deref_mut() {
             List(l) => {
                 l.swap(*pos_a as usize, *pos_b as usize);
-                List(l.to_vec()).into()
+                List(l.to_vec().into()).into()
             }
 
             _ => Error(format!(
@@ -98,7 +98,7 @@ fndr_native_func!(
 fndr_native_func!(
     /// Returns a `String` that contains the debug text of the given `value`
     dbg,
-    |_, value| { Ok(String(format!("{:?}", *value)).into()) }
+    |_, value| { Ok(String(format!("{:?}", *value).into()).into()) }
 );
 
 fndr_native_func!(

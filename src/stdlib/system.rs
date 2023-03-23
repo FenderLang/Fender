@@ -2,7 +2,7 @@ use crate::{
     fender_value::FenderValue::{self, *},
     fndr_native_func,
 };
-use std::process::Command;
+use std::{ops::Deref, process::Command};
 
 fndr_native_func!(
     /// Interact with host system shell
@@ -37,12 +37,13 @@ fndr_native_func!(
         const DEFAULT_SHELL: &str = "sh -c";
 
         let (mut shell, cmd) = match (&*cmd_name, &*shell_path) {
-            (String(name), String(shell)) => {
-                (shell.split(' '), format!("{} {}", name, cmd.to_string()))
-            }
+            (String(name), String(shell)) => (
+                shell.split(' '),
+                format!("{} {}", name.deref(), cmd.to_string()),
+            ),
             (String(name), Null) => (
                 DEFAULT_SHELL.split(' '),
-                format!("{} {}", name, cmd.to_string()),
+                format!("{} {}", name.deref(), cmd.to_string()),
             ),
             (Null, Null) => (DEFAULT_SHELL.split(' '), cmd.to_string()),
             _ => {
@@ -77,7 +78,7 @@ fndr_native_func!(
         };
 
         Ok(if result.status.success() {
-            String(output)
+            String(output.into())
         } else {
             Error(output)
         }

@@ -2,7 +2,7 @@ use crate::{
     fender_value::FenderValue::{self, *},
     fndr_native_func,
 };
-use std::io::Write;
+use std::{io::Write, ops::Deref};
 
 // --- stdout ---
 
@@ -33,7 +33,7 @@ fndr_native_func!(
     read_line_func,
     |_| {
         match std::io::stdin().lines().next() {
-            Some(Ok(s)) => Ok(String(s).into()),
+            Some(Ok(s)) => Ok(String(s.into()).into()),
             Some(Err(e)) => Ok(FenderValue::make_error(e.to_string()).into()),
             None => Ok(FenderValue::make_error("End of file".to_string()).into()),
         }
@@ -49,8 +49,8 @@ fndr_native_func!(
         let String(file_name) = &*file_name else {
         return Ok(FenderValue::make_error("file name must be of type `String`").into());
     };
-        Ok(match std::fs::read_to_string(file_name) {
-            Ok(s) => String(s).into(),
+        Ok(match std::fs::read_to_string(file_name.deref()) {
+            Ok(s) => String(s.into()).into(),
             Err(e) => {
                 FenderValue::make_error(format!("failed to read file due to error: {e}")).into()
             }
@@ -65,7 +65,7 @@ fndr_native_func!(
         let String(file_name) = &*file_name else {
         return Ok(FenderValue::make_error("file name must be of type `String`").into());
     };
-        Ok(match std::fs::write(file_name, data.to_string()) {
+        Ok(match std::fs::write(file_name.deref(), data.to_string()) {
             Ok(s) => Bool(true).into(),
             Err(e) => {
                 FenderValue::make_error(format!("failed to write file due to error: {e}")).into()
@@ -85,7 +85,7 @@ fndr_native_func!(
             .write(true)
             .append(true)
             .create(true)
-            .open(file_name)
+            .open(file_name.deref())
         {
             Ok(f) => f,
             Err(e) => {

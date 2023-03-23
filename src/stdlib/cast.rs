@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::{
     fender_value::FenderValue::{self, *},
     fndr_native_func,
@@ -16,7 +18,7 @@ fndr_native_func!(
         Ok(match &*item {
             String(s) => match s.parse() {
                 Ok(i) => Int(i).into(),
-                _ => FenderValue::make_error(format!("Invalid int string: {}", s)).into(),
+                _ => FenderValue::make_error(format!("Invalid int string: {}", s.deref())).into(),
             },
             Int(val) => Int(*val).into(),
             Float(val) => Int(*val as i64).into(),
@@ -34,7 +36,7 @@ fndr_native_func!(
 fndr_native_func!(
     /// Cast `FenderValue` to `FenderValue::String`
     str_func,
-    |_, item| { Ok(String(item.to_string()).into()) }
+    |_, item| { Ok(String(item.to_string().into()).into()) }
 );
 
 fndr_native_func!(

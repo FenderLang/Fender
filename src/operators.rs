@@ -137,7 +137,7 @@ fn add(a: &FenderReference, b: &FenderReference) -> FenderReference {
     let b_val: &FenderValue = b.into();
     match (a_val, b_val) {
         (FenderValue::String(s), other) | (other, FenderValue::String(s)) => {
-            FenderValue::String(format!("{}{}", s, other.to_string())).into()
+            FenderValue::String(format!("{}{}", s.deref(), other.to_string()).into()).into()
         }
         _ => num_add(a, b),
     }
@@ -234,7 +234,8 @@ impl Initializer<FenderReference> for FenderInitializer {
                 values
                     .into_iter()
                     .map(|val| FenderReference::FRef(InternalReference::from(val)))
-                    .collect(),
+                    .collect::<Vec<_>>()
+                    .into(),
             )
             .into(),
             Self::String => {
@@ -246,7 +247,7 @@ impl Initializer<FenderReference> for FenderInitializer {
                         collected.push_str(&v.to_string());
                     }
                 }
-                FenderValue::String(collected).into()
+                FenderValue::String(collected.into()).into()
             }
         }
     }
