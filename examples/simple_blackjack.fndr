@@ -60,7 +60,8 @@ $mainLoop = (player, dealer, deck){
          .then{return false}
          .else{return true}
    }
-
+   println("that was not an option")
+   true
 }
 
 $game = {
