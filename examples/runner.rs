@@ -1,4 +1,4 @@
-use fender::interpreter::{self, create_vm};
+use fender::interpreter;
 use std::env::args;
 
 fn main() {

@@ -156,6 +156,40 @@ impl FenderValue {
             v => v.clone(),
         }
     }
+
+    pub fn remove_at(&mut self, pos: i64) -> Result<FenderReference, String> {
+        let list = match self {
+            FenderValue::List(l) => l,
+            FenderValue::Ref(r) => return r.remove_at(pos),
+            e => {
+                return Err(format!(
+                    "cannot remove from type `{ty}`: expected type `List` found type `{ty}`",
+                    ty = e.get_type_id().to_string()
+                ))
+            }
+        };
+        let pos = if pos < 0 {
+            list.len() as i64 + pos
+        } else {
+            pos
+        };
+
+        if pos < 0 {
+            return Err("invalid wrapping index".into());
+        }
+
+        let pos = pos as usize;
+
+        if pos >= list.len() {
+            return Err(format!(
+                "Invalid index: index was {} list length is {}",
+                pos,
+                list.len()
+            ));
+        }
+
+        Ok(list.remove(pos))
+    }
 }
 
 /// Cast functions

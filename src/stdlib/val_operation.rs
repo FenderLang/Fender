@@ -98,7 +98,19 @@ fndr_native_func!(
 fndr_native_func!(
     /// Returns a `String` that contains the debug text of the given `value`
     dbg,
-    |_, value| {
-        Ok(String(format!("{:?}", *value)).into())
+    |_, value| { Ok(String(format!("{:?}", *value)).into()) }
+);
+
+fndr_native_func!(
+    /// Removes an element from a list and returns it or error if there is no element at that location
+    remove,
+    |_, mut value, pos| {
+        let Int(pos) = *pos else {
+            return Ok(FenderValue::make_error(format!("remove must be indexed with an int: expected type `Int` found type `{}`", pos.get_type_id().to_string())).into());
+        };
+        Ok(match value.remove_at(pos) {
+            Ok(v) => v,
+            Err(s) => FenderValue::make_error(s).into(),
+        })
     }
 );

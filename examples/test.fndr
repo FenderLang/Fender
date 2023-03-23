@@ -2,3 +2,6 @@
 [1,2,3,4,5,6].also(println).println()
 $c = 'c'
 c.str().dbg().println()
+$l = [1,2,3,4,5,6].println()
+l.remove(2).println()
+l.println()
