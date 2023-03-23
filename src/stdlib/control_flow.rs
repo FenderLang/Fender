@@ -49,8 +49,6 @@ fndr_native_func!(
     then_func,
     |ctx, cond, body| {
         if matches!(*cond, FenderValue::Null | FenderValue::Error(_)) {
-            // dbg!("here");
-            // dbg!(cond.get_type_id());
             return Ok(cond);
         }
 
@@ -120,10 +118,6 @@ fndr_native_func!(
                 );
             }
         }
-        // let Function(func) = &*func else{
-        //     //return Ok(FenderValue::make_error(format!("Also must take a function: Expected type `Function` found type `{}`", func.get_type_id().to_string())).into()) //TODO@FuzzyNovaGoblin change name on this line
-        //     return Ok(())
-        // };
 
         Ok(incoming_val)
     }
