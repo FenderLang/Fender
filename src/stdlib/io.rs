@@ -13,7 +13,7 @@ fndr_native_func!(
         print!("{}", item.to_string());
         let mut lock = std::io::stdout().lock();
         let _ = lock.flush();
-        Ok(Default::default())
+        Ok(item)
     }
 );
 
@@ -22,7 +22,7 @@ fndr_native_func!(
     println_func,
     |_, item| {
         println!("{}", item.to_string());
-        Ok(Default::default())
+        Ok(item)
     }
 );
 

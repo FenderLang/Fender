@@ -31,14 +31,12 @@ fndr_native_func!(
     /// If called on `FenderValue::Null`, `FenderValue::Error`, or `FenderValue::Bool(false)` will evaluate and return `body`
     else_func,
     |ctx, cond, body| {
-        // dbg!(&cond.get_type_id());
         if !matches!(*cond, FenderValue::Null | FenderValue::Error(_)) {
             return Ok(cond);
         }
-        let v = cond.deref().clone();
 
         Ok(match &*body {
-            Function(f) => ctx.call(f, vec![(v.into())])?,
+            Function(f) => ctx.call(f, Vec::with_capacity(0))?,
             _ => body,
         })
     }
@@ -108,3 +106,20 @@ fndr_native_func!(
         }
     }
 );
+// todo
+// fndr_native_func!(
+//     /// Runs
+//     also_func,
+//     |ctx, incoming_val, one_time_| {
+//         // dbg!(&cond.get_type_id());
+//         if !matches!(*cond, FenderValue::Null | FenderValue::Error(_)) {
+//             return Ok(cond);
+//         }
+//         let v = cond.deref().clone();
+
+//         Ok(match &*body {
+//             Function(f) => ctx.call(f, vec![(v.into())])?,
+//             _ => body,
+//         })
+//     }
+// );

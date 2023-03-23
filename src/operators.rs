@@ -117,7 +117,18 @@ fn eq(a: &FenderReference, b: &FenderReference) -> FenderReference {
     let b_val: &FenderValue = b.into();
     match (a_val, b_val) {
         (FenderValue::String(a), FenderValue::String(b)) => FenderValue::Bool(a == b).into(),
+        (FenderValue::Char(a), FenderValue::Char(b)) => FenderValue::Bool(a == b).into(),
         _ => num_eq(a, b),
+    }
+}
+
+fn ne(a: &FenderReference, b: &FenderReference) -> FenderReference {
+    let a_val: &FenderValue = a.into();
+    let b_val: &FenderValue = b.into();
+    match (a_val, b_val) {
+        (FenderValue::String(a), FenderValue::String(b)) => FenderValue::Bool(a != b).into(),
+        (FenderValue::Char(a), FenderValue::Char(b)) => FenderValue::Bool(a != b).into(),
+        _ => num_ne(a, b),
     }
 }
 
@@ -183,7 +194,7 @@ impl BinaryOperator<FenderReference> for FenderBinaryOperator {
             Le => num_le(a, b),
             Ge => num_ge(a, b),
             Eq => eq(a, b),
-            Ne => num_ne(a, b),
+            Ne => ne(a, b),
             And => num_and(a, b),
             Or => num_or(a, b),
             Index => index_op(a, b),
