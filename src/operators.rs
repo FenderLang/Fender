@@ -116,18 +116,37 @@ fn eq(a: &FenderReference, b: &FenderReference) -> FenderReference {
     let a_val: &FenderValue = a.into();
     let b_val: &FenderValue = b.into();
     match (a_val, b_val) {
+        (FenderValue::Ref(a), FenderValue::Ref(b)) => eq(a.deref(), b.deref()),
+        (FenderValue::Ref(r), _) => eq(r.deref(), b),
+        (_, FenderValue::Ref(r)) => eq(a, r.deref()),
         (FenderValue::String(a), FenderValue::String(b)) => FenderValue::Bool(a == b).into(),
         (FenderValue::Char(a), FenderValue::Char(b)) => FenderValue::Bool(a == b).into(),
-        _ => num_eq(a, b),
+        (FenderValue::Char(c), FenderValue::String(s))
+        | (FenderValue::String(s), FenderValue::Char(c)) => {
+            FenderValue::Bool(s.len() == 1 && s.deref().chars().next().unwrap() == *c).into()
+        }
+        (FenderValue::Int(_), FenderValue::Int(_))
+        | (FenderValue::Float(_), FenderValue::Float(_))
+        | (FenderValue::Int(_), FenderValue::Float(_))
+        | (FenderValue::Float(_), FenderValue::Int(_)) => num_eq(a, b),
+        (a, b) if a.get_real_type_id() != b.get_real_type_id() => FenderValue::Bool(false).into(),
+        _ => FenderValue::make_error(format!(
+            "cannot run `eq` on {} and {}",
+            a.get_real_type_id().to_string(),
+            b.get_real_type_id().to_string()
+        ))
+        .into(),
     }
 }
 
 fn ne(a: &FenderReference, b: &FenderReference) -> FenderReference {
     let a_val: &FenderValue = a.into();
     let b_val: &FenderValue = b.into();
+
     match (a_val, b_val) {
         (FenderValue::String(a), FenderValue::String(b)) => FenderValue::Bool(a != b).into(),
         (FenderValue::Char(a), FenderValue::Char(b)) => FenderValue::Bool(a != b).into(),
+
         _ => num_ne(a, b),
     }
 }
