@@ -2,7 +2,7 @@ delimitedList<elem, delim, whitespace> ::= elem (whitespace? delim whitespace? e
 wrappedDelimitedList<begin, end, elem, delim, whitespace> ::= begin whitespace? delimitedList<elem, delim, whitespace>? whitespace? end
 
 sep! ::= [ \t]+
-newLine! ::= "\r"? "\n"
+newLine! ::= <nl>
 break! ::= sep? ((";" | comment? newLine) sep?)+
 lineBreak! ::= sep? comment? (newLine sep?)+
 lineSep! ::= (lineBreak | sep)+
