@@ -14,10 +14,10 @@ impl InterpreterError {
                 (format!("Unresolved name `{name}`"), pos)
             }
             InterpreterError::DuplicateName(name, pos) => {
-                (format!("Unresolved name `{name}`"), pos)
+                (format!("Duplicate name `{name}`"), pos)
             }
             InterpreterError::UnresolvedLabel(name, pos) => {
-                (format!("Unresolved name `{name}`"), pos)
+                (format!("Unresolved label `{name}`"), pos)
             }
         };
 
