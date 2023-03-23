@@ -42,7 +42,7 @@ alpha ::= [a-z] | [A-Z]
 alphanum ::= [a-z] | [A-Z] | [0-9] | "_"
 name ::= ("_" | alpha) alphanum*
 
-literal ::= null | float | int | boolean | string | list | map | closure
+literal ::= null | float | int | boolean | string | char | list | map | closure
 int ::= "-"? [0-9]+
 list ::= wrappedDelimitedList<"[", "]", expr, ",", lineSep>
 mapEntry ::= expr lineSep? ":" lineSep? expr
@@ -55,6 +55,8 @@ strExpr ::= "{" sep? expr sep? "}"
 escapeSequence ::= "\\" ("u" ([A-F] | [0-9]){4} |[^])
 boolean ::= "true" | "false"
 null ::= "null"
+innerChar ::= [^]
+char ::= "'" (escapeSequence | innerChar) "'"
 
 invoke ::= invokeArgs | codeBody
 invokeArgs ::= wrappedDelimitedList<"(", ")", expr, ",", lineSep>

@@ -94,3 +94,11 @@ fndr_native_func!(
         })
     }
 );
+
+fndr_native_func!(
+    /// Returns a `String` that contains the debug text of the given `value`
+    dbg,
+    |_, value| {
+        Ok(String(format!("{:?}", *value)).into())
+    }
+);

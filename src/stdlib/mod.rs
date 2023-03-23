@@ -73,6 +73,7 @@ pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSyste
         "rand" => (NativeFunction::new(val_operation::rand_func), 0),
         "push" => (NativeFunction::new(val_operation::push_func), 2),
         "pop" => (NativeFunction::new(val_operation::pop_func), 1),
+        "dbg" => (NativeFunction::new(val_operation::dbg), 1),
 
         "shell" => (NativeFunction::new(system::shell_func), 3),
 

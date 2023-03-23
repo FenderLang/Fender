@@ -487,6 +487,7 @@ fn parse_literal(
         "float" => FenderValue::Float(token.get_match().parse()?).into(),
         "boolean" => FenderValue::Bool(token.get_match().parse()?).into(),
         "string" => parse_string(token, writer, scope)?,
+        "char" => parse_char(token)?.into(),
         "list" => parse_list(token, writer, scope)?,
         "null" => FenderValue::Null.into(),
         "closure" => parse_closure(token, writer, scope)?,
@@ -530,6 +531,19 @@ fn parse_string(
     }
     exprs.push(FenderValue::String(str).into());
     Ok(Expression::Initialize(FenderInitializer::String, exprs))
+}
+
+fn parse_char(
+    token: &Token
+) -> Result<FenderValue, Box<dyn Error>> {
+    assert!(token.children.len() == 1);
+    Ok(FenderValue::Char(
+        match token.children[0].get_name().as_deref().unwrap() {
+            "escapeSequence" => parse_escape_seq(&token.children[0])?,
+            "innerChar" => token.children[0].get_match().chars().next().unwrap(),
+            name => unreachable!("{name:?}"),
+        },
+    ))
 }
 
 fn parse_escape_seq(token: &Token) -> Result<char, Box<dyn Error>> {
