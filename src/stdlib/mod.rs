@@ -58,6 +58,7 @@ pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSyste
         "int" => (NativeFunction::new(cast::int_func), 1),
         "str" => (NativeFunction::new(cast::str_func), 1),
         "bool" => (NativeFunction::new(cast::to_bool_func), 1),
+        "ref" => (NativeFunction::new(cast::to_ref_func), 1),
 
         "if" => (NativeFunction::new(control_flow::if_func), 3),
         "else" => (NativeFunction::new(control_flow::else_func), 2),
@@ -73,8 +74,8 @@ pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSyste
         "rand" => (NativeFunction::new(val_operation::rand_func), 0),
         "push" => (NativeFunction::new(val_operation::push_func), 2),
         "pop" => (NativeFunction::new(val_operation::pop_func), 1),
-        "dbg" => (NativeFunction::new(val_operation::dbg), 1),
-        "remove" => (NativeFunction::new(val_operation::remove), 2),
+        "dbg" => (NativeFunction::new(val_operation::dbg_func), 1),
+        "remove" => (NativeFunction::new(val_operation::remove_func), 2),
 
         "shell" => (NativeFunction::new(system::shell_func), 3),
 

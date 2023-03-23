@@ -1,9 +1,9 @@
-use std::ops::Deref;
-
 use crate::{
+    fender_reference::InternalReference,
     fender_value::FenderValue::{self, *},
     fndr_native_func,
 };
+use std::ops::Deref;
 
 fndr_native_func!(
     /// return a raw `FenderValue` unwrapping all references
@@ -43,4 +43,10 @@ fndr_native_func!(
     /// Cast `FenderValue` to `FenderValue::String`
     to_bool_func,
     |_, item| { Ok(item.to_bool().into()) }
+);
+
+fndr_native_func!(
+    /// Wrap `value` in a `Ref`
+    to_ref_func,
+    |_, value| { Ok(Ref(InternalReference::new(value)).into()) }
 );
