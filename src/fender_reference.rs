@@ -105,7 +105,6 @@ impl From<FunctionRef<FenderTypeSystem>> for FenderReference {
     }
 }
 
-
 impl Clone for FenderReference {
     fn clone(&self) -> Self {
         self.get_pass_object()

@@ -127,7 +127,7 @@ impl FenderValue {
     pub fn pop(&mut self) -> Result<FenderReference, String> {
         match self {
             FenderValue::Ref(v) => v.pop(),
-            FenderValue::List(list) => Ok(list.pop().unwrap_or_default().into()),
+            FenderValue::List(list) => Ok(list.pop().unwrap_or_default()),
             e => Err(format!(
                 "Can only call pop on list: Expected type `List` found `{:?}`",
                 e.get_type_id()
@@ -158,24 +158,23 @@ impl FenderValue {
     }
 }
 
-
 /// Cast functions
 impl FenderValue {
-pub fn to_bool(&self)->FenderValue{
-    use FenderValue::*;
-    match self{
-        FenderValue::Ref(r) => r.to_bool(),
-        FenderValue::Int(i) => Bool(*i != 0),
-        FenderValue::Float(f) => Bool(*f != 0.0),
-        FenderValue::Char(c) => Bool(*c != '\0'),
-        FenderValue::String(s) => Bool(s.len() > 0),
-        FenderValue::Bool(b) => Bool(*b),
-        FenderValue::Error(_) => Bool(false),
-        FenderValue::Function(_) => Bool(true),
-        FenderValue::List(l) => Bool(l.len() > 0),
-        FenderValue::Null => Bool(false),
+    pub fn to_bool(&self) -> FenderValue {
+        use FenderValue::*;
+        match self {
+            FenderValue::Ref(r) => r.to_bool(),
+            FenderValue::Int(i) => Bool(*i != 0),
+            FenderValue::Float(f) => Bool(*f != 0.0),
+            FenderValue::Char(c) => Bool(*c != '\0'),
+            FenderValue::String(s) => Bool(!s.is_empty()),
+            FenderValue::Bool(b) => Bool(*b),
+            FenderValue::Error(_) => Bool(false),
+            FenderValue::Function(_) => Bool(true),
+            FenderValue::List(l) => Bool(!l.is_empty()),
+            FenderValue::Null => Bool(false),
+        }
     }
-}
 }
 
 impl ToString for FenderValue {

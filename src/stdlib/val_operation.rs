@@ -87,16 +87,10 @@ fndr_native_func!(
 fndr_native_func!(
     /// Pops a value off the end of a list
     pop_func,
-     |_, mut list| {
+    |_, mut list| {
         Ok(match list.pop() {
-            Ok(v) => v.into(),
+            Ok(v) => v,
             Err(e) => FenderValue::make_error(e).into(),
         })
     }
 );
-
-// fndr_native_func!(
-//     ///
-//     _func, |_| {
-//     Ok(FenderValue::Float(rand::random()).into())
-// });

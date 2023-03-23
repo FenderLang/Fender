@@ -59,14 +59,15 @@ pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSyste
         "str" => (NativeFunction::new(cast::str_func), 1),
         "bool" => (NativeFunction::new(cast::to_bool_func), 1),
 
-        "len" => (NativeFunction::new(val_operation::len_func), 1),
-        "swap" => (NativeFunction::new(val_operation::swap_func), 3),
-
         "if" => (NativeFunction::new(control_flow::if_func), 3),
         "else" => (NativeFunction::new(control_flow::else_func), 2),
         "then" => (NativeFunction::new(control_flow::then_func), 2),
         "while" => (NativeFunction::new(control_flow::while_func), 2),
+        "also" => (NativeFunction::new(control_flow::also_func), 2),
+        "apply" => (NativeFunction::new(control_flow::apply_func), 2),
 
+        "len" => (NativeFunction::new(val_operation::len_func), 1),
+        "swap" => (NativeFunction::new(val_operation::swap_func), 3),
         "shuffle" => (NativeFunction::new(val_operation::shuffle_func), 1),
         "getShuffled" => (NativeFunction::new(val_operation::get_shuffled_func), 1),
         "rand" => (NativeFunction::new(val_operation::rand_func), 0),

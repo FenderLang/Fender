@@ -99,7 +99,8 @@ fndr_native_func!(
         Ok(match write!(file, "{}", data.to_string()) {
             Ok(s) => Bool(true).into(),
             Err(e) => {
-                FenderValue::make_error(format!("failed to append to file due to error: {e}")).into()
+                FenderValue::make_error(format!("failed to append to file due to error: {e}"))
+                    .into()
             }
         })
     }
