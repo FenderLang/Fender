@@ -119,6 +119,11 @@ impl FenderValue {
                 list.push(value);
                 Ok(())
             }
+            FenderValue::String(s) => Ok(match &*value {
+                FenderValue::String(s_b) => s.push_str(&s_b),
+                FenderValue::Char(c) => s.push(*c),
+                value => s.push_str(value.to_string().as_str()),
+            }),
             e => Err(format!(
                 "Can only call push on list: Expected type `List` found `{:?}`",
                 e.get_type_id()
@@ -130,6 +135,10 @@ impl FenderValue {
         match self {
             FenderValue::Ref(v) => v.pop(),
             FenderValue::List(list) => Ok(list.pop().unwrap_or_default()),
+            FenderValue::String(s) => {
+                let len = s.len();
+                Ok(FenderValue::Char(s.remove(len - 1)).into())
+            }
             e => Err(format!(
                 "Can only call pop on list: Expected type `List` found `{:?}`",
                 e.get_type_id()

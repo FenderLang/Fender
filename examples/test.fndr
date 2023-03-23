@@ -1,20 +1,5 @@
 
-$dothing = (a){
- a = 3
-}
-
-$t = [3,5,7]
-"starting: {t}".println()
-
-
-t.dothing()
-"   first: {t}".println()
-
-
-t.ref().dothing()
-"with ref: {t}".println()
-
-
-$t = t.ref()
-t.dothing()
-" new ref: {t}".println()
+$s = "hello"
+s.println()
+s.pop().println()
+s.println()

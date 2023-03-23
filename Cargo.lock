@@ -25,7 +25,7 @@ source = "git+https://github.com/FenderLang/Flux?branch=master#1219add66d89b4a97
 [[package]]
 name = "freight_vm"
 version = "0.1.0"
-source = "git+https://github.com/FenderLang/Freight?branch=master#5590503ab68c63056502a46451a7c68e67b3abce"
+source = "git+https://github.com/FenderLang/Freight?rev=5590503#5590503ab68c63056502a46451a7c68e67b3abce"
 
 [[package]]
 name = "getrandom"
