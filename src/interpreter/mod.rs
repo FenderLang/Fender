@@ -21,6 +21,7 @@ use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
     error::Error,
+    process::exit,
     rc::Rc,
 };
 
@@ -103,7 +104,13 @@ impl<'a> LexicalScope<'a> {
 }
 
 static LEXER: LazyCell<Lexer> = LazyCell::new(|| {
-    let mut lex = flux_bnf::bnf::parse(include_str!("../../fender.bnf")).expect("Invalid BNF");
+    let mut lex = match flux_bnf::bnf::parse(include_str!("../../fender.bnf")) {
+        Ok(lex) => lex,
+        Err(e) => {
+            eprintln!("Invalid BNF: {e}");
+            exit(1);
+        }
+    };
     lex.set_unnamed_rule(CullStrategy::LiftChildren);
     lex.add_rule_for_names(
         vec![
