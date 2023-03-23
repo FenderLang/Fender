@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use crate::{
     fender_value::FenderValue::{self, *},
     fndr_native_func,

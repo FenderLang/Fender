@@ -1,0 +1,7 @@
+#!/bin/fender
+$fib = (n) {
+   (n > 1).then {return fib(n - 1) + fib(n - 2)}
+   .else {return n}
+}
+
+10.fib().println()

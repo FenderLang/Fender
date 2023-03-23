@@ -1,3 +1,4 @@
+#!/bin/fender
 $cardString = (card){
    (card == 1).then({return "A"})
    (card == 11).then({return "J"})
@@ -85,7 +86,6 @@ $game = {
    (dealer.score() > player.score()).then{println("dealer wins"); return}
    (dealer.score() < player.score()).then{println("you win"); return}
    println("its a tie, no winner")
-
 }
 
 $keep_run = ("y"[0])
