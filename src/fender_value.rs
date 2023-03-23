@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::{
     fender_reference::{FenderReference, InternalReference},
     type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
@@ -6,15 +8,15 @@ use freight_vm::{function::FunctionRef, value::Value};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum FenderValue {
-    Ref(InternalReference),
+    Ref(InternalReference<FenderReference>),
     Int(i64),
     Float(f64),
     Char(char),
-    String(String),
+    String(InternalReference<String>),
     Bool(bool),
     Error(String),
     Function(FunctionRef<FenderTypeSystem>),
-    List(Vec<FenderReference>),
+    List(InternalReference<Vec<FenderReference>>),
     #[default]
     Null,
 }
@@ -57,7 +59,7 @@ impl FenderValue {
             Bool(b) => Bool(*b),
             Error(e) => Error(e.clone()),
             Function(f) => Function(f.clone()),
-            List(l) => List(l.iter().map(Value::deep_clone).collect()),
+            List(l) => List(l.iter().map(Value::deep_clone).collect::<Vec<_>>().into()),
             Null => Null,
         }
     }
@@ -106,7 +108,7 @@ impl ToString for FenderValue {
             FenderValue::Int(i) => i.to_string(),
             FenderValue::Float(f) => f.to_string(),
             FenderValue::Char(c) => c.to_string(),
-            FenderValue::String(s) => s.clone(),
+            FenderValue::String(s) => s.deref().clone(),
             FenderValue::Bool(b) => b.to_string(),
             FenderValue::Error(e) => format!("Error({e})"),
             FenderValue::Function(_) => "Function".to_string(),

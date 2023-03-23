@@ -507,7 +507,7 @@ fn parse_string(
             "strChar" => str.push(child.source[child.range.start]),
             "escapeSequence" => str.push(parse_escape_seq(child)?),
             "strExpr" => {
-                exprs.push(Expression::from(FenderValue::String(str)));
+                exprs.push(Expression::from(FenderValue::String(str.into())));
                 str = String::new();
                 exprs.push(parse_expr(&child.children[0], writer, scope)?);
             }
@@ -515,9 +515,9 @@ fn parse_string(
         }
     }
     if exprs.is_empty() {
-        return Ok(FenderValue::String(str).into());
+        return Ok(FenderValue::String(str.into()).into());
     }
-    exprs.push(FenderValue::String(str).into());
+    exprs.push(FenderValue::String(str.into()).into());
     Ok(Expression::Initialize(FenderInitializer::String, exprs))
 }
 

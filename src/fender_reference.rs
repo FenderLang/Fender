@@ -10,46 +10,52 @@ use std::{
     rc::Rc,
 };
 
-#[derive(Clone, Debug)]
-pub struct InternalReference(Rc<UnsafeCell<FenderValue>>);
+#[derive(Clone)]
+pub struct InternalReference<T>(Rc<UnsafeCell<T>>);
 
-impl InternalReference {
-    pub fn new(value: FenderValue) -> Self {
+impl<T: Debug> Debug for InternalReference<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "InternalReference({:?})", **self)
+    }
+}
+
+impl<T> InternalReference<T> {
+    pub fn new(value: T) -> Self {
         Self(Rc::new(UnsafeCell::new(value)))
     }
 }
 
-impl Deref for InternalReference {
-    type Target = FenderValue;
+impl<T> Deref for InternalReference<T> {
+    type Target = T;
 
     fn deref(&self) -> &Self::Target {
         unsafe { &*self.0.get() }
     }
 }
 
-impl DerefMut for InternalReference {
+impl<T> DerefMut for InternalReference<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe { self.0.get().as_mut().unwrap() }
     }
 }
 
-impl PartialEq for InternalReference {
+impl<T: PartialEq> PartialEq for InternalReference<T> {
     fn eq(&self, other: &Self) -> bool {
         **self == **other
     }
 }
 
+#[derive(Debug)]
 pub enum FenderReference {
-    FRef(InternalReference),
+    FRef(InternalReference<FenderValue>),
     FRaw(FenderValue),
 }
 
 impl FenderReference {
     pub fn get_pass_object(&self) -> FenderReference {
-        if self.get_type_id().is_value_type() {
-            self.deep_clone()
-        } else {
-            self.dupe_ref()
+        match self {
+            FenderReference::FRef(r) => FenderReference::FRef(r.deref().clone().into()),
+            FenderReference::FRaw(v) => FenderReference::FRaw(v.clone()),
         }
     }
 }
@@ -92,6 +98,12 @@ impl From<FenderValue> for FenderReference {
     }
 }
 
+impl<T> From<T> for InternalReference<T> {
+    fn from(value: T) -> Self {
+        InternalReference::new(value)
+    }
+}
+
 impl From<FenderValue> for Expression<FenderTypeSystem> {
     fn from(value: FenderValue) -> Self {
         Expression::RawValue(value.into())
@@ -101,12 +113,6 @@ impl From<FenderValue> for Expression<FenderTypeSystem> {
 impl From<FunctionRef<FenderTypeSystem>> for FenderReference {
     fn from(value: FunctionRef<FenderTypeSystem>) -> Self {
         FenderReference::FRaw(FenderValue::Function(value))
-    }
-}
-
-impl Debug for FenderReference {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        (**self).fmt(f)
     }
 }
 
@@ -174,7 +180,7 @@ impl Value for FenderReference {
     }
 }
 
-impl From<FenderReference> for InternalReference {
+impl From<FenderReference> for InternalReference<FenderValue> {
     fn from(value: FenderReference) -> Self {
         match value {
             FenderReference::FRef(val) => val,

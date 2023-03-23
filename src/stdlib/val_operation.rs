@@ -32,7 +32,7 @@ fndr_native_func!(
         Ok(match variable.deref_mut() {
             List(l) => {
                 l.swap(*pos_a as usize, *pos_b as usize);
-                List(l.to_vec()).into()
+                List(l.to_vec().into()).into()
             }
 
             _ => Error(format!(
