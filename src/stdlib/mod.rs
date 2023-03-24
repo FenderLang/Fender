@@ -1,7 +1,12 @@
 #![deny(missing_docs)]
-use crate::{fender_value::FenderValue, type_sys::type_system::FenderTypeSystem};
+use crate::{
+    deps_enum, fender_reference::FenderReference, fender_value::FenderValue,
+    type_sys::type_system::FenderTypeSystem,
+};
 use flux_bnf::tokens::{iterators::SelectTokens, Token};
 use freight_vm::{
+    error::FreightError,
+    execution_engine::ExecutionEngine,
     expression::{Expression, NativeFunction},
     function::{ArgCount, FunctionWriter},
     vm_writer::VMWriter,
@@ -11,12 +16,16 @@ use std::{
     ops::RangeBounds,
 };
 
+use self::loader::StdlibResource;
+
 /// functions for converting fender values
 pub mod cast;
 /// conditional execution and branching
 pub mod control_flow;
 /// stdin, stdout, and file IO
 pub mod io;
+/// loads stdlib resources
+pub mod loader;
 /// system interface
 pub mod system;
 /// modify and query existing values
@@ -52,10 +61,42 @@ pub fn detect_load(
 fn fixed(args: usize) -> ArgCount {
     ArgCount::Fixed(args)
 }
+
 /// Shorthand function to create ranged `ArgCount`
 fn range<RB: RangeBounds<usize>>(args: RB) -> ArgCount {
     ArgCount::new(args)
 }
+
+deps_enum! {FenderResource, STDLIB_SIZE:
+    print
+}
+
+struct FenderNativeFunction {
+    func: fn(
+        &mut ExecutionEngine<FenderTypeSystem>,
+        Vec<FenderReference>,
+    ) -> Result<FenderReference, FreightError>,
+    args: ArgCount,
+}
+
+impl StdlibResource for FenderNativeFunction {
+    fn set_deps<const N: usize>(&self, _: &mut loader::DependencyList<N>) {}
+
+    fn load_into(
+        &self,
+        writer: &mut VMWriter<FenderTypeSystem>,
+        main: &mut FunctionWriter<FenderTypeSystem>,
+    ) -> usize {
+        let func = writer.include_native_function(NativeFunction::new(self.func), self.args);
+        let global = writer.create_global();
+        main.evaluate_expression(Expression::AssignGlobal(
+            global,
+            Box::new(FenderValue::Function(func).into()),
+        ));
+        global
+    }
+}
+
 /// Get the native rust function to be called when `name` is called in fender
 pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSystem>, ArgCount)> {
     Some(match name {
