@@ -105,9 +105,9 @@ impl FenderValue {
         Ok(match self {
             FenderValue::Ref(v) => v.get_shuffled()?,
             FenderValue::List(v) => {
-                let mut list = v.clone();
+                let mut list = v.deref().clone();
                 list.shuffle(&mut thread_rng());
-                FenderValue::List(list)
+                FenderValue::make_list(list)
             }
             e => {
                 return Err(format!(
@@ -294,9 +294,10 @@ impl FenderValue {
             FenderValue::List(l) => {
                 FenderValue::make_string(l.iter().map(|i| i.to_string()).collect::<String>())
             }
-            e => {
-                FenderValue::make_error(format!("Cannot join type `{}` to String", e.get_type_id().to_string()))
-            }
+            e => FenderValue::make_error(format!(
+                "Cannot join type `{}` to String",
+                e.get_type_id().to_string()
+            )),
         }
     }
 }
