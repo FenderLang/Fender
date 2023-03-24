@@ -1,10 +1,11 @@
-use std::ops::Deref;
+use std::{any::Any, fmt::format, ops::Deref};
 
 use crate::{
     fender_reference::{FenderReference, InternalReference},
     type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
 };
 use freight_vm::{function::FunctionRef, value::Value};
+use rand::{seq::SliceRandom, thread_rng, Error};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum FenderValue {
@@ -24,6 +25,12 @@ pub enum FenderValue {
 impl FenderValue {
     pub fn make_error<S: Into<String>>(e_body: S) -> FenderValue {
         FenderValue::Error(e_body.into())
+    }
+    pub fn make_list(list: Vec<FenderReference>) -> FenderValue {
+        FenderValue::List(InternalReference::new(list))
+    }
+    pub fn make_string(s_body: String) -> FenderValue {
+        FenderValue::String(InternalReference::new(s_body))
     }
 
     pub fn get_type_id(&self) -> FenderTypeId {
@@ -78,6 +85,73 @@ impl FenderValue {
         })
     }
 
+    pub fn shuffle(&mut self) -> Result<&mut FenderValue, String> {
+        Ok(match self {
+            FenderValue::Ref(v) => v.shuffle()?,
+            FenderValue::List(v) => {
+                v.shuffle(&mut thread_rng());
+                self
+            }
+            e => {
+                return Err(format!(
+                    "shuffle() can only be called on type `List`, expected `List` found `{:?}`",
+                    e.get_type_id()
+                ))
+            }
+        })
+    }
+
+    pub fn get_shuffled(&self) -> Result<FenderValue, String> {
+        Ok(match self {
+            FenderValue::Ref(v) => v.get_shuffled()?,
+            FenderValue::List(v) => {
+                let mut list = v.deref().clone();
+                list.shuffle(&mut thread_rng());
+                FenderValue::make_list(list)
+            }
+            e => {
+                return Err(format!(
+                    "shuffle() can only be called on type `List`, expected `List` found `{:?}`",
+                    e.get_type_id()
+                ))
+            }
+        })
+    }
+
+    pub fn push(&mut self, value: FenderReference) -> Result<(), String> {
+        match self {
+            FenderValue::Ref(v) => v.push(value),
+            FenderValue::List(list) => {
+                list.push(value);
+                Ok(())
+            }
+            FenderValue::String(s) => Ok(match &*value {
+                FenderValue::String(s_b) => s.push_str(&s_b),
+                FenderValue::Char(c) => s.push(*c),
+                value => s.push_str(value.to_string().as_str()),
+            }),
+            e => Err(format!(
+                "Can only call push on list: Expected type `List` found `{:?}`",
+                e.get_type_id()
+            )),
+        }
+    }
+
+    pub fn pop(&mut self) -> Result<FenderReference, String> {
+        match self {
+            FenderValue::Ref(v) => v.pop(),
+            FenderValue::List(list) => Ok(list.pop().unwrap_or_default()),
+            FenderValue::String(s) => {
+                let len = s.len();
+                Ok(FenderValue::Char(s.remove(len - 1)).into())
+            }
+            e => Err(format!(
+                "Can only call pop on list: Expected type `List` found `{:?}`",
+                e.get_type_id()
+            )),
+        }
+    }
+
     pub fn is_empty(&self) -> Result<bool, String> {
         Ok(match self {
             FenderValue::Ref(v) => v.is_empty()?,
@@ -97,6 +171,133 @@ impl FenderValue {
         match self {
             FenderValue::Ref(r) => r.unwrap_value(),
             v => v.clone(),
+        }
+    }
+
+    pub fn remove_at(&mut self, pos: i64) -> Result<FenderReference, String> {
+        let list = match self {
+            FenderValue::List(l) => l,
+            FenderValue::Ref(r) => return r.remove_at(pos),
+            e => {
+                return Err(format!(
+                    "cannot remove from type `{ty}`: expected type `List` found type `{ty}`",
+                    ty = e.get_type_id().to_string()
+                ))
+            }
+        };
+        let pos = if pos < 0 {
+            list.len() as i64 + pos
+        } else {
+            pos
+        };
+
+        if pos < 0 {
+            return Err("invalid wrapping index".into());
+        }
+
+        let pos = pos as usize;
+
+        if pos >= list.len() {
+            return Err(format!(
+                "Invalid index: index was {} list length is {}",
+                pos,
+                list.len()
+            ));
+        }
+
+        Ok(list.remove(pos))
+    }
+}
+
+/// Cast functions
+impl FenderValue {
+    pub fn cast_to(&self, typeid: FenderTypeId) -> FenderValue {
+        use FenderValue::*;
+        match (self, typeid) {
+            (Ref(r), t) => r.deref().cast_to(t),
+            (v, t) if v.get_type_id() == t => v.clone(),
+            (Int(i), FenderTypeId::Float) => Float(*i as f64),
+            (Int(i), FenderTypeId::Bool) => Bool(*i != 0),
+            (Int(i), FenderTypeId::String) => String(i.to_string().into()),
+            (Int(_i), FenderTypeId::Error) => todo!(),
+            (Int(i), FenderTypeId::List) => List(vec![Int(*i).into()].into()),
+            (Int(i), FenderTypeId::Char) => Char(*i as u8 as char),
+            (Float(f), FenderTypeId::Int) => Int(*f as i64),
+            (Float(f), FenderTypeId::Bool) => Bool(*f > 0.0),
+            (Float(f), FenderTypeId::String) => FenderValue::make_string(f.to_string()),
+            (Float(f), FenderTypeId::Error) => FenderValue::make_error(f.to_string()),
+            (Float(f), FenderTypeId::List) => FenderValue::make_list(vec![Float(*f).into()]),
+            (Float(f), FenderTypeId::Char) => Char(*f as u8 as char),
+            (Char(c), FenderTypeId::Int) => Int(*c as i64),
+            (Char(c), FenderTypeId::Float) => Float(*c as u64 as f64),
+            (Char(c), FenderTypeId::String) => FenderValue::make_string(c.to_string()),
+            (Char(c), FenderTypeId::Error) => FenderValue::make_error(c.to_string()),
+            (Char(c), FenderTypeId::List) => FenderValue::make_list(vec![Char(*c).into()]),
+            (String(s), FenderTypeId::Int) => match s.parse() {
+                Ok(i) => Int(i).into(),
+                _ => FenderValue::make_error(format!("Invalid int string: {}", s.deref())).into(),
+            },
+            (String(s), FenderTypeId::Float) => match s.parse() {
+                Ok(i) => Float(i).into(),
+                _ => FenderValue::make_error(format!("Invalid int string: {}", s.deref())).into(),
+            },
+            (String(s), FenderTypeId::Bool) => Bool(s.to_lowercase() == "true"),
+            (String(s), FenderTypeId::Error) => Error(s.deref().into()),
+            (String(s), FenderTypeId::List) => {
+                FenderValue::make_list(s.chars().map(|c| Char(c).into()).collect::<Vec<_>>())
+            }
+            (String(s), FenderTypeId::Char) => {
+                if s.len() > 1 {
+                    Char(s.chars().next().unwrap())
+                } else {
+                    Char('\0')
+                }
+            }
+            (Bool(b), FenderTypeId::Int) => Int(*b as i64),
+            (Bool(b), FenderTypeId::Float) => Float(if *b { 1.0 } else { 0.0 }),
+            (Bool(b), FenderTypeId::String) => FenderValue::make_string(b.to_string()),
+            (Bool(b), FenderTypeId::Char) => Char(if *b { 't' } else { 'f' }),
+            (Error(e), FenderTypeId::String) => FenderValue::make_string(e.into()),
+            (Null, FenderTypeId::Int) => Int(Default::default()),
+            (Null, FenderTypeId::Float) => Float(Default::default()),
+            (Null, FenderTypeId::Bool) => Bool(Default::default()),
+            (Null, FenderTypeId::String) => FenderValue::make_string("NULL".into()),
+            (Null, FenderTypeId::Error) => Error("is NULL".into()),
+            (Null, FenderTypeId::List) => FenderValue::make_list(Vec::new()),
+            (Null, FenderTypeId::Char) => Char('\0'),
+            (v, t) => FenderValue::make_error(format!(
+                "Cannot cast from type `{}` to `{}`",
+                v.get_type_id().to_string(),
+                t.to_string()
+            )),
+        }
+    }
+    pub fn to_bool(&self) -> FenderValue {
+        use FenderValue::*;
+        match self {
+            FenderValue::Ref(r) => r.to_bool(),
+            FenderValue::Int(i) => Bool(*i != 0),
+            FenderValue::Float(f) => Bool(*f != 0.0),
+            FenderValue::Char(c) => Bool(*c != '\0'),
+            FenderValue::String(s) => Bool(!s.is_empty()),
+            FenderValue::Bool(b) => Bool(*b),
+            FenderValue::Error(_) => Bool(false),
+            FenderValue::Function(_) => Bool(true),
+            FenderValue::List(l) => Bool(!l.is_empty()),
+            FenderValue::Null => Bool(false),
+        }
+    }
+    pub fn join_to_string(&self) -> FenderValue {
+        match self {
+            FenderValue::Ref(r) => r.join_to_string(),
+            FenderValue::String(_) => self.clone(),
+            FenderValue::List(l) => {
+                FenderValue::make_string(l.iter().map(|i| i.to_string()).collect::<String>())
+            }
+            e => FenderValue::make_error(format!(
+                "Cannot join type `{}` to String",
+                e.get_type_id().to_string()
+            )),
         }
     }
 }

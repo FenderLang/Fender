@@ -13,7 +13,7 @@ fndr_native_func!(
         print!("{}", item.to_string());
         let mut lock = std::io::stdout().lock();
         let _ = lock.flush();
-        Ok(Default::default())
+        Ok(item)
     }
 );
 
@@ -22,7 +22,7 @@ fndr_native_func!(
     println_func,
     |_, item| {
         println!("{}", item.to_string());
-        Ok(Default::default())
+        Ok(item)
     }
 );
 
@@ -66,9 +66,41 @@ fndr_native_func!(
         return Ok(FenderValue::make_error("file name must be of type `String`").into());
     };
         Ok(match std::fs::write(file_name.deref(), data.to_string()) {
-            Ok(s) => Null.into(),
+            Ok(s) => Bool(true).into(),
             Err(e) => {
-                FenderValue::make_error(format!("failed to read file due to error: {e}")).into()
+                FenderValue::make_error(format!("failed to write file due to error: {e}")).into()
+            }
+        })
+    }
+);
+
+fndr_native_func!(
+    /// Appends to file `file_name` with `data`
+    append_func,
+    |_, data, file_name| {
+        let String(file_name) = &*file_name else {
+        return Ok(FenderValue::make_error("file name must be of type `String`").into());
+    };
+        let mut file = match std::fs::OpenOptions::new()
+            .write(true)
+            .append(true)
+            .create(true)
+            .open(file_name.deref())
+        {
+            Ok(f) => f,
+            Err(e) => {
+                return Ok(FenderValue::make_error(format!(
+                    "failed to open file due to error: {e}"
+                ))
+                .into())
+            }
+        };
+
+        Ok(match write!(file, "{}", data.to_string()) {
+            Ok(s) => Bool(true).into(),
+            Err(e) => {
+                FenderValue::make_error(format!("failed to append to file due to error: {e}"))
+                    .into()
             }
         })
     }

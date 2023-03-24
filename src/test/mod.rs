@@ -155,3 +155,39 @@ fn run_quicksort_test() {
         )
     );
 }
+
+#[test]
+fn test_shuffle() {
+    let input_list = (0..100).collect::<Vec<_>>();
+    let test_prog = format!(
+        "$ordered = {:?}; $new = ordered.shuffle(); return [ordered, new]",
+        input_list
+    );
+
+    let results = match (*run(&test_prog)).clone() {
+        FenderValue::List(l) => ((*l[0]).to_string(), (*l[1]).to_string()),
+        _ => unreachable!(),
+    };
+    assert_ne!(results.0, format!("{:?}", input_list));
+    assert_ne!(results.1, format!("{:?}", input_list));
+    assert_eq!(results.0, results.1);
+
+    // -_- I hate this
+}
+
+#[test]
+fn test_shuffled() {
+    let input_list = (0..100).collect::<Vec<_>>();
+    let test_prog = format!(
+        "$ordered = {:?}; $new = ordered.getShuffled(); return [ordered, new]",
+        input_list
+    );
+
+    let results = match (*run(&test_prog)).clone() {
+        FenderValue::List(l) => ((*l[0]).to_string(), (*l[1]).to_string()),
+        _ => unreachable!(),
+    };
+    assert_eq!(results.0, format!("{:?}", input_list));
+    assert_ne!(results.1, format!("{:?}", input_list));
+    assert_ne!(results.0, results.1);
+}

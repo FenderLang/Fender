@@ -62,7 +62,7 @@ fndr_native_func!(
                 Bool(true)
             }
             b => Error(format!(
-                "then body expected, found {:?}; else will be run if called",
+                "then body expected, found {:?}; else will be run",
                 b.get_type_id()
             )),
         }
@@ -80,25 +80,56 @@ fndr_native_func!(
     |ctx, cond, body| {
         let (Function(cond), Function(body)) = (&*cond, &*body) else
     {
-        return Ok(FenderValue::make_error(format!("while must take 2 expressions `{:?}` and `{:?}` were provided", cond.get_type_id(), body.get_type_id())).into());
+        return Ok(FenderValue::make_error(format!("while must take 2 expressions `{}` and `{}` were provided", cond.get_type_id().to_string(), body.get_type_id().to_string())).into());
     };
         loop {
             let keep_run = match &*ctx.call(cond, Vec::with_capacity(0))? {
                 Bool(bool_val) => *bool_val,
                 v => {
                     return Ok(FenderValue::make_error(format!(
-                        "condition expression did not evaluate to a boolean value, found {:?}",
-                        v
+                        "condition expression did not evaluate to a boolean value, found {}",
+                        v.get_type_id().to_string()
                     ))
                     .into());
                 }
             };
 
             if !keep_run {
-                return Ok(Null.into());
+                return Ok(Bool(true).into());
             } else {
                 ctx.call(body, Vec::with_capacity(0))?;
             }
         }
+    }
+);
+
+fndr_native_func!(
+    /// Runs a function on a given value, then passes the original value
+    also_func,
+    |ctx, incoming_val, func| {
+        match &*func {
+            Function(func) => {
+                ctx.call(func, vec![incoming_val.get_pass_object()])?;
+            }
+            e => {
+                eprintln!(
+                    "\nAlso must take a function: Expected type `Function` found type `{}`",
+                    func.get_type_id().to_string()
+                );
+            }
+        }
+
+        Ok(incoming_val)
+    }
+);
+
+fndr_native_func!(
+    /// Takes a value and a function and applies that function to the Runs a function on a given value, then passes the original value
+    apply_func,
+    |ctx, incoming_val, func| {
+        let Function(func) = &*func else{
+            return Ok(FenderValue::make_error(format!("apply_pass_func must take a function: Expected type `Function` found type `{}`", func.get_type_id().to_string())).into()) //TODO@FuzzyNovaGoblin change name on this line
+        };
+        ctx.call(func, vec![incoming_val.get_pass_object()])
     }
 );

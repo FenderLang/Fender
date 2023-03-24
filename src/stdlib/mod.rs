@@ -49,19 +49,73 @@ pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSyste
     Some(match name {
         "print" => (NativeFunction::new(io::print_func), 1),
         "println" => (NativeFunction::new(io::println_func), 1),
-        "if" => (NativeFunction::new(control_flow::if_func), 3),
         "readLine" => (NativeFunction::new(io::read_line_func), 0),
-        "raw" => (NativeFunction::new(cast::get_raw_func), 1),
-        "len" => (NativeFunction::new(val_operation::len_func), 1),
-        "int" => (NativeFunction::new(cast::int_func), 1),
         "read" => (NativeFunction::new(io::read_func), 1),
         "write" => (NativeFunction::new(io::write_func), 2),
-        "swap" => (NativeFunction::new(val_operation::swap_func), 3),
+        "append" => (NativeFunction::new(io::append_func), 2),
+
+        "raw" => (NativeFunction::new(cast::get_raw_func), 1),
+        "int" => (NativeFunction::new(cast::int_func), 1),
         "str" => (NativeFunction::new(cast::str_func), 1),
+        "bool" => (NativeFunction::new(cast::to_bool_func), 1),
+        "ref" => (NativeFunction::new(cast::to_ref_func), 1),
+        "list" => (NativeFunction::new(cast::to_list_func), 1),
+        "joinStr" => (NativeFunction::new(cast::join_to_string_func), 1),
+
+        "if" => (NativeFunction::new(control_flow::if_func), 3),
         "else" => (NativeFunction::new(control_flow::else_func), 2),
         "then" => (NativeFunction::new(control_flow::then_func), 2),
         "while" => (NativeFunction::new(control_flow::while_func), 2),
+        "also" => (NativeFunction::new(control_flow::also_func), 2),
+        "apply" => (NativeFunction::new(control_flow::apply_func), 2),
+
+        "len" => (NativeFunction::new(val_operation::len_func), 1),
+        "swap" => (NativeFunction::new(val_operation::swap_func), 3),
+        "shuffle" => (NativeFunction::new(val_operation::shuffle_func), 1),
+        "getShuffled" => (NativeFunction::new(val_operation::get_shuffled_func), 1),
+        "rand" => (NativeFunction::new(val_operation::rand_func), 0),
+        "push" => (NativeFunction::new(val_operation::push_func), 2),
+        "pop" => (NativeFunction::new(val_operation::pop_func), 1),
+        "dbg" => (NativeFunction::new(val_operation::dbg_func), 1),
+        "remove" => (NativeFunction::new(val_operation::remove_func), 2),
+        "removePass" => (NativeFunction::new(val_operation::remove_pass_func), 2),
+
         "shell" => (NativeFunction::new(system::shell_func), 3),
+
         _ => return None,
     })
+}
+
+#[macro_export]
+/// Count number of paramaters
+macro_rules! count {
+    ($first:pat_param, $($rest:pat_param),*) => {
+        1 + $crate::count!($($rest),*)
+    };
+    ($first:pat_param) => {1};
+    () => {0};
+}
+
+#[macro_export]
+/// Create fender function in rust
+macro_rules! fndr_native_func {
+    (
+        $(#[$docs:meta])*
+        $name:ident, | $ctx:tt $(, $($arg:pat_param),*)? | $body:expr
+    ) => {
+        $(#[$docs])*
+        #[allow(unused)]
+        pub fn $name(
+            $ctx: &mut freight_vm::execution_engine::ExecutionEngine<
+                $crate::type_sys::type_system::FenderTypeSystem
+            >,
+            args: Vec<$crate::fender_reference::FenderReference>,
+        ) -> Result<$crate::fender_reference::FenderReference, freight_vm::error::FreightError> {
+            const _ARG_COUNT: usize = $crate::count!($($($arg),*)?);
+            $(
+                    let [$($arg),*]: [$crate::fender_reference::FenderReference; _ARG_COUNT]  = args.try_into().unwrap();
+                    )?
+            $body
+        }
+    }
 }

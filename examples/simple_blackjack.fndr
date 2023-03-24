@@ -1,0 +1,98 @@
+#!/bin/fender
+$cardString = (card){
+   (card == 1).then({return "A"})
+   (card == 11).then({return "J"})
+   (card == 12).then({return "Q"})
+   (card == 13).then({return "K"})
+   card.str()
+}
+
+$score = (hand){
+   $ret_score = 0
+   $ace = false
+
+   $i = 0
+   while({i < hand.len()},{
+      (hand[i] == 1).then{
+         ret_score = ret_score + 11
+         ace = true
+      }.else{
+         ret_score = ret_score + if(hand[i] > 10, 10, hand[i])
+      }
+
+      i = i + 1
+   })
+
+   (ret_score > 21 && ace).then{ret_score = ret_score - 10}
+
+   ret_score
+}
+
+$printStatus = (player, dealer){
+   print("player hand: ")
+   $i = 0
+   while({i < player.len()}, {print("{player[i].cardString()} "); i = i + 1})
+   print(" score: {player.score()}\ndealer's hand: ")
+   i = 0
+   while({i < dealer.len()}, {print("{dealer[i].cardString()} "); i = i + 1})
+   println(" score: {dealer.score()}")
+}
+
+$createDeck = {
+   $deck = []
+   while({deck.len() < 13}, {deck.push(deck.len()+1)})
+   deck.shuffle()
+   deck
+}
+
+$draw = (hand, deck){
+   hand.push(deck.pop())
+}
+
+$mainLoop = (player, dealer, deck){
+   printStatus(player, dealer)
+   println("Do you want to (H)it or (S)tay?")
+   $response = readLine()[0]
+
+   (response == "s").then{return false}
+   (response == "h").then{
+      player.draw(deck)
+      (player.score() > 21)
+         .then{return false}
+         .else{return true}
+   }
+   println("that was not an option")
+   true
+}
+
+$game = {
+   $deck = createDeck()
+   $player = []
+   $dealer = []
+   println("dealer draws 1 card, player draws 2")
+
+   dealer.draw(deck)
+   player.draw(deck)
+   player.draw(deck)
+
+   while({mainLoop(player, dealer, deck)}, {})
+   (player.score() > 21).then{
+      println("you bust, dealer wins")
+      return
+   }
+   while({dealer.score() < 17}, {dealer.draw(deck); println("dealer draws"); printStatus(player, dealer)})
+
+   (dealer.score() > 21).then{println("dealer busts, you win"); return}
+   (dealer.score() > player.score()).then{println("dealer wins"); return}
+   (dealer.score() < player.score()).then{println("you win"); return}
+   println("its a tie, no winner")
+}
+
+$keep_run = ("y"[0])
+
+while({keep_run != "n"[0]}, {
+   game()
+   println("play again? [y/n]")
+   keep_run = readLine()[0]
+})
+println("thanks for playing")

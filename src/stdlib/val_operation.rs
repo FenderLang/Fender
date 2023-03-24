@@ -43,3 +43,88 @@ fndr_native_func!(
         })
     }
 );
+
+fndr_native_func!(
+    /// Shuffles a list in place, also returns the resulting list
+    shuffle_func,
+    |_, mut list| {
+        Ok(match list.shuffle() {
+            Ok(v) => list,
+            Err(e) => FenderValue::make_error(e).into(),
+        })
+    }
+);
+
+fndr_native_func!(
+    /// Creates, and returns, a copy of the given list shuffled,
+    /// without modifying the original list
+    get_shuffled_func,
+    |_, mut list| {
+        Ok(match list.get_shuffled() {
+            Ok(v) => v.into(),
+            Err(e) => FenderValue::make_error(e).into(),
+        })
+    }
+);
+
+fndr_native_func!(
+    /// Get random float between 0 and 1
+    rand_func,
+    |_| { Ok(FenderValue::Float(rand::random()).into()) }
+);
+
+fndr_native_func!(
+    /// Pushes a value to the end of a list
+    push_func,
+    |_, mut list, value| {
+        Ok(match list.push(value) {
+            Ok(_) => list,
+            Err(e) => FenderValue::make_error(e).into(),
+        })
+    }
+);
+
+fndr_native_func!(
+    /// Pops a value off the end of a list
+    pop_func,
+    |_, mut list| {
+        Ok(match list.pop() {
+            Ok(v) => v,
+            Err(e) => FenderValue::make_error(e).into(),
+        })
+    }
+);
+
+fndr_native_func!(
+    /// Returns a `String` that contains the debug text of the given `value`
+    dbg_func,
+    |_, value| { Ok(String(format!("{:?}", *value).into()).into()) }
+);
+
+fndr_native_func!(
+    /// Removes an element from a list and returns it or error if there is no element at that location
+    remove_func,
+    |_, mut value, pos| {
+        let Int(pos) = *pos else {
+            return Ok(FenderValue::make_error(format!("remove must be indexed with an int: expected type `Int` found type `{}`", pos.get_type_id().to_string())).into());
+        };
+        Ok(match value.remove_at(pos) {
+            Ok(v) => v,
+            Err(s) => FenderValue::make_error(s).into(),
+        })
+    }
+);
+
+fndr_native_func!(
+    /// Removes an element from a list and returns the list it was removed from
+    remove_pass_func,
+    |_, mut value, pos| {
+        let Int(pos) = *pos else {
+            return Ok(FenderValue::make_error(format!("remove must be indexed with an int: expected type `Int` found type `{}`", pos.get_type_id().to_string())).into());
+        };
+        Ok(match value.remove_at(pos) {
+            Ok(_) => value,
+            Err(s) => FenderValue::make_error(s).into(),
+        })
+    }
+);

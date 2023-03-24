@@ -2,7 +2,7 @@ use self::error::InterpreterError;
 use crate::{
     fender_value::FenderValue, lazy_cell::LazyCell, operators::FenderBinaryOperator,
     operators::FenderInitializer, operators::FenderUnaryOperator, stdlib,
-    type_sys::type_system::FenderTypeSystem,
+    type_sys::type_system::{FenderTypeSystem, FenderMetadata},
 };
 use flux_bnf::{
     lexer::{CullStrategy, Lexer},
@@ -21,6 +21,7 @@ use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
     error::Error,
+    process::exit,
     rc::Rc,
 };
 
@@ -51,11 +52,11 @@ impl<'a> LexicalScope<'a> {
         }
     }
 
-    pub fn capture(&self, name: &str) -> Result<(), InterpreterError> {
+    pub fn capture(&self, name: &str, src_pos: usize) -> Result<(), InterpreterError> {
         let parent_var = self
             .parent
             .and_then(|parent| parent.variables.borrow().get(name).cloned())
-            .ok_or_else(|| InterpreterError::UnresolvedName(name.to_string()))?;
+            .ok_or_else(|| InterpreterError::UnresolvedName(name.to_string(), src_pos))?;
         let mut captures = self.captures.borrow_mut();
         captures.push(parent_var);
         self.variables
@@ -64,7 +65,11 @@ impl<'a> LexicalScope<'a> {
         Ok(())
     }
 
-    pub fn resolve_propagate(&self, name: &str) -> Result<VariableType, InterpreterError> {
+    pub fn resolve_propagate(
+        &self,
+        name: &str,
+        src_pos: usize,
+    ) -> Result<VariableType, InterpreterError> {
         let mut parent_scopes = vec![];
         let mut cur = self;
         while !cur.variables.borrow().contains_key(name) {
@@ -75,13 +80,13 @@ impl<'a> LexicalScope<'a> {
                     if let Some(var) = self.globals.get(name) {
                         return Ok(VariableType::Global(*var));
                     } else {
-                        return Err(InterpreterError::UnresolvedName(name.to_string()));
+                        return Err(InterpreterError::UnresolvedName(name.to_string(), src_pos));
                     }
                 }
             }
         }
         for scope in parent_scopes.into_iter().rev() {
-            scope.capture(name)?;
+            scope.capture(name, src_pos)?;
         }
         Ok(self.variables.borrow()[name].clone())
     }
@@ -99,7 +104,13 @@ impl<'a> LexicalScope<'a> {
 }
 
 static LEXER: LazyCell<Lexer> = LazyCell::new(|| {
-    let mut lex = flux_bnf::bnf::parse(include_str!("../../fender.bnf")).expect("Invalid BNF");
+    let mut lex = match flux_bnf::bnf::parse(include_str!("../../fender.bnf")) {
+        Ok(lex) => lex,
+        Err(e) => {
+            eprintln!("Invalid BNF: {e}");
+            exit(1);
+        }
+    };
     lex.set_unnamed_rule(CullStrategy::LiftChildren);
     lex.add_rule_for_names(
         vec![
@@ -165,7 +176,7 @@ fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem
         main.evaluate_expression(statement);
     }
     let main_ref = vm.include_function(main, main_return_target);
-    Ok(vm.finish(main_ref))
+    Ok(vm.finish(main_ref, FenderMetadata::default()))
 }
 
 fn code_body_uses_lambda_parameter(token: &Token) -> bool {
@@ -258,11 +269,9 @@ fn parse_statement(
         "return" => parse_return(token, writer, scope)?,
         "declaration" if use_globals => {
             let name = token.children[0].get_match();
-            let var = scope
-                .globals
-                .get(&name)
-                .copied()
-                .ok_or_else(|| InterpreterError::UnresolvedName(name.to_string()))?;
+            let var = scope.globals.get(&name).copied().ok_or_else(|| {
+                InterpreterError::UnresolvedName(name.to_string(), token.range.start)
+            })?;
             let expr = &token.children[1];
             let expr = parse_expr(expr, writer, scope)?;
             Expression::AssignGlobal(var, expr.into())
@@ -275,7 +284,9 @@ fn parse_statement(
                 existing,
                 Some(VariableType::Stack(_) | VariableType::Captured(_))
             ) {
-                return Err(InterpreterError::DuplicateName(name.to_string()).into());
+                return Err(
+                    InterpreterError::DuplicateName(name.to_string(), token.range.start).into(),
+                );
             }
             drop(variables);
             let var = function.create_variable();
@@ -326,7 +337,7 @@ fn parse_return(
         let label = scope
             .labels
             .get(&name)
-            .ok_or(InterpreterError::UnresolvedLabel(name))?;
+            .ok_or(InterpreterError::UnresolvedLabel(name, token.range.start))?;
         Ok(Expression::Return(*label, expr.into()))
     } else {
         Ok(Expression::Return(scope.top_level_return(), expr.into()))
@@ -379,7 +390,7 @@ fn parse_value(
         "literal" => parse_literal(&token.children[0], writer, scope)?,
         "lambdaParameter" => Expression::stack(0),
         "enclosedExpr" => parse_expr(&token.children[0], writer, scope)?,
-        "name" => match scope.resolve_propagate(&token.get_match())? {
+        "name" => match scope.resolve_propagate(&token.get_match(), token.range.start)? {
             VariableType::Captured(addr) => Expression::captured(addr),
             VariableType::Stack(addr) => Expression::stack(addr),
             VariableType::Global(addr) => Expression::global(addr),
@@ -418,7 +429,7 @@ fn parse_tail_operation(
         }
         "receiverCall" => {
             let name = token.children[0].get_match();
-            let function = match scope.resolve_propagate(&name)? {
+            let function = match scope.resolve_propagate(&name, token.range.start)? {
                 VariableType::Captured(addr) => Expression::captured(addr),
                 VariableType::Stack(addr) => Expression::stack(addr),
                 VariableType::Global(addr) => Expression::global(addr),
@@ -476,6 +487,7 @@ fn parse_literal(
         "float" => FenderValue::Float(token.get_match().parse()?).into(),
         "boolean" => FenderValue::Bool(token.get_match().parse()?).into(),
         "string" => parse_string(token, writer, scope)?,
+        "char" => parse_char(token)?.into(),
         "list" => parse_list(token, writer, scope)?,
         "null" => FenderValue::Null.into(),
         "closure" => parse_closure(token, writer, scope)?,
@@ -521,6 +533,19 @@ fn parse_string(
     Ok(Expression::Initialize(FenderInitializer::String, exprs))
 }
 
+fn parse_char(
+    token: &Token
+) -> Result<FenderValue, Box<dyn Error>> {
+    assert!(token.children.len() == 1);
+    Ok(FenderValue::Char(
+        match token.children[0].get_name().as_deref().unwrap() {
+            "escapeSequence" => parse_escape_seq(&token.children[0])?,
+            "innerChar" => token.children[0].get_match().chars().next().unwrap(),
+            name => unreachable!("{name:?}"),
+        },
+    ))
+}
+
 fn parse_escape_seq(token: &Token) -> Result<char, Box<dyn Error>> {
     let escape: Vec<_> = token.get_match().bytes().collect();
     Ok(match escape[1] as char {
@@ -553,7 +578,7 @@ fn parse_expr(
                 let return_target = scope
                     .labels
                     .get(&label)
-                    .ok_or(InterpreterError::UnresolvedLabel(label))?;
+                    .ok_or(InterpreterError::UnresolvedLabel(label, token.range.start))?;
                 expr = Expression::ReturnTarget(*return_target, expr.into());
             }
             expr

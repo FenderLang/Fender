@@ -32,7 +32,7 @@ fndr_native_func!(
     shell_func,
     |_, cmd, cmd_name, shell_path| {
         #[cfg(target_os = "windows")]
-        const DEFAULT_SHELL: &str = "batch -c";
+        const DEFAULT_SHELL: &str = "cmd /c";
         #[cfg(not(target_os = "windows"))]
         const DEFAULT_SHELL: &str = "sh -c";
 
@@ -57,8 +57,8 @@ fndr_native_func!(
             Ok(v) => v,
             Err(e) => {
                 return Ok(FenderValue::make_error(format!(
-                    "failed to run command {:?} {:?}",
-                    cmd_name, cmd
+                    "failed to run command {:?} {:?}\t{}",
+                    cmd_name, cmd, e.to_string().trim()
                 ))
                 .into())
             }

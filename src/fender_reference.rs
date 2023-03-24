@@ -169,7 +169,10 @@ impl Value for FenderReference {
     }
 
     fn assign(&mut self, value: FenderReference) {
-        *self.deref_mut() = (*value).clone();
+        match &mut *self.deref_mut() {
+            FenderValue::Ref(v) => v.assign(value),
+            val => *val = (*value).clone(),
+        }
     }
 
     fn into_ref(self) -> Self {
