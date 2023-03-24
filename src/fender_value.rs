@@ -1,4 +1,4 @@
-use std::{any::Any, ops::Deref};
+use std::{any::Any, fmt::format, ops::Deref};
 
 use crate::{
     fender_reference::{FenderReference, InternalReference},
@@ -285,6 +285,18 @@ impl FenderValue {
             FenderValue::Function(_) => Bool(true),
             FenderValue::List(l) => Bool(!l.is_empty()),
             FenderValue::Null => Bool(false),
+        }
+    }
+    pub fn join_to_string(&self) -> FenderValue {
+        match self {
+            FenderValue::Ref(r) => r.join_to_string(),
+            FenderValue::String(_) => self.clone(),
+            FenderValue::List(l) => {
+                FenderValue::make_string(l.iter().map(|i| i.to_string()).collect::<String>())
+            }
+            e => {
+                FenderValue::make_error(format!("Cannot join type `{}` to String", e.get_type_id().to_string()))
+            }
         }
     }
 }

@@ -1,5 +1,1 @@
-
-$s = "hello"
-s.println()
-s.pop().println()
-s.println()
+"hello there".list().removePass(0).joinStr().println()

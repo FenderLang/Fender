@@ -114,3 +114,17 @@ fndr_native_func!(
         })
     }
 );
+
+fndr_native_func!(
+    /// Removes an element from a list and returns the list it was removed from
+    remove_pass_func,
+    |_, mut value, pos| {
+        let Int(pos) = *pos else {
+            return Ok(FenderValue::make_error(format!("remove must be indexed with an int: expected type `Int` found type `{}`", pos.get_type_id().to_string())).into());
+        };
+        Ok(match value.remove_at(pos) {
+            Ok(_) => value,
+            Err(s) => FenderValue::make_error(s).into(),
+        })
+    }
+);

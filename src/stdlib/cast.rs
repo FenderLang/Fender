@@ -50,3 +50,19 @@ fndr_native_func!(
     to_ref_func,
     |_, value| { Ok(Ref(InternalReference::new(value)).into()) }
 );
+
+fndr_native_func!(
+    /// Cast to a list
+    to_list_func,
+    |_, value| {
+        Ok(value
+            .cast_to(crate::type_sys::type_id::FenderTypeId::List)
+            .into())
+    }
+);
+
+fndr_native_func!(
+    /// Cast to a list
+    join_to_string_func,
+    |ctx, value| { Ok(value.join_to_string().into()) }
+);

@@ -59,6 +59,8 @@ pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSyste
         "str" => (NativeFunction::new(cast::str_func), 1),
         "bool" => (NativeFunction::new(cast::to_bool_func), 1),
         "ref" => (NativeFunction::new(cast::to_ref_func), 1),
+        "list" => (NativeFunction::new(cast::to_list_func), 1),
+        "joinStr" => (NativeFunction::new(cast::join_to_string_func), 1),
 
         "if" => (NativeFunction::new(control_flow::if_func), 3),
         "else" => (NativeFunction::new(control_flow::else_func), 2),
@@ -76,13 +78,13 @@ pub fn get_stdlib_function(name: &str) -> Option<(NativeFunction<FenderTypeSyste
         "pop" => (NativeFunction::new(val_operation::pop_func), 1),
         "dbg" => (NativeFunction::new(val_operation::dbg_func), 1),
         "remove" => (NativeFunction::new(val_operation::remove_func), 2),
+        "removePass" => (NativeFunction::new(val_operation::remove_pass_func), 2),
 
         "shell" => (NativeFunction::new(system::shell_func), 3),
 
         _ => return None,
     })
 }
-
 
 #[macro_export]
 /// Count number of paramaters
