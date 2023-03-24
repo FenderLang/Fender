@@ -1,11 +1,11 @@
-use std::{any::Any, fmt::format, ops::Deref};
+use std::ops::Deref;
 
 use crate::{
     fender_reference::{FenderReference, InternalReference},
     type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
 };
 use freight_vm::{function::FunctionRef, value::Value};
-use rand::{seq::SliceRandom, thread_rng, Error};
+use rand::{seq::SliceRandom, thread_rng};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum FenderValue {

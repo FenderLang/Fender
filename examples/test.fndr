@@ -1,1 +1,6 @@
-"hello there".list().removePass(0).joinStr().println()
+
+
+$text = "hello there"
+text.println()
+text.println(" fjkfklsjlk")
+text.println(null)

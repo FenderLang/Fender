@@ -12,5 +12,8 @@ fn main() {
             exit(1);
         }
     };
-    vm.run().unwrap();
+
+    if let Err(e) = vm.run() {
+        println!("{}",e);
+    }
 }

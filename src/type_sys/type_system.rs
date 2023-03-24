@@ -17,5 +17,5 @@ impl TypeSystem for FenderTypeSystem {
     type GlobalContext = FenderMetadata;
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct FenderMetadata;
