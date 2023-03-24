@@ -54,8 +54,8 @@ $mainLoop = (player, dealer, deck){
    println("Do you want to (H)it or (S)tay?")
    $response = readLine()[0]
 
-   (response == "s"[0]).then{return false}
-   (response == "h"[0]).then{
+   (response == "s").then{return false}
+   (response == "h").then{
       player.draw(deck)
       (player.score() > 21)
          .then{return false}

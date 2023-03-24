@@ -14,4 +14,8 @@ impl TypeSystem for FenderTypeSystem {
     type UnaryOp = FenderUnaryOperator;
     type TypeId = FenderTypeId;
     type Init = FenderInitializer;
+    type GlobalContext = FenderMetadata;
 }
+
+#[derive(Default)]
+pub struct FenderMetadata;

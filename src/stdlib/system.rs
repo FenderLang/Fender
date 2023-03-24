@@ -57,8 +57,8 @@ fndr_native_func!(
             Ok(v) => v,
             Err(e) => {
                 return Ok(FenderValue::make_error(format!(
-                    "failed to run command {:?} {:?}\n{}",
-                    cmd_name, cmd,e
+                    "failed to run command {:?} {:?}\t{}",
+                    cmd_name, cmd, e.to_string().trim()
                 ))
                 .into())
             }

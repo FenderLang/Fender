@@ -2,7 +2,7 @@ use self::error::InterpreterError;
 use crate::{
     fender_value::FenderValue, lazy_cell::LazyCell, operators::FenderBinaryOperator,
     operators::FenderInitializer, operators::FenderUnaryOperator, stdlib,
-    type_sys::type_system::FenderTypeSystem,
+    type_sys::type_system::{FenderTypeSystem, FenderMetadata},
 };
 use flux_bnf::{
     lexer::{CullStrategy, Lexer},
@@ -176,7 +176,7 @@ fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem
         main.evaluate_expression(statement);
     }
     let main_ref = vm.include_function(main, main_return_target);
-    Ok(vm.finish(main_ref))
+    Ok(vm.finish(main_ref, FenderMetadata::default()))
 }
 
 fn code_body_uses_lambda_parameter(token: &Token) -> bool {
