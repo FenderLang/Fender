@@ -1,11 +1,11 @@
-use std::ops::Deref;
+use std::{any::Any, ops::Deref};
 
 use crate::{
     fender_reference::{FenderReference, InternalReference},
     type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
 };
 use freight_vm::{function::FunctionRef, value::Value};
-use rand::{seq::SliceRandom, thread_rng};
+use rand::{seq::SliceRandom, thread_rng, Error};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum FenderValue {
@@ -25,6 +25,12 @@ pub enum FenderValue {
 impl FenderValue {
     pub fn make_error<S: Into<String>>(e_body: S) -> FenderValue {
         FenderValue::Error(e_body.into())
+    }
+    pub fn make_list(list: Vec<FenderReference>) -> FenderValue {
+        FenderValue::List(InternalReference::new(list))
+    }
+    pub fn make_string(s_body: String) -> FenderValue {
+        FenderValue::String(InternalReference::new(s_body))
     }
 
     pub fn get_type_id(&self) -> FenderTypeId {
@@ -205,6 +211,67 @@ impl FenderValue {
 
 /// Cast functions
 impl FenderValue {
+    pub fn cast_to(&self, typeid: FenderTypeId) -> FenderValue {
+        use FenderValue::*;
+        match (self, typeid) {
+            (Ref(r), t) => r.deref().cast_to(t),
+            (v, t) if v.get_type_id() == t => v.clone(),
+            (Int(i), FenderTypeId::Float) => Float(*i as f64),
+            (Int(i), FenderTypeId::Bool) => Bool(*i != 0),
+            (Int(i), FenderTypeId::String) => String(i.to_string().into()),
+            (Int(_i), FenderTypeId::Error) => todo!(),
+            (Int(i), FenderTypeId::List) => List(vec![Int(*i).into()].into()),
+            (Int(i), FenderTypeId::Char) => Char(*i as u8 as char),
+            (Float(f), FenderTypeId::Int) => Int(*f as i64),
+            (Float(f), FenderTypeId::Bool) => Bool(*f > 0.0),
+            (Float(f), FenderTypeId::String) => FenderValue::make_string(f.to_string()),
+            (Float(f), FenderTypeId::Error) => FenderValue::make_error(f.to_string()),
+            (Float(f), FenderTypeId::List) => FenderValue::make_list(vec![Float(*f).into()]),
+            (Float(f), FenderTypeId::Char) => Char(*f as u8 as char),
+            (Char(c), FenderTypeId::Int) => Int(*c as i64),
+            (Char(c), FenderTypeId::Float) => Float(*c as u64 as f64),
+            (Char(c), FenderTypeId::String) => FenderValue::make_string(c.to_string()),
+            (Char(c), FenderTypeId::Error) => FenderValue::make_error(c.to_string()),
+            (Char(c), FenderTypeId::List) => FenderValue::make_list(vec![Char(*c).into()]),
+            (String(s), FenderTypeId::Int) => match s.parse() {
+                Ok(i) => Int(i).into(),
+                _ => FenderValue::make_error(format!("Invalid int string: {}", s.deref())).into(),
+            },
+            (String(s), FenderTypeId::Float) => match s.parse() {
+                Ok(i) => Float(i).into(),
+                _ => FenderValue::make_error(format!("Invalid int string: {}", s.deref())).into(),
+            },
+            (String(s), FenderTypeId::Bool) => Bool(s.to_lowercase() == "true"),
+            (String(s), FenderTypeId::Error) => Error(s.deref().into()),
+            (String(s), FenderTypeId::List) => {
+                FenderValue::make_list(s.chars().map(|c| Char(c).into()).collect::<Vec<_>>())
+            }
+            (String(s), FenderTypeId::Char) => {
+                if s.len() > 1 {
+                    Char(s.chars().next().unwrap())
+                } else {
+                    Char('\0')
+                }
+            }
+            (Bool(b), FenderTypeId::Int) => Int(*b as i64),
+            (Bool(b), FenderTypeId::Float) => Float(if *b { 1.0 } else { 0.0 }),
+            (Bool(b), FenderTypeId::String) => FenderValue::make_string(b.to_string()),
+            (Bool(b), FenderTypeId::Char) => Char(if *b { 't' } else { 'f' }),
+            (Error(e), FenderTypeId::String) => FenderValue::make_string(e.into()),
+            (Null, FenderTypeId::Int) => Int(Default::default()),
+            (Null, FenderTypeId::Float) => Float(Default::default()),
+            (Null, FenderTypeId::Bool) => Bool(Default::default()),
+            (Null, FenderTypeId::String) => FenderValue::make_string("NULL".into()),
+            (Null, FenderTypeId::Error) => Error("is NULL".into()),
+            (Null, FenderTypeId::List) => FenderValue::make_list(Vec::new()),
+            (Null, FenderTypeId::Char) => Char('\0'),
+            (v, t) => FenderValue::make_error(format!(
+                "Cannot cast from type `{}` to `{}`",
+                v.get_type_id().to_string(),
+                t.to_string()
+            )),
+        }
+    }
     pub fn to_bool(&self) -> FenderValue {
         use FenderValue::*;
         match self {
