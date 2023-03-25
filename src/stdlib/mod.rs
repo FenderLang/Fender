@@ -72,7 +72,7 @@ impl StdlibResource for FenderNativeFunction {
         &self,
         writer: &mut VMWriter<FenderTypeSystem>,
         main: &mut FunctionWriter<FenderTypeSystem>,
-        deps: &mut DependencyList<N>,
+        _: &mut DependencyList<N>,
     ) -> usize {
         let func = writer.include_native_function(NativeFunction::new(self.func), self.args);
         let global = writer.create_global();

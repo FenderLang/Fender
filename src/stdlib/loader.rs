@@ -38,7 +38,8 @@ macro_rules! deps_enum {
                 }
             }
 
-            fn all() -> impl IntoIterator<Item = $name> {
+            /// Get all entries in the standard library
+            pub fn all() -> impl IntoIterator<Item = $name> {
                 [$($name::$val),*]
             }
 
