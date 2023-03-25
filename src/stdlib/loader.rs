@@ -49,7 +49,6 @@ macro_rules! deps_enum {
                 func: &mut freight_vm::function::FunctionWriter<FenderTypeSystem>,
                 deps: &mut DependencyList<N>,
             ) -> usize {
-                println!("Loading {}", self.name());
                 if let Some(dep) = deps.0[*self as usize] {
                     return dep;
                 }
@@ -91,5 +90,4 @@ pub trait StdlibResource {
         main: &mut FunctionWriter<FenderTypeSystem>,
         deps: &mut DependencyList<N>,
     ) -> usize;
-    fn set_deps<const N: usize>(&self, deps: &mut DependencyList<N>);
 }

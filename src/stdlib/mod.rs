@@ -67,8 +67,6 @@ struct FenderNativeFunction {
 }
 
 impl StdlibResource for FenderNativeFunction {
-    fn set_deps<const N: usize>(&self, _: &mut loader::DependencyList<N>) {}
-
     fn load_into<const N: usize>(
         &self,
         writer: &mut VMWriter<FenderTypeSystem>,
