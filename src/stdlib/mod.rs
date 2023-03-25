@@ -34,7 +34,7 @@ pub fn detect_load(
     globals: &mut HashMap<String, usize>,
     main: &mut FunctionWriter<FenderTypeSystem>,
     vm: &mut VMWriter<FenderTypeSystem>,
-) {
+) -> DependencyList<STDLIB_SIZE> {
     let mut deplist = DependencyList([None; STDLIB_SIZE]);
     token
         .rec_iter()
@@ -45,6 +45,7 @@ pub fn detect_load(
             let global = res.load(vm, main, &mut deplist);
             globals.insert(res.name().to_string(), global);
         });
+    deplist
 }
 
 /// Shorthand function to create fixed `ArgCount`
