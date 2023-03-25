@@ -19,6 +19,7 @@ macro_rules! deps_enum {
         /// Number of valid dependencies
         pub const $count: usize = $crate::count!($($val),*);
         #[allow(non_camel_case_types, missing_docs)]
+        #[derive(Clone, Copy)]
         pub enum $name {
             $($val),*
         }
@@ -27,6 +28,13 @@ macro_rules! deps_enum {
                 match s {
                     $(dep_name!($($string_name =>)? $val) => Some($name::$val)),*,
                     _ => None
+                }
+            }
+
+            /// Get the name of this standard library resource
+            pub fn name(&self) -> &'static str {
+                match self {
+                    $($name::$val => dep_name!($($string_name =>)? $val)),*
                 }
             }
 
@@ -50,7 +58,7 @@ macro_rules! deps_enum {
     };
 }
 
-pub struct DependencyList<const N: usize>([bool; N]);
+pub struct DependencyList<const N: usize>(pub(crate) [bool; N]);
 
 impl<const N: usize> DependencyList<N> {
     pub fn add_deps(&mut self, deps: impl IntoIterator<Item = impl Into<usize>>) {
