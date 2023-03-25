@@ -4,7 +4,7 @@ use crate::{
     operators::FenderBinaryOperator,
     operators::FenderInitializer,
     operators::FenderUnaryOperator,
-    stdlib::{FenderResource, STDLIB_SIZE},
+    stdlib::{loader::DependencyList, FenderResource, STDLIB_SIZE},
 };
 use freight_vm::TypeSystem;
 
@@ -22,11 +22,11 @@ impl TypeSystem for FenderTypeSystem {
 
 #[derive(Default, Debug)]
 pub struct FenderMetadata {
-    pub deps: [Option<usize>; STDLIB_SIZE],
+    pub deps: DependencyList<STDLIB_SIZE>,
 }
 
 impl FenderMetadata {
     pub fn get_dep(&self, dep: FenderResource) -> usize {
-        self.deps[dep as usize].unwrap()
+        self.deps.0[dep as usize].unwrap()
     }
 }

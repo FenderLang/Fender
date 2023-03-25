@@ -42,10 +42,22 @@ macro_rules! deps_enum {
                 [$($name::$val),*]
             }
 
-            fn load(&self, vm: &mut freight_vm::vm_writer::VMWriter<FenderTypeSystem>, func: &mut freight_vm::function::FunctionWriter<FenderTypeSystem>) -> usize {
+            fn load<const N: usize>(
+                &self,
+                vm: &mut freight_vm::vm_writer::VMWriter<FenderTypeSystem>,
+                func: &mut freight_vm::function::FunctionWriter<FenderTypeSystem>,
+                deps: &mut DependencyList<N>,
+            ) -> usize {
+                if let Some(dep) = deps.0[*self as usize] {
+                    return dep;
+                }
                 match self {
                     $(
-                        $name::$val => $res.load_into(vm, func)
+                        $name::$val => {
+                            let loaded = $res.load_into(vm, func, deps);
+                            deps.0[*self as usize] = Some(loaded);
+                            loaded
+                        }
                     ),*
                 }
             }
@@ -58,21 +70,21 @@ macro_rules! deps_enum {
     };
 }
 
-pub struct DependencyList<const N: usize>(pub(crate) [bool; N]);
+#[derive(Debug)]
+pub struct DependencyList<const N: usize>(pub(crate) [Option<usize>; N]);
 
-impl<const N: usize> DependencyList<N> {
-    pub fn add_deps(&mut self, deps: impl IntoIterator<Item = impl Into<usize>>) {
-        for dep in deps {
-            self.0[dep.into()] = true;
-        }
+impl<const N: usize> Default for DependencyList<N> {
+    fn default() -> Self {
+        Self([None; N])
     }
 }
 
 pub trait StdlibResource {
-    fn load_into(
+    fn load_into<const N: usize>(
         &self,
         writer: &mut VMWriter<FenderTypeSystem>,
         main: &mut FunctionWriter<FenderTypeSystem>,
+        deps: &mut DependencyList<N>,
     ) -> usize;
     fn set_deps<const N: usize>(&self, deps: &mut DependencyList<N>);
 }

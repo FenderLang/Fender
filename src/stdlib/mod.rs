@@ -35,20 +35,16 @@ pub fn detect_load(
     main: &mut FunctionWriter<FenderTypeSystem>,
     vm: &mut VMWriter<FenderTypeSystem>,
 ) {
-    let mut deplist = DependencyList([false; STDLIB_SIZE]);
+    let mut deplist = DependencyList([None; STDLIB_SIZE]);
     token
         .rec_iter()
         .select_token("name")
         .map(|n| n.get_match())
         .filter_map(|n| FenderResource::from_str(&n))
-        .for_each(|n| deplist.0[n as usize] = true);
-    for res in FenderResource::all() {
-        if !deplist.0[res as usize] {
-            continue;
-        }
-        let global = res.load(vm, main);
-        globals.insert(res.name().to_string(), global);
-    }
+        .for_each(|res| {
+            let global = res.load(vm, main, &mut deplist);
+            globals.insert(res.name().to_string(), global);
+        });
 }
 
 /// Shorthand function to create fixed `ArgCount`
@@ -72,10 +68,11 @@ struct FenderNativeFunction {
 impl StdlibResource for FenderNativeFunction {
     fn set_deps<const N: usize>(&self, _: &mut loader::DependencyList<N>) {}
 
-    fn load_into(
+    fn load_into<const N: usize>(
         &self,
         writer: &mut VMWriter<FenderTypeSystem>,
         main: &mut FunctionWriter<FenderTypeSystem>,
+        deps: &mut DependencyList<N>,
     ) -> usize {
         let func = writer.include_native_function(NativeFunction::new(self.func), self.args);
         let global = writer.create_global();
