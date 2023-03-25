@@ -84,6 +84,7 @@ impl StdlibResource for FenderNativeFunction {
         global
     }
 }
+
 deps_enum! {FenderResource, STDLIB_SIZE:
         print => FenderNativeFunction {func: io::print_func, args: range(1..)},
         println => FenderNativeFunction {func: io::println_func, args: range(1..)},
