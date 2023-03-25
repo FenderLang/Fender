@@ -15,7 +15,7 @@ macro_rules! dep_name {
 
 #[macro_export]
 macro_rules! deps_enum {
-    ($name:ident, $count:ident : $($(@ $string_name:literal)? $val:ident => $res:expr),* $(,)?) => {
+    ($name:ident, $count:ident : $($(@ $string_name:literal)? $val:ident $([$($dep:ident),*])? => $res:expr),* $(,)?) => {
         /// Number of valid dependencies
         pub const $count: usize = $crate::count!($($val),*);
         #[allow(non_camel_case_types, missing_docs)]
@@ -49,12 +49,16 @@ macro_rules! deps_enum {
                 func: &mut freight_vm::function::FunctionWriter<FenderTypeSystem>,
                 deps: &mut DependencyList<N>,
             ) -> usize {
+                println!("Loading {}", self.name());
                 if let Some(dep) = deps.0[*self as usize] {
                     return dep;
                 }
                 match self {
                     $(
                         $name::$val => {
+                            $($(
+                                $name::$dep.load(vm, func, deps);
+                            )*)?
                             let loaded = $res.load_into(vm, func, deps);
                             deps.0[*self as usize] = Some(loaded);
                             loaded
