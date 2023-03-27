@@ -1,3 +1,9 @@
 #!/bin/fender
 
-[1,2,3,4].println()
+$thing = (a, [b, c...]){
+   a.println()
+   b.println()
+   c.println()
+}
+
+thing(1, "jfkdl",  18932, 423874)

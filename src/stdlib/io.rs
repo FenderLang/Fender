@@ -1,6 +1,6 @@
 use crate::{
     fender_value::FenderValue::{self, *},
-    fndr_native_func, fender_reference::FenderReference,
+    fndr_native_func
 };
 use std::{io::Write, ops::Deref};
 
@@ -9,20 +9,18 @@ use std::{io::Write, ops::Deref};
 fndr_native_func!(
     /// Prints to stdout
     print_func,
-    |_, item| {
+    |_, item, argv| {
         print!("{}", item.to_string());
-        // let argv = match &*argv {
-        //     List(l) => l.deref(),
-        //     _ => unreachable!(),
-        // };
-        // for item in argv {
-        //     print!("{}", item.to_string());
-        // }
+        let argv = match &*argv {
+            List(l) => l.deref(),
+            _ => unreachable!(),
+        };
+        for item in argv {
+            print!("{}", item.to_string());
+        }
         Ok(item)
     }
 );
-
-const DEFAULT_ARGV: Vec<FenderReference> = Vec::new();
 
 fndr_native_func!(
     /// Prints to stdout and adds a newline

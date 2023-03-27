@@ -193,16 +193,32 @@ fn code_body_uses_lambda_parameter(token: &Token) -> bool {
         .is_some()
 }
 
-fn parse_args(token: &Token) -> Vec<String> {
+fn parse_args(token: &Token) -> (Vec<String>, Vec<String>, Option<String>) {
     let mut arg_names = vec![];
-    for arg in &token.children {
+    let mut optional_arg_names = vec![];
+    for arg in token.children_named("arg") {
+
         if arg.children.len() == 2 {
             unimplemented!();
         }
         let name = arg.children[0].get_match();
         arg_names.push(name);
     }
-    arg_names
+    if let Some(args) = token.children_named("optionalArgs").next() {
+        for arg in args.children.iter() {
+
+            match arg.get_name().as_deref().unwrap() {
+                "arg" => optional_arg_names.push(arg.get_match()),
+                // "name" => return (arg_names, optional_arg_names, Some(arg.get_match())),
+                "vararg" => {
+                    let varg_name = optional_arg_names.pop();
+                    return (arg_names, optional_arg_names, varg_name);
+                }
+                e => unreachable!("{:?}", e),
+            }
+        }
+    }
+    (arg_names, optional_arg_names, None)
 }
 
 fn parse_closure(
@@ -215,10 +231,22 @@ fn parse_closure(
             let args = &token.children[0];
             let code_body = &token.children[1];
 
-            let args = parse_args(args);
-            let mut new_scope =
-                scope.child_scope(ArgCount::Fixed(args.len()), writer.create_return_target());
-            for (index, arg) in args.into_iter().enumerate() {
+            let (args, optional_args, varg_name) = parse_args(args);
+
+            let arg_count = match (optional_args.len(), &varg_name) {
+                (op_arg_count, Some(_)) => ArgCount::Variadic {
+                    min: args.len(),
+                    max: op_arg_count+op_arg_count,
+                },
+                (op_arg_count, None) if op_arg_count > 0 => ArgCount::Range {
+                    min: args.len(),
+                    max: args.len()+op_arg_count,
+                },
+                _ => ArgCount::Fixed(args.len()),
+            };
+
+            let mut new_scope = scope.child_scope(arg_count, writer.create_return_target());
+            for (index, arg) in args.into_iter().chain(optional_args.into_iter()).chain(varg_name).enumerate() {
                 new_scope
                     .variables
                     .borrow_mut()
