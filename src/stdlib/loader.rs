@@ -1,9 +1,9 @@
-#![allow(missing_docs)]
 use freight_vm::{function::FunctionWriter, vm_writer::VMWriter};
 
 use crate::type_sys::type_system::FenderTypeSystem;
 
 #[macro_export]
+/// Resolves the name of a dependency as a string
 macro_rules! dep_name {
     ($name:literal => $variant_name:ident) => {
         $name
@@ -14,14 +14,16 @@ macro_rules! dep_name {
 }
 
 #[macro_export]
+/// Generates implementations for standard library resources that can be loaded
 macro_rules! deps_enum {
     ($name:ident, $count:ident : $($(@ $string_name:literal)? $val:ident $([$($dep:ident),*])? => $res:expr),* $(,)?) => {
         /// Number of valid dependencies
         pub const $count: usize = $crate::count!($($val),*);
-        #[allow(non_camel_case_types, missing_docs)]
+        #[allow(non_camel_case_types)]
         #[derive(Clone, Copy)]
+        /// Standard library resources that can be loaded
         pub enum $name {
-            $($val),*
+            $(#[allow(missing_docs)] $val),*
         }
         impl $name {
             fn from_str(s: &str) -> Option<$name> {
@@ -75,6 +77,8 @@ macro_rules! deps_enum {
 }
 
 #[derive(Debug)]
+/// Represents a list of loaded standard library modules pointing to their location
+/// in global variables
 pub struct DependencyList<const N: usize>(pub(crate) [Option<usize>; N]);
 
 impl<const N: usize> Default for DependencyList<N> {
@@ -83,7 +87,9 @@ impl<const N: usize> Default for DependencyList<N> {
     }
 }
 
+/// Represents a standard library resource that can be loaded
 pub trait StdlibResource {
+    /// Load this resource into the VM and return the address of the global variable it resides in
     fn load_into<const N: usize>(
         &self,
         writer: &mut VMWriter<FenderTypeSystem>,

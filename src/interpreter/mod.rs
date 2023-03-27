@@ -166,7 +166,7 @@ fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem
         .map(|(i, name)| (name, i))
         .collect();
 
-    let deplist = stdlib::detect_load(token, &mut globals, &mut main, &mut vm);
+    let dep_list = stdlib::detect_load(token, &mut globals, &mut main, &mut vm);
     let mut scope = LexicalScope {
         globals: Rc::new(globals),
         labels: Rc::new(labels),
@@ -181,7 +181,7 @@ fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem
         main.evaluate_expression(statement);
     }
     let main_ref = vm.include_function(main, main_return_target);
-    Ok(vm.finish(main_ref, FenderMetadata { deps: deplist }))
+    Ok(vm.finish(main_ref, FenderMetadata { deps: dep_list }))
 }
 
 fn code_body_uses_lambda_parameter(token: &Token) -> bool {
