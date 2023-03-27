@@ -20,12 +20,11 @@ dependencies = [
 [[package]]
 name = "flux_bnf"
 version = "0.1.0"
-source = "git+https://github.com/FenderLang/Flux?branch=master#9089ecbbfc38cec2872b1373a784faec3bd3992c"
+source = "git+https://github.com/FenderLang/Flux?rev=67af16a78f4115dec68fd7bab370ab1a30b1c9ac#67af16a78f4115dec68fd7bab370ab1a30b1c9ac"
 
 [[package]]
 name = "freight_vm"
 version = "0.1.0"
-source = "git+https://github.com/FenderLang/Freight?rev=792383bc8677fe4e1baf8c5b3ffeb96c70ec4546#792383bc8677fe4e1baf8c5b3ffeb96c70ec4546"
 
 [[package]]
 name = "getrandom"

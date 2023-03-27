@@ -1,6 +1,3 @@
+#!/bin/fender
 
-
-$text = "hello there"
-text.println()
-text.println(" fjkfklsjlk")
-text.println(null)
+[1,2,3,4].println()

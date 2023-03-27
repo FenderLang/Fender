@@ -9,15 +9,15 @@ use std::{io::Write, ops::Deref};
 fndr_native_func!(
     /// Prints to stdout
     print_func,
-    |_, item, argv| {
+    |_, item| {
         print!("{}", item.to_string());
-        let argv = match &*argv {
-            List(l) => l.deref(),
-            _ => unreachable!(),
-        };
-        for item in argv {
-            print!("{}", item.to_string());
-        }
+        // let argv = match &*argv {
+        //     List(l) => l.deref(),
+        //     _ => unreachable!(),
+        // };
+        // for item in argv {
+        //     print!("{}", item.to_string());
+        // }
         Ok(item)
     }
 );
@@ -31,8 +31,8 @@ fndr_native_func!(
         print!("{}", item.to_string());
         let argv = match &*argv {
             List(l) => l.deref(),
-            
-            _ => unreachable!(),
+
+            e => unreachable!("{:?}", e),
         };
         for item in argv {
             print!("{}", item.to_string());

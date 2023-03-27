@@ -56,6 +56,11 @@ fn fixed(args: usize) -> ArgCount {
 /// Shorthand function to create ranged `ArgCount`
 fn range<RB: RangeBounds<usize>>(args: RB) -> ArgCount {
     ArgCount::new(args)
+    // ArgCount::Fixed(match args.end_bound() {
+    //     std::ops::Bound::Included(i) => *i,
+    //     std::ops::Bound::Excluded(e) => e - 1,
+    //     std::ops::Bound::Unbounded => 2,
+    // })
 }
 
 struct FenderNativeFunction {
@@ -97,7 +102,7 @@ deps_enum! {FenderResource, STDLIB_SIZE:
         @ "ref" r#ref => FenderNativeFunction {func: cast::to_ref_func, args: fixed(1)},
         list => FenderNativeFunction {func: cast::to_list_func, args: fixed(1)},
         joinStr => FenderNativeFunction {func: cast::join_to_string_func, args: fixed(1)},
-        @ "if" r#if => FenderNativeFunction {func: control_flow::if_func, args: fixed(2)},
+        @ "if" r#if => FenderNativeFunction {func: control_flow::if_func, args: fixed(3)},
         @ "else" r#else => FenderNativeFunction {func: control_flow::else_func, args: fixed(2)},
         then => FenderNativeFunction {func: control_flow::then_func, args: fixed(2)},
         @ "while" r#while => FenderNativeFunction {func: control_flow::while_func, args: fixed(2)},
