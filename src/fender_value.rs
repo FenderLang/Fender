@@ -125,11 +125,14 @@ impl FenderValue {
                 list.push(value);
                 Ok(())
             }
-            FenderValue::String(s) => Ok(match &*value {
-                FenderValue::String(s_b) => s.push_str(&s_b),
-                FenderValue::Char(c) => s.push(*c),
-                value => s.push_str(value.to_string().as_str()),
-            }),
+            FenderValue::String(s) => {
+                match &*value {
+                    FenderValue::String(s_b) => s.push_str(s_b),
+                    FenderValue::Char(c) => s.push(*c),
+                    value => s.push_str(value.to_string().as_str()),
+                };
+                Ok(())
+            }
             e => Err(format!(
                 "Can only call push on list: Expected type `List` found `{:?}`",
                 e.get_type_id()
@@ -234,12 +237,12 @@ impl FenderValue {
             (Char(c), FenderTypeId::Error) => FenderValue::make_error(c.to_string()),
             (Char(c), FenderTypeId::List) => FenderValue::make_list(vec![Char(*c).into()]),
             (String(s), FenderTypeId::Int) => match s.parse() {
-                Ok(i) => Int(i).into(),
-                _ => FenderValue::make_error(format!("Invalid int string: {}", s.deref())).into(),
+                Ok(i) => Int(i),
+                _ => FenderValue::make_error(format!("Invalid int string: {}", s.deref())),
             },
             (String(s), FenderTypeId::Float) => match s.parse() {
-                Ok(i) => Float(i).into(),
-                _ => FenderValue::make_error(format!("Invalid int string: {}", s.deref())).into(),
+                Ok(i) => Float(i),
+                _ => FenderValue::make_error(format!("Invalid int string: {}", s.deref())),
             },
             (String(s), FenderTypeId::Bool) => Bool(s.to_lowercase() == "true"),
             (String(s), FenderTypeId::Error) => Error(s.deref().into()),

@@ -68,9 +68,9 @@ macro_rules! deps_enum {
                 }
             }
         }
-        impl Into<usize> for $name {
-            fn into(self) -> usize {
-                self as usize
+        impl From<$name> for usize{
+            fn from(val:$name) -> Self{
+                val as usize
             }
         }
     };
