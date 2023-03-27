@@ -53,15 +53,11 @@ fn fixed(args: usize) -> ArgCount {
     ArgCount::Fixed(args)
 }
 
-/// Shorthand function to create ranged `ArgCount`
-fn range<RB: RangeBounds<usize>>(args: RB) -> ArgCount {
-    ArgCount::new(args)
-    // ArgCount::Fixed(match args.end_bound() {
-    //     std::ops::Bound::Included(i) => *i,
-    //     std::ops::Bound::Excluded(e) => e - 1,
-    //     std::ops::Bound::Unbounded => 2,
-    // })
+/// Shorthand function to create `ArgCount::Variadic`
+fn variadic<RB: RangeBounds<usize>>(args: RB) -> ArgCount {
+    ArgCount::new_variadic(args)
 }
+
 
 struct FenderNativeFunction {
     func: fn(
@@ -89,8 +85,8 @@ impl StdlibResource for FenderNativeFunction {
 }
 
 deps_enum! {FenderResource, STDLIB_SIZE:
-        print => FenderNativeFunction {func: io::print_func, args: range(1..)},
-        println => FenderNativeFunction {func: io::println_func, args: range(1..)},
+        print => FenderNativeFunction {func: io::print_func, args: variadic(1..)},
+        println => FenderNativeFunction {func: io::println_func, args: variadic(1..)},
         readLine => FenderNativeFunction {func: io::read_line_func, args: fixed(0)},
         read => FenderNativeFunction {func: io::read_func, args: fixed(1)},
         write => FenderNativeFunction {func: io::write_func, args: fixed(2)},
@@ -118,7 +114,7 @@ deps_enum! {FenderResource, STDLIB_SIZE:
         dbg => FenderNativeFunction {func: val_operation::dbg_func, args: fixed(1)},
         remove => FenderNativeFunction {func: val_operation::remove_func, args: fixed(2)},
         removePass => FenderNativeFunction {func: val_operation::remove_pass_func, args: fixed(2), },
-        shell => FenderNativeFunction {func: system::shell_func, args: range(1..=3)},
+        shell => FenderNativeFunction {func: system::shell_func, args: variadic(1..=3)},
 }
 
 #[macro_export]
