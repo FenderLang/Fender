@@ -145,7 +145,7 @@ pub fn create_vm(source: &str) -> Result<ExecutionEngine<FenderTypeSystem>, Box<
 }
 
 fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem>, Box<dyn Error>> {
-let mut vm = VMWriter::new();
+    let mut vm = VMWriter::new();
     let mut main = FunctionWriter::new(ArgCount::Fixed(0));
     let main_return_target = vm.create_return_target();
     let mut globals = HashMap::new();
@@ -157,16 +157,16 @@ let mut vm = VMWriter::new();
         }
     }
     let labels = token
-    .rec_iter()
-    .select_token("label")
-    .map(|t| t.children[0].get_match())
+        .rec_iter()
+        .select_token("label")
+        .map(|t| t.children[0].get_match())
         .collect::<HashSet<_>>()
         .into_iter()
         .enumerate()
         .map(|(i, name)| (name, i))
         .collect();
 
-    stdlib::detect_load(token, &mut globals, &mut main, &mut vm);
+    let dep_list = stdlib::detect_load(token, &mut globals, &mut main, &mut vm);
     let mut scope = LexicalScope {
         globals: Rc::new(globals),
         labels: Rc::new(labels),
@@ -181,16 +181,16 @@ let mut vm = VMWriter::new();
         main.evaluate_expression(statement);
     }
     let main_ref = vm.include_function(main, main_return_target);
-    Ok(vm.finish(main_ref, FenderMetadata::default()))
+    Ok(vm.finish(main_ref, FenderMetadata { deps: dep_list }))
 }
 
 fn code_body_uses_lambda_parameter(token: &Token) -> bool {
     token
-    .rec_iter()
-    .ignore_token("codeBody")
-    .select_token("lambdaParameter")
-    .next()
-    .is_some()
+        .rec_iter()
+        .ignore_token("codeBody")
+        .select_token("lambdaParameter")
+        .next()
+        .is_some()
 }
 
 fn parse_args(token: &Token) -> Vec<String> {
@@ -214,7 +214,7 @@ fn parse_closure(
         "closure" if token.children.len() == 2 => {
             let args = &token.children[0];
             let code_body = &token.children[1];
-            
+
             let args = parse_args(args);
             let mut new_scope =
                 scope.child_scope(ArgCount::Fixed(args.len()), writer.create_return_target());
