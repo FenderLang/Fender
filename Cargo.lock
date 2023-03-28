@@ -20,7 +20,7 @@ dependencies = [
 [[package]]
 name = "flux_bnf"
 version = "0.1.0"
-source = "git+https://github.com/FenderLang/Flux?rev=67af16a78f4115dec68fd7bab370ab1a30b1c9ac#67af16a78f4115dec68fd7bab370ab1a30b1c9ac"
+source = "git+https://github.com/FenderLang/Flux?branch=repeating-fix#7935d0ce0c2ff5d51cff5a2da88721d7568ab9ab"
 
 [[package]]
 name = "freight_vm"
