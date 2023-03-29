@@ -1,3 +1,11 @@
 #!/bin/fender
-
-shell("echo hi").println()
+$fn = ([a...]){
+   $b = 18;
+   a.println()
+   b.println()
+   b = b + 23;
+   b.println()
+   a = a + b
+   a.println()
+}
+fn(2)
