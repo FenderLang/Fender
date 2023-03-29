@@ -1,6 +1,6 @@
 use crate::{
     fender_value::FenderValue::{self, *},
-    fndr_native_func
+    fndr_native_func,
 };
 use std::{io::Write, ops::Deref};
 

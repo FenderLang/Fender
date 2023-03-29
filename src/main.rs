@@ -14,6 +14,6 @@ fn main() {
     };
 
     if let Err(e) = vm.run() {
-        println!("{}",e);
+        println!("{}", e);
     }
 }

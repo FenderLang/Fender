@@ -58,7 +58,6 @@ fn variadic<RB: RangeBounds<usize>>(args: RB) -> ArgCount {
     ArgCount::new_variadic(args)
 }
 
-
 struct FenderNativeFunction {
     func: fn(
         &mut ExecutionEngine<FenderTypeSystem>,
