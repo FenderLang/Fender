@@ -58,6 +58,10 @@ fn variadic<RB: RangeBounds<usize>>(args: RB) -> ArgCount {
     ArgCount::new_variadic(args)
 }
 
+/// Shorthand function to create `ArgCount::Range`
+fn range<RB: RangeBounds<usize>>(args: RB) -> ArgCount {
+    ArgCount::new(args)
+}
 
 struct FenderNativeFunction {
     func: fn(
@@ -114,7 +118,7 @@ deps_enum! {FenderResource, STDLIB_SIZE:
         dbg => FenderNativeFunction {func: val_operation::dbg_func, args: fixed(1)},
         remove => FenderNativeFunction {func: val_operation::remove_func, args: fixed(2)},
         removePass => FenderNativeFunction {func: val_operation::remove_pass_func, args: fixed(2), },
-        shell => FenderNativeFunction {func: system::shell_func, args: variadic(1..=3)},
+        shell => FenderNativeFunction {func: system::shell_func, args: range(1..=3)},
 }
 
 #[macro_export]
