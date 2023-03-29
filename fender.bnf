@@ -2,7 +2,7 @@ delimitedList<elem, delim, whitespace> ::= elem (whitespace? delim whitespace? e
 wrappedDelimitedList<begin, end, elem, delim, whitespace> ::= begin whitespace? delimitedList<elem, delim, whitespace>? whitespace? end
 
 sep! ::= [ \t]+
-newLine! ::= <nl>
+newLine! ::= <nl> | <eof>
 break! ::= sep? ((";" | comment? newLine) sep?)+
 lineBreak! ::= sep? comment? (newLine sep?)+
 lineSep! ::= (lineBreak | sep)+
@@ -67,7 +67,9 @@ structDeclaration ::= "struct" sep? name lineSep? structBody
 arg ::= name (sep? typeAnnotation)?
 typeAnnotation ::= ":" lineSep? name
 codeBody ::= "{" lineSep? (statement break)* statement? lineSep? "}"
-args ::= wrappedDelimitedList<"(", ")", arg, ",", lineSep>
+optionalArgs ::= "[" delimitedList<arg, ",", sep> vararg? "]"
+vararg ::= "..."
+args ::= ("(" sep? delimitedList<arg, ",", sep> sep? ("," sep? optionalArgs)? sep? ")") | "(" sep? optionalArgs sep? ")"
 closure ::= args? lineSep? codeBody
 functionDeclaration ::= "fn" sep? name lineSep? args lineSep? ("=" lineSep? expr | codeBody)
 

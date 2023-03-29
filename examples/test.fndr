@@ -1,1 +1,11 @@
-"hello there".list().removePass(0).joinStr().println()
+#!/bin/fender
+$fn = ([a...]){
+   $b = 18;
+   a.println()
+   b.println()
+   b = b + 23;
+   b.println()
+   a = a + b
+   a.println()
+}
+fn(2)

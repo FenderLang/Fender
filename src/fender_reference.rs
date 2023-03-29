@@ -181,6 +181,10 @@ impl Value for FenderReference {
             FenderReference::FRaw(v) => FenderReference::FRef(InternalReference::new(v)),
         }
     }
+
+    fn gen_list(values: Vec<Self>) -> Self {
+        FenderReference::FRaw(FenderValue::List(InternalReference::new(values)))
+    }
 }
 
 impl From<FenderReference> for InternalReference<FenderValue> {

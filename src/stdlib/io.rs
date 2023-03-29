@@ -9,10 +9,15 @@ use std::{io::Write, ops::Deref};
 fndr_native_func!(
     /// Prints to stdout
     print_func,
-    |_, item| {
+    |_, item, argv| {
         print!("{}", item.to_string());
-        let mut lock = std::io::stdout().lock();
-        let _ = lock.flush();
+        let argv = match &*argv {
+            List(l) => l.deref(),
+            e => unreachable!("Last argument is always a vararg list, found: {:?}", e),
+        };
+        for item in argv {
+            print!("{}", item.to_string());
+        }
         Ok(item)
     }
 );
@@ -20,8 +25,18 @@ fndr_native_func!(
 fndr_native_func!(
     /// Prints to stdout and adds a newline
     println_func,
-    |_, item| {
-        println!("{}", item.to_string());
+    |_, item, argv| {
+        print!("{}", item.to_string());
+        let argv = match &*argv {
+            List(l) => l.deref(),
+
+            e => unreachable!("Last argument is always a vararg list, found: {:?}", e),
+        };
+        for item in argv {
+            print!("{}", item.to_string());
+        }
+        println!();
+
         Ok(item)
     }
 );
