@@ -25,7 +25,7 @@ source = "git+https://github.com/FenderLang/Flux?branch=repeating-fix#7935d0ce0c
 [[package]]
 name = "freight_vm"
 version = "0.1.0"
-source = "git+https://github.com/FenderLang/Freight?branch=veriadic_functions#8c6a4d0376c60615158ff227db39e0f64bc1950f"
+source = "git+https://github.com/FenderLang/Freight?branch=veriadic_functions#76cae0d17f436a78fcc9e9b31dd46d4ba211b16e"
 
 [[package]]
 name = "getrandom"
