@@ -13,7 +13,7 @@ fndr_native_func!(
         print!("{}", item.to_string());
         let argv = match &*argv {
             List(l) => l.deref(),
-            _ => unreachable!(),
+            e => unreachable!("Last argument is always a vararg list, found: {:?}", e),
         };
         for item in argv {
             print!("{}", item.to_string());
@@ -30,7 +30,7 @@ fndr_native_func!(
         let argv = match &*argv {
             List(l) => l.deref(),
 
-            e => unreachable!("{:?}", e),
+            e => unreachable!("Last argument is always a vararg list, found: {:?}", e),
         };
         for item in argv {
             print!("{}", item.to_string());

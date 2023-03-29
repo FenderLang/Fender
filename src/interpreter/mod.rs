@@ -207,7 +207,6 @@ fn parse_args(token: &Token) -> (Vec<String>, Vec<String>, Option<String>) {
         for arg in args.children.iter() {
             match arg.get_name().as_deref().unwrap() {
                 "arg" => optional_arg_names.push(arg.get_match()),
-                // "name" => return (arg_names, optional_arg_names, Some(arg.get_match())),
                 "vararg" => {
                     let varg_name = optional_arg_names.pop();
                     return (arg_names, optional_arg_names, varg_name);

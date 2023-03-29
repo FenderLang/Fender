@@ -7,7 +7,6 @@ fndr_native_func!(
     /// if `cond` is true will evaluate and return `if_true` else will evaluate and return `if_false
     if_func,
     |ctx, cond, if_true, if_false| {
-        // dbg!(&cond, &if_true, &if_false);
         let Bool(cond) = *cond else{
         return Ok(FenderValue::make_error(format!("`if` must be called with a condition value of type `Bool`\t`{:?}` was supplied", cond.get_type_id())).into());
     };
