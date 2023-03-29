@@ -69,7 +69,7 @@ typeAnnotation ::= ":" lineSep? name
 codeBody ::= "{" lineSep? (statement break)* statement? lineSep? "}"
 optionalArgs ::= "[" delimitedList<arg, ",", sep> vararg? "]"
 vararg ::= "..."
-args ::= "(" sep? delimitedList<arg, ",", sep> sep? ("," sep? optionalArgs)? sep? ")"
+args ::= ("(" sep? delimitedList<arg, ",", sep> sep? ("," sep? optionalArgs)? sep? ")") | "(" sep? optionalArgs sep? ")"
 closure ::= args? lineSep? codeBody
 functionDeclaration ::= "fn" sep? name lineSep? args lineSep? ("=" lineSep? expr | codeBody)
 
