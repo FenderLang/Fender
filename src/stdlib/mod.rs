@@ -95,6 +95,7 @@ deps_enum! {FenderResource, STDLIB_SIZE:
         read => FenderNativeFunction {func: io::read_func, args: fixed(1)},
         write => FenderNativeFunction {func: io::write_func, args: fixed(2)},
         append => FenderNativeFunction {func: io::append_func, args: fixed(2)},
+
         raw => FenderNativeFunction {func: cast::get_raw_func, args: fixed(1)},
         int => FenderNativeFunction {func: cast::int_func, args: fixed(1)},
         str => FenderNativeFunction {func: cast::str_func, args: fixed(1)},
@@ -102,12 +103,14 @@ deps_enum! {FenderResource, STDLIB_SIZE:
         @ "ref" r#ref => FenderNativeFunction {func: cast::to_ref_func, args: fixed(1)},
         list => FenderNativeFunction {func: cast::to_list_func, args: fixed(1)},
         joinStr => FenderNativeFunction {func: cast::join_to_string_func, args: fixed(1)},
+
         @ "if" r#if => FenderNativeFunction {func: control_flow::if_func, args: fixed(3)},
         @ "else" r#else => FenderNativeFunction {func: control_flow::else_func, args: fixed(2)},
         then => FenderNativeFunction {func: control_flow::then_func, args: fixed(2)},
         @ "while" r#while => FenderNativeFunction {func: control_flow::while_func, args: fixed(2)},
         also => FenderNativeFunction {func: control_flow::also_func, args: fixed(2)},
         apply => FenderNativeFunction {func: control_flow::apply_func, args: fixed(2)},
+
         len => FenderNativeFunction {func: val_operation::len_func, args: fixed(1)},
         swap => FenderNativeFunction {func: val_operation::swap_func, args: fixed(3)},
         shuffle => FenderNativeFunction {func: val_operation::shuffle_func, args: fixed(1)},
@@ -118,7 +121,10 @@ deps_enum! {FenderResource, STDLIB_SIZE:
         dbg => FenderNativeFunction {func: val_operation::dbg_func, args: fixed(1)},
         remove => FenderNativeFunction {func: val_operation::remove_func, args: fixed(2)},
         removePass => FenderNativeFunction {func: val_operation::remove_pass_func, args: fixed(2), },
+
         shell => FenderNativeFunction {func: system::shell_func, args: range(1..=3)},
+        pwd => FenderNativeFunction {func: system::pwd_func, args: fixed(0)},
+        cd => FenderNativeFunction {func: system::cd_func, args: fixed(1)},
 }
 
 #[macro_export]
