@@ -1,9 +1,12 @@
 #!/bin/fender
-struct Testing<
-   name1:String,
-   name2
->
-$good = Testing("dog", 2).println()
-$fails = Testing(3.2, 2).println()
-$new = Testing<name1:9, name2:'f'>;
+struct Thing {name1:String,name2}
+
+$new = Thing⧼name1:"the name", name2:'f'⧽
+
+$name1 = 1
+$name2 = 2
+Thing⧼name1:"the name", name2:'f'⧽
+
+#$thing=[name1:"the name", name2:'f']
+
 new.println()
