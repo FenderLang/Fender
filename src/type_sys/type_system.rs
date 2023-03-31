@@ -1,6 +1,7 @@
 use super::type_id::FenderTypeId;
 use crate::{
     fender_reference::FenderReference,
+    fender_value::fender_structs::FenderStructType,
     operators::FenderBinaryOperator,
     operators::FenderInitializer,
     operators::FenderUnaryOperator,
@@ -17,15 +18,16 @@ impl TypeSystem for FenderTypeSystem {
     type UnaryOp = FenderUnaryOperator;
     type TypeId = FenderTypeId;
     type Init = FenderInitializer;
-    type GlobalContext = FenderMetadata;
+    type GlobalContext = FenderGlobalContext;
 }
 
 #[derive(Default, Debug)]
-pub struct FenderMetadata {
+pub struct FenderGlobalContext {
     pub deps: DependencyList<STDLIB_SIZE>,
+    pub struct_table: Vec<FenderStructType>,
 }
 
-impl FenderMetadata {
+impl FenderGlobalContext {
     pub fn get_dep(&self, dep: FenderResource) -> usize {
         self.deps.0[dep as usize].unwrap()
     }

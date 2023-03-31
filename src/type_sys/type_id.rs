@@ -1,4 +1,4 @@
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, PartialOrd)]
 pub enum FenderTypeId {
     Int,
     Float,
@@ -10,6 +10,8 @@ pub enum FenderTypeId {
     Function,
     List,
     Char,
+    Struct,
+    Type
 }
 
 impl FenderTypeId {
@@ -26,6 +28,25 @@ impl FenderTypeId {
             String => false,
             List => false,
             Char => true,
+            Struct => false,
+            Type => true,
+        }
+    }
+    pub fn from_str(value: String) -> Option<FenderTypeId> {
+        dbg!(&value);
+        match value.as_str() {
+            "Int" => Some(FenderTypeId::Int),
+            "Float" => Some(FenderTypeId::Float),
+            "Bool" => Some(FenderTypeId::Bool),
+            "Error" => Some(FenderTypeId::Error),
+            "Reference" => Some(FenderTypeId::Reference),
+            "Function" => Some(FenderTypeId::Function),
+            "String" => Some(FenderTypeId::String),
+            "List" => Some(FenderTypeId::List),
+            "Char" => Some(FenderTypeId::Char),
+            "Struct" => Some(FenderTypeId::Struct),
+            "Null" => Some(FenderTypeId::Null),
+            _ => None,
         }
     }
 }
@@ -44,6 +65,8 @@ impl ToString for FenderTypeId {
             String => "String",
             List => "List",
             Char => "Char",
+            Struct => "Struct",
+            Type => "Type",
         }
         .to_owned()
     }

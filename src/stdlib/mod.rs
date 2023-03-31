@@ -35,17 +35,17 @@ pub fn detect_load(
     main: &mut FunctionWriter<FenderTypeSystem>,
     vm: &mut VMWriter<FenderTypeSystem>,
 ) -> DependencyList<STDLIB_SIZE> {
-    let mut deplist = DependencyList([None; STDLIB_SIZE]);
+    let mut dep_list = DependencyList([None; STDLIB_SIZE]);
     token
         .rec_iter()
         .select_token("name")
         .map(|n| n.get_match())
         .filter_map(|n| FenderResource::from_str(&n))
         .for_each(|res| {
-            let global = res.load(vm, main, &mut deplist);
+            let global = res.load(vm, main, &mut dep_list);
             globals.insert(res.name().to_string(), global);
         });
-    deplist
+    dep_list
 }
 
 /// Shorthand function to create fixed `ArgCount`

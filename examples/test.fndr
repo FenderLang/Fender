@@ -1,11 +1,7 @@
 #!/bin/fender
-$fn = ([a...]){
-   $b = 18;
-   a.println()
-   b.println()
-   b = b + 23;
-   b.println()
-   a = a + b
-   a.println()
+struct Testing{
+   name1:String,
+   name2
 }
-fn(2)
+$r = Testing(2, 2)
+r:name1.println()
