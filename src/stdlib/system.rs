@@ -5,6 +5,43 @@ use crate::{
 use std::{ops::Deref, process::Command};
 
 fndr_native_func!(
+    /// Get the current working directory
+    ///
+    /// This is equivalent to `shell("pwd")` on *nix systems
+    pwd_func,
+    |_| {
+        Ok(match std::env::current_dir() {
+            Ok(path) => FenderValue::make_string(path.to_string_lossy().into()).into(),
+            Err(e) => FenderValue::make_error(format!("failed to get current path: {}", e)).into(),
+        })
+    }
+);
+
+fndr_native_func!(
+    /// Change the current working directory environment variable (PWD)
+    cd_func,
+    |_, path| {
+        let path = match path.unwrap_value() {
+            String(s) => s.to_string(),
+            e => {
+                return Ok(FenderValue::make_error(format!(
+                    "invalid arg for `cd`: expected `String` found `{}`",
+                    e.get_type_id().to_string()
+                ))
+                .into())
+            }
+        };
+
+        Ok(match std::env::set_current_dir(path) {
+            Ok(path) => Bool(true).into(),
+            Err(e) => {
+                FenderValue::make_error(format!("failed to change current directory: {}", e)).into()
+            }
+        })
+    }
+);
+
+fndr_native_func!(
     /// Interact with host system shell
     ///
     /// Commands run through `shell` will return all of stdout in a `FenderValue::String` on
