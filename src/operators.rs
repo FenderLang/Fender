@@ -1,12 +1,13 @@
 use crate::{
     fender_reference::{FenderReference, InternalReference},
-    fender_value::FenderValue,
+    fender_value::{FenderValue, fender_structs::FenderStruct},
+    type_sys::type_system::{FenderGlobalContext, FenderTypeSystem},
 };
 use freight_vm::{
     operators::{BinaryOperator, Initializer, UnaryOperator},
     value::Value,
 };
-use std::ops::Deref;
+use std::{ops::Deref, collections::HashMap};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FenderBinaryOperator {
@@ -36,6 +37,7 @@ pub enum FenderUnaryOperator {
 pub enum FenderInitializer {
     List,
     String,
+    Struct(usize),
 }
 
 macro_rules! num_op_func {
@@ -263,10 +265,14 @@ impl UnaryOperator<FenderReference> for FenderUnaryOperator {
     }
 }
 
-impl Initializer<FenderReference> for FenderInitializer {
-    fn initialize(&self, values: Vec<FenderReference>) -> FenderReference {
+impl Initializer<FenderTypeSystem> for FenderInitializer {
+    fn initialize(
+        &self,
+        values: Vec<FenderReference>,
+        ctx: &mut FenderGlobalContext,
+    ) -> FenderReference {
         match self {
-            Self::List => FenderValue::List(
+            FenderInitializer::List => FenderValue::List(
                 values
                     .into_iter()
                     .map(|val| FenderReference::FRef(InternalReference::from(val)))
@@ -274,7 +280,7 @@ impl Initializer<FenderReference> for FenderInitializer {
                     .into(),
             )
             .into(),
-            Self::String => {
+            FenderInitializer::String => {
                 let mut collected = String::new();
                 for v in values {
                     if let FenderValue::String(s) = &*v {
@@ -285,6 +291,18 @@ impl Initializer<FenderReference> for FenderInitializer {
                 }
                 FenderValue::String(collected.into()).into()
             }
+            FenderInitializer::Struct(id) => {
+                match ctx.struct_table.get(*id){
+                    Some(struct_type) => {
+                        let mut ret = FenderStruct{ struct_id: struct_type.clone(), data: HashMap::new() };
+                        for ((key, field), val) in struct_type.fields.iter().enumerate().zip(values.into_iter()){
+                            ret.data.insert(key, InternalReference::from(val));
+                        }
+                        FenderValue::Struct(ret).into()
+                    },
+                    None => todo!(),
+                }
+            },
         }
     }
 }

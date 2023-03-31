@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use super::type_id::FenderTypeId;
 use crate::{
     fender_reference::FenderReference,
@@ -24,7 +26,7 @@ impl TypeSystem for FenderTypeSystem {
 #[derive(Default, Debug)]
 pub struct FenderGlobalContext {
     pub deps: DependencyList<STDLIB_SIZE>,
-    pub struct_table: Vec<FenderStructType>,
+    pub struct_table: Vec<Rc<FenderStructType>>,
 }
 
 impl FenderGlobalContext {

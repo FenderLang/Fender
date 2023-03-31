@@ -395,25 +395,37 @@ fn parse_struct_declaration(
         }
     }
     let new_scope = scope.child_scope(ArgCount::Fixed(fields.len()), writer.create_return_target());
-    let constructor = FunctionWriter::new(ArgCount::Fixed(fields.len()));
+    let mut constructor = FunctionWriter::new(ArgCount::Fixed(fields.len()));
+    let mut exprs = Vec::with_capacity(fields.len());
+    for i in 0..fields.len(){
+        exprs.push(Expression::Variable(VariableType::Stack(i)));
+    }
+    constructor.evaluate_expression(Expression::Initialize(FenderInitializer::Struct(global_context.struct_table.len()), exprs));
+
+
     // constructor.evaluate_expression(expr)
 
-    global_context.struct_table.push(FenderStructType {
+    global_context.struct_table.push(Rc::new(FenderStructType {
         name: struct_name.clone(),
         fields,
         types,
-    });
+    }));
     // let t = writer.include_function(constructor, new_scope.return_target);
     // Ok(Expression::AssignDynamic([, writer.include_function(constructor, new_scope.return_target)].into()))
 
     let constructor_var = outer_function.create_variable();
-    scope
-        .variables
-        .borrow_mut()
-        .insert(struct_name.to_string(), VariableType::Stack(constructor_var));
+    scope.variables.borrow_mut().insert(
+        struct_name.to_string(),
+        VariableType::Stack(constructor_var),
+    );
 
-    let constructor = writer.include_function(constructor, new_scope.return_target);
-    Ok(Expression::AssignStack(constructor_var, Box::new(FenderValue::Function(constructor).into())))
+    Ok(Expression::AssignStack(
+        constructor_var,
+        Expression::from(FenderValue::Function(
+            writer.include_function(constructor, new_scope.return_target),
+        ))
+        .into(),
+    ))
 
     // Ok(FenderValue::Function(writer.include_function(constructor, new_scope.return_target)).into())
 }

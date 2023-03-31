@@ -3,5 +3,5 @@ struct Testing{
    name1:String,
    name2
 }
-$r = Testing(2, 2)
-r:name1.println()
+$r = Testing("dog", 2)
+r.println()

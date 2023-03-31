@@ -1,10 +1,10 @@
 use crate::{fender_reference::{FenderReference, InternalReference}, type_sys::type_id::FenderTypeId};
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FenderStruct {
-    r#type: FenderStructType,
-    data: HashMap<usize, InternalReference<FenderReference>>,
+    pub struct_id: Rc<FenderStructType>,
+    pub data: HashMap<usize, InternalReference<FenderReference>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
