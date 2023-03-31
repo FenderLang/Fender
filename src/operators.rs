@@ -306,7 +306,7 @@ impl Initializer<FenderTypeSystem> for FenderInitializer {
                         match type_id {
                             Some(type_id) if *type_id != val.get_type_id() => {
                                 return FenderValue::make_error(format!(
-                                    "Incorect type used: expected {} found {}",
+                                    "Incorect type used: expected `{}` found `{}`",
                                     type_id.to_string(),
                                     val.get_type_id().to_string()
                                 ))
