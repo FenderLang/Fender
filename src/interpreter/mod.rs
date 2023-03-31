@@ -361,7 +361,7 @@ fn parse_statement(
             Expression::AssignStack(var, expr.into())
         }
         "structDeclaration" => {
-            parse_struct_declaration(token, writer, scope, global_context, function)?.into()
+            parse_struct_declaration(token, writer, scope, global_context, function)?
         }
         name => unreachable!("{name}"),
     })
@@ -376,19 +376,22 @@ fn parse_struct_declaration(
 ) -> InterpreterResult {
     let mut struct_name = String::new();
     let mut fields = Vec::new();
-    let mut types = Vec::new();
 
     for child_token in token.iter() {
         match child_token.get_name().as_deref().unwrap() {
             "name" => struct_name = child_token.get_match(),
             "structBody" => {
                 for arg_token in child_token.iter() {
-                    fields.push(arg_token.children[0].get_match());
-                    types.push(if arg_token.children.len() > 1 {
-                        FenderTypeId::from_str(arg_token.children[1].children[0].get_match())
-                    } else {
-                        None
-                    });
+                    fields.push((
+                        arg_token.children[0].get_match(),
+                        if arg_token.children.len() > 1 {
+                            FenderTypeId::type_from_str(
+                                arg_token.children[1].children[0].get_match(),
+                            )
+                        } else {
+                            None
+                        },
+                    ));
                 }
             }
             e => unreachable!("{}", e),
@@ -397,27 +400,28 @@ fn parse_struct_declaration(
     let new_scope = scope.child_scope(ArgCount::Fixed(fields.len()), writer.create_return_target());
     let mut constructor = FunctionWriter::new(ArgCount::Fixed(fields.len()));
     let mut exprs = Vec::with_capacity(fields.len());
-    for i in 0..fields.len(){
+    for i in 0..fields.len() {
         exprs.push(Expression::Variable(VariableType::Stack(i)));
     }
-    constructor.evaluate_expression(Expression::Initialize(FenderInitializer::Struct(global_context.struct_table.len()), exprs));
-
+    constructor.evaluate_expression(Expression::Initialize(
+        FenderInitializer::Struct(global_context.struct_table.len()),
+        exprs,
+    ));
 
     // constructor.evaluate_expression(expr)
 
     global_context.struct_table.push(Rc::new(FenderStructType {
         name: struct_name.clone(),
         fields,
-        types,
     }));
     // let t = writer.include_function(constructor, new_scope.return_target);
     // Ok(Expression::AssignDynamic([, writer.include_function(constructor, new_scope.return_target)].into()))
 
     let constructor_var = outer_function.create_variable();
-    scope.variables.borrow_mut().insert(
-        struct_name.to_string(),
-        VariableType::Stack(constructor_var),
-    );
+    scope
+        .variables
+        .borrow_mut()
+        .insert(struct_name, VariableType::Stack(constructor_var));
 
     Ok(Expression::AssignStack(
         constructor_var,

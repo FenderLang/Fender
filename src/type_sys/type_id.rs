@@ -11,7 +11,7 @@ pub enum FenderTypeId {
     List,
     Char,
     Struct,
-    Type
+    Type,
 }
 
 impl FenderTypeId {
@@ -32,8 +32,7 @@ impl FenderTypeId {
             Type => true,
         }
     }
-    pub fn from_str(value: String) -> Option<FenderTypeId> {
-        dbg!(&value);
+    pub fn type_from_str(value: String) -> Option<FenderTypeId> {
         match value.as_str() {
             "Int" => Some(FenderTypeId::Int),
             "Float" => Some(FenderTypeId::Float),

@@ -3,5 +3,6 @@ struct Testing{
    name1:String,
    name2
 }
-$r = Testing("dog", 2)
+$good = Testing("dog", 2)
+$fails = Testing("dog", 2)
 r.println()

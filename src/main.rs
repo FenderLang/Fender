@@ -14,12 +14,10 @@ fn main() {
             script.push('\n');
         }
         script
+    } else if let Ok(true) = Path::new(&args[1]).try_exists() {
+        fs::read_to_string(&args[1]).unwrap()
     } else {
-        if let Ok(true) = Path::new(&args[1]).try_exists() {
-            fs::read_to_string(&args[1]).unwrap()
-        } else {
-            args[1].clone()
-        }
+        args[1].clone()
     };
 
     let mut vm = match interpreter::create_vm(&script) {

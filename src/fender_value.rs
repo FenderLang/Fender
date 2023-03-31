@@ -341,7 +341,7 @@ impl ToString for FenderValue {
                         .fields
                         .iter()
                         .enumerate()
-                        .map(|(i, name)| format!("{}:{}", name, (*s.data[&i]).to_string()))
+                        .map(|(i, (name, _))| format!("{}:{}", name, (*s.data[&i]).to_string()))
                         .collect::<Vec<_>>()
                         .join(", ")
                 )

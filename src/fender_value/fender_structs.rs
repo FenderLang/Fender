@@ -1,4 +1,7 @@
-use crate::{fender_reference::{FenderReference, InternalReference}, type_sys::type_id::FenderTypeId};
+use crate::{
+    fender_reference::{FenderReference, InternalReference},
+    type_sys::type_id::FenderTypeId,
+};
 use std::{collections::HashMap, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -10,6 +13,5 @@ pub struct FenderStruct {
 #[derive(Debug, Clone, PartialEq)]
 pub struct FenderStructType {
     pub name: String,
-    pub fields: Vec<String>,
-    pub types: Vec<Option<FenderTypeId>>
+    pub fields: Vec<(String, Option<FenderTypeId>)>,
 }

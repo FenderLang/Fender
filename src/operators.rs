@@ -1,13 +1,13 @@
 use crate::{
     fender_reference::{FenderReference, InternalReference},
-    fender_value::{FenderValue, fender_structs::FenderStruct},
+    fender_value::{fender_structs::FenderStruct, FenderValue},
     type_sys::type_system::{FenderGlobalContext, FenderTypeSystem},
 };
 use freight_vm::{
     operators::{BinaryOperator, Initializer, UnaryOperator},
     value::Value,
 };
-use std::{ops::Deref, collections::HashMap};
+use std::{collections::HashMap, ops::Deref};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FenderBinaryOperator {
@@ -291,17 +291,35 @@ impl Initializer<FenderTypeSystem> for FenderInitializer {
                 }
                 FenderValue::String(collected.into()).into()
             }
-            FenderInitializer::Struct(id) => {
-                match ctx.struct_table.get(*id){
-                    Some(struct_type) => {
-                        let mut ret = FenderStruct{ struct_id: struct_type.clone(), data: HashMap::new() };
-                        for ((key, field), val) in struct_type.fields.iter().enumerate().zip(values.into_iter()){
-                            ret.data.insert(key, InternalReference::from(val));
+            FenderInitializer::Struct(id) => match ctx.struct_table.get(*id) {
+                Some(struct_type) => {
+                    let mut ret = FenderStruct {
+                        struct_id: struct_type.clone(),
+                        data: HashMap::new(),
+                    };
+                    for ((key, (_field, type_id)), val) in struct_type
+                        .fields
+                        .iter()
+                        .enumerate()
+                        .zip(values.into_iter())
+                    {
+                        match type_id {
+                            Some(type_id) if *type_id != val.get_type_id() => {
+                                return FenderValue::make_error(format!(
+                                    "Incorect type used: expected {} found {}",
+                                    type_id.to_string(),
+                                    val.get_type_id().to_string()
+                                ))
+                                .into();
+                            }
+                            _ => (),
                         }
-                        FenderValue::Struct(ret).into()
-                    },
-                    None => todo!(),
+
+                        ret.data.insert(key, InternalReference::from(val));
+                    }
+                    FenderValue::Struct(ret).into()
                 }
+                None => todo!(),
             },
         }
     }
