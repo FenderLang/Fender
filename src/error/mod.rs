@@ -7,7 +7,7 @@ use self::{code_pos::CodePos, parent_type::ParentErrorType};
 pub mod code_pos;
 pub mod parent_type;
 
-pub type FenderResult<T> = Result<T, FenderError>;
+pub type FenderResult<T> = Result<T, Box<FenderError>>;
 
 #[derive(Debug)]
 pub struct FenderError {
@@ -24,11 +24,11 @@ impl FenderError {
     ) -> FenderResult<T> {
         match result {
             Ok(v) => Ok(v),
-            Err(rust_e) => Err(FenderError::new_rust(
+            Err(rust_e) => Err(Box::new(FenderError::new_rust(
                 rust_e.into(),
                 rust_code_pos,
                 fender_code_pos,
-            )),
+            ))),
         }
     }
 
@@ -97,6 +97,22 @@ impl From<InterpreterError> for FenderError {
             rust_code_pos: CodePos::new_abs(None, 0),
             fender_code_pos: Some(CodePos::new_abs(None, pos)),
         }
+    }
+}
+
+impl From<InterpreterError> for Box<FenderError> {
+    fn from(value: InterpreterError) -> Self {
+        let pos = match value {
+            InterpreterError::UnresolvedName(_, pos)
+            | InterpreterError::DuplicateName(_, pos)
+            | InterpreterError::UnresolvedLabel(_, pos) => pos,
+        };
+
+        Box::new(FenderError {
+            error_type: ParentErrorType::FenderInterpreterError(value),
+            rust_code_pos: CodePos::new_abs(None, 0),
+            fender_code_pos: Some(CodePos::new_abs(None, pos)),
+        })
     }
 }
 

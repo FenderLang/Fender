@@ -29,8 +29,6 @@ use freight_vm::{
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
-    error::Error,
-    ops::Deref,
     process::exit,
     rc::Rc,
 };
@@ -149,11 +147,11 @@ pub fn create_vm(source: &str) -> FenderResult<ExecutionEngine<FenderTypeSystem>
     let root = match lex.tokenize(source) {
         Ok(v) => v,
         Err(e) => {
-            return Err(FenderError {
+            return Err(Box::new(FenderError {
                 error_type: ParentErrorType::Flux(e),
                 rust_code_pos: CodePos::new_rel(Some(file!().into()), line!(), column!()),
                 fender_code_pos: None,
-            })
+            }))
         }
     };
     parse_main_function(&root)
