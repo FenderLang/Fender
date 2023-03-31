@@ -1,4 +1,4 @@
-use std::{rc::Rc, collections::HashMap};
+use std::{collections::HashMap, rc::Rc};
 
 use super::type_id::FenderTypeId;
 use crate::{
@@ -23,8 +23,6 @@ impl TypeSystem for FenderTypeSystem {
     type GlobalContext = FenderGlobalContext;
 }
 
-
-
 #[derive(Default, Debug)]
 pub struct FenderGlobalContext {
     pub deps: DependencyList<STDLIB_SIZE>,
@@ -38,27 +36,26 @@ impl FenderGlobalContext {
 }
 
 #[derive(Default, Debug)]
-pub struct StructTable{
+pub struct StructTable {
     type_list: Vec<Rc<FenderStructType>>,
-    struct_name_index: HashMap<String, usize>
+    struct_name_index: HashMap<String, usize>,
 }
 
 impl StructTable {
-
-    pub fn type_list(&mut self) -> & Vec<Rc<FenderStructType>>{
-     & self.type_list
+    pub fn type_list(&mut self) -> &Vec<Rc<FenderStructType>> {
+        &self.type_list
     }
-    pub fn struct_name_index(& self) -> & HashMap<String, usize>{
-     & self.struct_name_index
+    pub fn struct_name_index(&self) -> &HashMap<String, usize> {
+        &self.struct_name_index
     }
 
-    pub fn insert(&mut self, new_type: FenderStructType){
-        self.struct_name_index.insert(new_type.name.clone(), self.type_list.len());
+    pub fn insert(&mut self, new_type: FenderStructType) {
+        self.struct_name_index
+            .insert(new_type.name.clone(), self.type_list.len());
         self.type_list.push(Rc::new(new_type));
     }
 
     pub(crate) fn len(&self) -> usize {
         self.type_list.len()
     }
-
 }

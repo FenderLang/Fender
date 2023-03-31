@@ -1,5 +1,6 @@
 use self::error::InterpreterError;
 use crate::{
+    error::{code_pos::CodePos, parent_type::ParentErrorType, FenderError, FenderResult},
     fender_value::{fender_structs::FenderStructType, FenderValue},
     lazy_cell::LazyCell,
     operators::FenderBinaryOperator,
@@ -10,6 +11,7 @@ use crate::{
         type_id::FenderTypeId,
         type_system::{FenderGlobalContext, FenderTypeSystem},
     },
+    unwrap_rust,
 };
 use flux_bnf::{
     lexer::{CullStrategy, Lexer},
@@ -35,7 +37,7 @@ use std::{
 
 pub mod error;
 
-pub type InterpreterResult = Result<Expression<FenderTypeSystem>, Box<dyn Error>>;
+pub type InterpreterResult = FenderResult<Expression<FenderTypeSystem>>;
 
 pub struct LexicalScope<'a> {
     globals: Rc<HashMap<String, usize>>,
@@ -141,14 +143,23 @@ static LEXER: LazyCell<Lexer> = LazyCell::new(|| {
     lex
 });
 
-pub fn create_vm(source: &str) -> Result<ExecutionEngine<FenderTypeSystem>, Box<dyn Error>> {
+pub fn create_vm(source: &str) -> FenderResult<ExecutionEngine<FenderTypeSystem>> {
     let lex_read = LEXER.get();
     let lex = lex_read.as_ref().unwrap();
-    let root = lex.tokenize(source)?;
+    let root = match lex.tokenize(source) {
+        Ok(v) => v,
+        Err(e) => {
+            return Err(FenderError {
+                error_type: ParentErrorType::Flux(e),
+                rust_code_pos: CodePos::new_rel(Some(file!().into()), line!(), column!()),
+                fender_code_pos: None,
+            })
+        }
+    };
     parse_main_function(&root)
 }
 
-fn parse_main_function(token: &Token) -> Result<ExecutionEngine<FenderTypeSystem>, Box<dyn Error>> {
+fn parse_main_function(token: &Token) -> FenderResult<ExecutionEngine<FenderTypeSystem>> {
     let mut vm = VMWriter::new();
     let mut main = FunctionWriter::new(ArgCount::Fixed(0));
     let main_return_target = vm.create_return_target();
@@ -238,7 +249,7 @@ fn parse_closure(
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
     global_context: &mut FenderGlobalContext,
-) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+) -> FenderResult<Expression<FenderTypeSystem>> {
     let function_ref = match token.matcher_name.as_deref().unwrap() {
         "closure" if token.children.len() == 2 => {
             let args = &token.children[0];
@@ -297,7 +308,7 @@ fn parse_code_body(
     writer: &mut VMWriter<FenderTypeSystem>,
     new_scope: &mut LexicalScope,
     global_context: &mut FenderGlobalContext,
-) -> Result<FunctionRef<FenderTypeSystem>, Box<dyn Error>> {
+) -> FenderResult<FunctionRef<FenderTypeSystem>> {
     let mut function = FunctionWriter::new(new_scope.args);
     for statement in &token.children {
         let expr = parse_statement(
@@ -538,7 +549,7 @@ fn parse_invoke_args(
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
     global_context: &mut FenderGlobalContext,
-) -> Result<Vec<Expression<FenderTypeSystem>>, Box<dyn Error>> {
+) -> FenderResult<Vec<Expression<FenderTypeSystem>>> {
     let token = &token.children[0];
     match token.get_name().as_deref().unwrap() {
         "invokeArgs" => token
@@ -621,9 +632,9 @@ fn parse_literal(
 ) -> InterpreterResult {
     let token = &token.children[0];
     Ok(match token.get_name().as_deref().unwrap() {
-        "int" => FenderValue::Int(token.get_match().parse()?).into(),
-        "float" => FenderValue::Float(token.get_match().parse()?).into(),
-        "boolean" => FenderValue::Bool(token.get_match().parse()?).into(),
+        "int" => FenderValue::Int(unwrap_rust!(token.get_match().parse())?).into(),
+        "float" => FenderValue::Float(unwrap_rust!(token.get_match().parse())?).into(),
+        "boolean" => FenderValue::Bool(unwrap_rust!(token.get_match().parse())?).into(),
         "string" => parse_string(token, writer, scope, global_context)?,
         "char" => parse_char(token)?.into(),
         "list" => parse_list(token, writer, scope, global_context)?,
@@ -682,7 +693,10 @@ fn parse_struct_instantiation(
         }
     }
 
-    Ok(Expression::Initialize(FenderInitializer::Struct(id), values))
+    Ok(Expression::Initialize(
+        FenderInitializer::Struct(id),
+        values,
+    ))
 }
 
 fn parse_list(
@@ -703,7 +717,7 @@ fn parse_string(
     writer: &mut VMWriter<FenderTypeSystem>,
     scope: &mut LexicalScope,
     global_context: &mut FenderGlobalContext,
-) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
+) -> FenderResult<Expression<FenderTypeSystem>> {
     let mut exprs = Vec::new();
     let mut str = String::new();
     for child in &token.children {
@@ -730,7 +744,7 @@ fn parse_string(
     Ok(Expression::Initialize(FenderInitializer::String, exprs))
 }
 
-fn parse_char(token: &Token) -> Result<FenderValue, Box<dyn Error>> {
+fn parse_char(token: &Token) -> FenderResult<FenderValue> {
     assert!(token.children.len() == 1);
     Ok(FenderValue::Char(
         match token.children[0].get_name().as_deref().unwrap() {
@@ -741,7 +755,7 @@ fn parse_char(token: &Token) -> Result<FenderValue, Box<dyn Error>> {
     ))
 }
 
-fn parse_escape_seq(token: &Token) -> Result<char, Box<dyn Error>> {
+fn parse_escape_seq(token: &Token) -> FenderResult<char> {
     let escape: Vec<_> = token.get_match().bytes().collect();
     Ok(match escape[1] as char {
         'n' => '\n',
@@ -750,7 +764,7 @@ fn parse_escape_seq(token: &Token) -> Result<char, Box<dyn Error>> {
         't' => '\t',
         'u' => {
             let code = String::from_utf8_lossy(&escape[2..]);
-            unsafe { char::from_u32_unchecked(u32::from_str_radix(&code, 16)?) }
+            unsafe { char::from_u32_unchecked(unwrap_rust!(u32::from_str_radix(&code, 16))?) }
         }
         _ => escape[1] as char,
     })

@@ -1,7 +1,10 @@
 use crate::{
     fender_reference::{FenderReference, InternalReference},
     fender_value::{fender_structs::FenderStruct, FenderValue},
-    type_sys::{type_system::{FenderGlobalContext, FenderTypeSystem}, type_id::FenderTypeId},
+    type_sys::{
+        type_id::FenderTypeId,
+        type_system::{FenderGlobalContext, FenderTypeSystem},
+    },
 };
 use freight_vm::{
     operators::{BinaryOperator, Initializer, UnaryOperator},
@@ -304,8 +307,10 @@ impl Initializer<FenderTypeSystem> for FenderInitializer {
                         .zip(values.into_iter())
                     {
                         match type_id {
-                            Some(type_id) if *type_id != val.get_type_id() && val.get_type_id() != FenderTypeId::Null => {
-
+                            Some(type_id)
+                                if *type_id != val.get_type_id()
+                                    && val.get_type_id() != FenderTypeId::Null =>
+                            {
                                 return FenderValue::make_error(format!(
                                     "Incorect type used: expected `{}` found `{}`",
                                     type_id.to_string(),
