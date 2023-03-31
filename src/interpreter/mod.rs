@@ -28,6 +28,7 @@ use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
     error::Error,
+    ops::Deref,
     process::exit,
     rc::Rc,
 };
@@ -52,7 +53,7 @@ impl<'a> LexicalScope<'a> {
             globals: self.globals.clone(),
             labels: self.labels.clone(),
             args,
-            captures: vec![].into(),
+            captures: Vec::new().into(),
             variables: HashMap::new().into(),
             parent: Some(self),
             return_target,
@@ -77,7 +78,7 @@ impl<'a> LexicalScope<'a> {
         name: &str,
         src_pos: usize,
     ) -> Result<VariableType, InterpreterError> {
-        let mut parent_scopes = vec![];
+        let mut parent_scopes = Vec::new();
         let mut cur = self;
         while !cur.variables.borrow().contains_key(name) {
             parent_scopes.push(cur);
@@ -208,8 +209,8 @@ fn code_body_uses_lambda_parameter(token: &Token) -> bool {
 }
 
 fn parse_args(token: &Token) -> (Vec<String>, Vec<String>, Option<String>) {
-    let mut arg_names = vec![];
-    let mut optional_arg_names = vec![];
+    let mut arg_names = Vec::new();
+    let mut optional_arg_names = Vec::new();
     for arg in token.children_named("arg") {
         if arg.children.len() == 2 {
             unimplemented!();
@@ -408,14 +409,10 @@ fn parse_struct_declaration(
         exprs,
     ));
 
-    // constructor.evaluate_expression(expr)
-
-    global_context.struct_table.push(Rc::new(FenderStructType {
+    global_context.struct_table.insert(FenderStructType {
         name: struct_name.clone(),
         fields,
-    }));
-    // let t = writer.include_function(constructor, new_scope.return_target);
-    // Ok(Expression::AssignDynamic([, writer.include_function(constructor, new_scope.return_target)].into()))
+    });
 
     let constructor_var = outer_function.create_variable();
     scope
@@ -430,8 +427,6 @@ fn parse_struct_declaration(
         ))
         .into(),
     ))
-
-    // Ok(FenderValue::Function(writer.include_function(constructor, new_scope.return_target)).into())
 }
 
 fn parse_assignment(
@@ -634,8 +629,60 @@ fn parse_literal(
         "list" => parse_list(token, writer, scope, global_context)?,
         "null" => FenderValue::Null.into(),
         "closure" => parse_closure(token, writer, scope, global_context)?,
+        "structInstantiation" => parse_struct_instantiation(token, writer, scope, global_context)?,
         name => unreachable!("{name}"),
     })
+}
+
+fn parse_struct_instantiation(
+    token: &Token,
+    writer: &mut VMWriter<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+    global_context: &mut FenderGlobalContext,
+) -> InterpreterResult {
+    let mut name = String::new();
+    let mut fields = HashMap::new();
+    for sub in token.children.iter() {
+        match sub.get_name().as_deref().unwrap() {
+            "name" => {
+                if !global_context
+                    .struct_table
+                    .struct_name_index()
+                    .contains_key(&sub.get_match())
+                // .iter()
+                // .any(|v| v.name == )
+                {
+                    return Err(InterpreterError::UnresolvedName(
+                        sub.get_match(),
+                        token.range.start,
+                    )
+                    .into());
+                }
+                name = sub.get_match()
+            }
+            "structEntry" => {
+                fields.insert(sub.children[0].get_match(), &sub.children[1]);
+            }
+            e => unreachable!("{:?}", e),
+        }
+    }
+
+    let mut values = Vec::new();
+
+    let id = global_context.struct_table.struct_name_index()[&name];
+    for f_name in global_context.struct_table.type_list()[id]
+        .fields
+        .iter()
+        .map(|v| v.0.clone())
+        .collect::<Vec<_>>()
+    {
+        match fields.get(&f_name) {
+            Some(t) => values.push(parse_expr(t, writer, scope, global_context)?),
+            None => todo!("{:?}", f_name),
+        }
+    }
+
+    Ok(Expression::Initialize(FenderInitializer::Struct(id), values))
 }
 
 fn parse_list(
@@ -644,7 +691,7 @@ fn parse_list(
     scope: &mut LexicalScope,
     global_context: &mut FenderGlobalContext,
 ) -> InterpreterResult {
-    let mut values = vec![];
+    let mut values = Vec::new();
     for child in &token.children {
         values.push(parse_expr(child, writer, scope, global_context)?);
     }
@@ -657,7 +704,7 @@ fn parse_string(
     scope: &mut LexicalScope,
     global_context: &mut FenderGlobalContext,
 ) -> Result<Expression<FenderTypeSystem>, Box<dyn Error>> {
-    let mut exprs = vec![];
+    let mut exprs = Vec::new();
     let mut str = String::new();
     for child in &token.children {
         match child.get_name().as_deref().unwrap() {

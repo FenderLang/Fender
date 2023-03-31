@@ -1,7 +1,9 @@
 #!/bin/fender
-struct Testing{
+struct Testing<
    name1:String,
    name2
-}
+>
 $good = Testing("dog", 2).println()
-$fails = Testing(3, 2).println()
+$fails = Testing(3.2, 2).println()
+$new = Testing<name1:9, name2:'f'>;
+new.println()
