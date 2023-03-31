@@ -64,7 +64,7 @@ invokeArgs ::= wrappedDelimitedList<"(", ")", expr, ",", lineSep>
 structBody ::= wrappedDelimitedList<"{", "}", arg, ",", lineSep>
 structDeclaration ::= "struct" sep? name lineSep? structBody
 structEntry ::= name lineSep? ":" lineSep? expr
-structInstantiation ::= name wrappedDelimitedList<"⧼", "⧽", structEntry, ",", lineSep?>
+structInstantiation ::= name wrappedDelimitedList<"|", "|", structEntry, ",", lineSep?>
 
 
 arg ::= name (sep? typeAnnotation)?
