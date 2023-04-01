@@ -176,7 +176,7 @@ impl FenderValue {
         })
     }
 
-    /// return a raw `FenderValue` unwrapping all references
+    /// Return a raw `FenderValue` unwrapping all references
     pub fn unwrap_value(&self) -> FenderValue {
         match self {
             FenderValue::Ref(r) => r.unwrap_value(),
@@ -341,7 +341,11 @@ impl ToString for FenderValue {
                         .fields
                         .iter()
                         .enumerate()
-                        .map(|(i, (name, _))| format!("{}:{}", name, (*s.data[&i]).to_string()))
+                        .map(|(i, (name, _))| format!(
+                            "{}:{}",
+                            name,
+                            (*s.data[&(i as i64)]).to_string()
+                        ))
                         .collect::<Vec<_>>()
                         .join(", ")
                 )

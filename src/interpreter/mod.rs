@@ -392,6 +392,10 @@ fn parse_struct_declaration(
             "name" => struct_name = child_token.get_match(),
             "structBody" => {
                 for arg_token in child_token.iter() {
+                    global_context
+                        .struct_table
+                        .field_index(&arg_token.children[0].get_match());
+
                     fields.push((
                         arg_token.children[0].get_match(),
                         if arg_token.children.len() > 1 {
@@ -444,8 +448,6 @@ fn parse_assignment(
     scope: &mut LexicalScope,
     global_context: &mut FenderGlobalContext,
 ) -> InterpreterResult {
-    dbg!("here");
-
     let target = &token.children[0];
     let value = &token.children[token.children.len() - 1];
     let op = token
@@ -453,7 +455,6 @@ fn parse_assignment(
         .next()
         .map(|t| parse_binary_operator(&t.get_match()));
     let target = parse_expr(target, writer, scope, global_context)?;
-    dbg!(&target);
     let value = parse_expr(value, writer, scope, global_context)?;
     if let Some(_op) = op {
         todo!()
@@ -588,6 +589,19 @@ fn parse_tail_operation(
             Ok(Expression::BinaryOpEval(
                 FenderBinaryOperator::Index,
                 [expr, pos].into(),
+            ))
+        }
+        "fieldAccess" => {
+            let field_id = global_context
+                .struct_table
+                .field_index(&token.children[0].get_match());
+            Ok(Expression::BinaryOpEval(
+                FenderBinaryOperator::FieldAccess,
+                [
+                    expr,
+                    Expression::RawValue(FenderValue::Int(field_id as i64).into()),
+                ]
+                .into(),
             ))
         }
         name => unreachable!("{name}"),

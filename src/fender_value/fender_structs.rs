@@ -7,7 +7,7 @@ use std::{collections::HashMap, rc::Rc};
 #[derive(Debug, Clone, PartialEq)]
 pub struct FenderStruct {
     pub struct_id: Rc<FenderStructType>,
-    pub data: HashMap<usize, InternalReference<FenderReference>>,
+    pub data: HashMap<i64, InternalReference<FenderReference>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

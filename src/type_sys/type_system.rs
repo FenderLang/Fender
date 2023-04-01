@@ -39,6 +39,7 @@ impl FenderGlobalContext {
 pub struct StructTable {
     type_list: Vec<Rc<FenderStructType>>,
     struct_name_index: HashMap<String, usize>,
+    field_map: HashMap<String, usize>,
 }
 
 impl StructTable {
@@ -57,5 +58,17 @@ impl StructTable {
 
     pub(crate) fn len(&self) -> usize {
         self.type_list.len()
+    }
+
+    pub(crate) fn field_index(&mut self, name: &String) -> usize {
+        let next = self.field_map.len();
+
+        match self.field_map.get(name) {
+            Some(v) => *v,
+            None => {
+                self.field_map.insert(name.clone(), next);
+                next
+            }
+        }
     }
 }
