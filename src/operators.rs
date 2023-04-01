@@ -338,7 +338,11 @@ impl Initializer<FenderTypeSystem> for FenderInitializer {
                         }
                         FenderValue::Struct(ret).into()
                     }
-                    None => FenderValue::make_error(format!("")).into(),
+                    None => FenderValue::make_error(format!(
+                        "struct does not exist with internal id {}",
+                        id
+                    ))
+                    .into(),
                 }
             }
         }

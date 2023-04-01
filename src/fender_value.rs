@@ -5,7 +5,7 @@ use crate::{
 };
 use freight_vm::{function::FunctionRef, value::Value};
 use rand::{seq::SliceRandom, thread_rng};
-use std::{ops::Deref, rc::Rc};
+use std::ops::Deref;
 pub mod fender_structs;
 
 #[derive(Clone, Debug, Default, PartialEq)]
