@@ -1,12 +1,10 @@
 use crate::{
     fender_reference::{FenderReference, InternalReference},
     fender_value::{fender_structs::FenderStruct, FenderValue},
-    type_sys::{
-        type_id::FenderTypeId,
-        type_system::{FenderGlobalContext, FenderTypeSystem},
-    },
+    type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
 };
 use freight_vm::{
+    execution_engine::ExecutionEngine,
     operators::{BinaryOperator, Initializer, UnaryOperator},
     value::Value,
 };
@@ -281,7 +279,7 @@ impl Initializer<FenderTypeSystem> for FenderInitializer {
     fn initialize(
         &self,
         values: Vec<FenderReference>,
-        ctx: &mut FenderGlobalContext,
+        ctx: &mut ExecutionEngine<FenderTypeSystem>,
     ) -> FenderReference {
         match self {
             FenderInitializer::List => FenderValue::List(
@@ -304,7 +302,7 @@ impl Initializer<FenderTypeSystem> for FenderInitializer {
                 FenderValue::String(collected.into()).into()
             }
             FenderInitializer::Struct(id) => {
-                let id = ctx.struct_table.type_list().get(*id).cloned();
+                let id = ctx.context.struct_table.type_list().get(*id).cloned();
                 match id {
                     Some(struct_type) => {
                         let mut ret = FenderStruct {
@@ -315,7 +313,7 @@ impl Initializer<FenderTypeSystem> for FenderInitializer {
                             struct_type.fields.iter().zip(values.into_iter()).map(
                                 |((name, type_id), val)| {
                                     (
-                                        ctx.struct_table.field_index(name) as i64,
+                                        ctx.context.struct_table.field_index(name) as i64,
                                         type_id,
                                         val.into_ref(),
                                     )

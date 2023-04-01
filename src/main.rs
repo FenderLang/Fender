@@ -1,4 +1,4 @@
-use fender::interpreter;
+use fender::{fender_reference::FenderReference, fender_value::FenderValue, interpreter};
 use std::{fs, io::BufRead, path::Path, process::exit};
 
 fn main() {
@@ -20,15 +20,33 @@ fn main() {
         args[1].clone()
     };
 
-    let mut vm = match interpreter::create_vm(&script) {
+    let (mut engine, main) = match interpreter::create_engine_main(&script) {
         Ok(v) => v,
         Err(e) => {
-            eprintln!("Error processing fender code: {}", e);
+            eprintln!("Error processing fender code: {:#?}", e); // remove later, just for debugging rust
+            eprintln!(
+                "Error processing fender code: {}",
+                e.src_relative_string(&script)
+            );
             exit(1);
         }
     };
 
-    if let Err(e) = vm.run() {
-        println!("{}", e);
+    match engine.call(
+        &main,
+        args[2..]
+            .iter()
+            .map(|v| FenderReference::from(FenderValue::make_string(v.clone())))
+            .collect(),
+    ) {
+        Ok(v) => match v.unwrap_value() {
+            FenderValue::Int(i) => exit(i as i32),
+            FenderValue::Bool(b) => exit((!b) as i32),
+            FenderValue::Null => (),
+            _ => (), // do we want to print this? or do any of this?
+        },
+        Err(e) => {
+            eprintln!("{}", e);
+        }
     }
 }

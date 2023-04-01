@@ -1,10 +1,11 @@
 use crate::{
-    fender_reference::FenderReference, fender_value::FenderValue, interpreter::create_vm,
+    fender_reference::FenderReference, fender_value::FenderValue, interpreter::create_engine_main,
     type_sys::type_id::FenderTypeId,
 };
 
 fn run(source: &str) -> FenderReference {
-    create_vm(source).unwrap().run().unwrap()
+    let (mut engine, main) = create_engine_main(source).unwrap();
+    engine.call(&main, Vec::new()).unwrap()
 }
 
 #[test]

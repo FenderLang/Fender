@@ -1,6 +1,5 @@
-use freight_vm::{function::FunctionWriter, vm_writer::VMWriter};
-
 use crate::type_sys::type_system::FenderTypeSystem;
+use freight_vm::{execution_engine::ExecutionEngine, function::FunctionWriter};
 
 #[macro_export]
 /// Resolves the name of a dependency as a string
@@ -47,7 +46,7 @@ macro_rules! deps_enum {
 
             fn load<const N: usize>(
                 &self,
-                vm: &mut freight_vm::vm_writer::VMWriter<FenderTypeSystem>,
+                engine: &mut ExecutionEngine<FenderTypeSystem>,
                 func: &mut freight_vm::function::FunctionWriter<FenderTypeSystem>,
                 deps: &mut DependencyList<N>,
             ) -> usize {
@@ -58,9 +57,9 @@ macro_rules! deps_enum {
                     $(
                         $name::$val => {
                             $($(
-                                $name::$dep.load(vm, func, deps);
+                                $name::$dep.load(engine, func, deps);
                             )*)?
-                            let loaded = $res.load_into(vm, func, deps);
+                            let loaded = $res.load_into(engine, func, deps);
                             deps.0[*self as usize] = Some(loaded);
                             loaded
                         }
@@ -92,7 +91,7 @@ pub trait StdlibResource {
     /// Load this resource into the VM and return the address of the global variable it resides in
     fn load_into<const N: usize>(
         &self,
-        writer: &mut VMWriter<FenderTypeSystem>,
+        engine: &mut ExecutionEngine<FenderTypeSystem>,
         main: &mut FunctionWriter<FenderTypeSystem>,
         deps: &mut DependencyList<N>,
     ) -> usize;

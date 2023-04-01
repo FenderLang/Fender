@@ -73,7 +73,24 @@ macro_rules! unwrap_rust {
 impl Display for FenderError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.error_type {
-            ParentErrorType::FenderInterpreterError(e) => write!(f, "{}", e),
+            ParentErrorType::FenderInterpreterError(e) => {
+                write!(f, "{}", e,)?;
+                if let Some(code_pos) = &self.fender_code_pos {
+                    match (&code_pos.file_name, &code_pos.pos) {
+                        (None, code_pos::InnerCodePos::Pos(_)) => (),
+                        (Some(f_name), code_pos::InnerCodePos::LineCol(l, c)) => {
+                            write!(f, ": {f_name} {l}:{c}")?
+                        }
+                        (Some(f_name), code_pos::InnerCodePos::Pos(p)) => {
+                            write!(f, ": {f_name} pos {p}")?
+                        }
+                        (None, code_pos::InnerCodePos::LineCol(l, c)) => {
+                            write!(f, ": position {l}:{c}")?
+                        }
+                    }
+                }
+                Ok(())
+            }
             ParentErrorType::None => write!(
                 f,
                 "Error at rust {:?} or fender {:?}",

@@ -1,5 +1,8 @@
 #!/bin/fender
-struct Thing {name1:String,name2}
+
+
+struct Thing {name1:String, name2}
+
 
 $new = Thing|name1:"the name", name2:[1, 2, 3, 4]|
 
@@ -8,5 +11,11 @@ Thing|name1:"the name", name2:'f'|
 new:name2.println()
 new:name2[1] = 478378
 new:name2.println()
-new:name2 = "jfksdl"
+new:name2 = "word"
 new:name2.println()
+
+println("value is {$}")
+
+$.println()
+
+null
