@@ -5,7 +5,7 @@ use crate::{
 };
 use freight_vm::{function::FunctionRef, value::Value};
 use rand::{seq::SliceRandom, thread_rng};
-use std::ops::Deref;
+use std::{ops::Deref, rc::Rc};
 pub mod fender_structs;
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -73,7 +73,14 @@ impl FenderValue {
             Function(f) => Function(f.clone()),
             List(l) => List(l.iter().map(Value::deep_clone).collect::<Vec<_>>().into()),
             Null => Null,
-            Struct(_) => todo!(),
+            Struct(s) => Struct(FenderStruct {
+                struct_id: s.struct_id.clone(),
+                data: s
+                    .data
+                    .iter()
+                    .map(|(k, v)| (*k, InternalReference::new(v.deep_clone())))
+                    .collect(),
+            }),
             Type(t) => Type(t.clone()),
         }
     }

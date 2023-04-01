@@ -302,8 +302,7 @@ impl Initializer<FenderTypeSystem> for FenderInitializer {
                 FenderValue::String(collected.into()).into()
             }
             FenderInitializer::Struct(id) => {
-                let id = ctx.context.struct_table.type_list().get(*id).cloned();
-                match id {
+                match ctx.context.struct_table.type_list().get(*id).cloned() {
                     Some(struct_type) => {
                         let mut ret = FenderStruct {
                             struct_id: struct_type.clone(),
@@ -339,7 +338,7 @@ impl Initializer<FenderTypeSystem> for FenderInitializer {
                         }
                         FenderValue::Struct(ret).into()
                     }
-                    None => todo!(),
+                    None => FenderValue::make_error(format!("")).into(),
                 }
             }
         }

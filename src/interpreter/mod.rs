@@ -679,7 +679,16 @@ fn parse_struct_instantiation(
     {
         match fields.get(&f_name) {
             Some(t) => values.push(parse_expr(t, engine, scope)?),
-            None => todo!("{:?}", f_name),
+            None => {
+                return Err(FenderError {
+                    error_type: ParentErrorType::FenderInterpreterError(
+                        InterpreterError::UnresolvedName(f_name, token.range.start),
+                    ),
+                    fender_code_pos: Some(CodePos::new_abs(None, token.range.start)),
+                    rust_code_pos: CodePos::new_rel(Some(file!().into()), line!(), column!()),
+                }
+                .into())
+            }
         }
     }
 
