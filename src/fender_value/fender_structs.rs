@@ -13,5 +13,5 @@ pub struct FenderStruct {
 #[derive(Debug, Clone, PartialEq)]
 pub struct FenderStructType {
     pub name: String,
-    pub fields: Vec<(String, Option<FenderTypeId>)>,
+    pub fields: Vec<(String, Option<FenderTypeId>, usize)>,
 }

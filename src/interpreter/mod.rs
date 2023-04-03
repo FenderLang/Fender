@@ -376,11 +376,6 @@ fn parse_struct_declaration(
             "name" => struct_name = child_token.get_match(),
             "structBody" => {
                 for arg_token in child_token.iter() {
-                    engine
-                        .context
-                        .struct_table
-                        .field_index(&arg_token.children[0].get_match());
-
                     fields.push((
                         arg_token.children[0].get_match(),
                         if arg_token.children.len() > 1 {
@@ -390,6 +385,10 @@ fn parse_struct_declaration(
                         } else {
                             None
                         },
+                        engine
+                            .context
+                            .struct_table
+                            .field_index(&arg_token.children[0].get_match()),
                     ));
                 }
             }

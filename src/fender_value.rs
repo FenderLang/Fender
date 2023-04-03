@@ -289,6 +289,7 @@ impl FenderValue {
             )),
         }
     }
+
     pub fn to_bool(&self) -> FenderValue {
         use FenderValue::*;
         match self {
@@ -306,6 +307,7 @@ impl FenderValue {
             Type(_) => Bool(true),
         }
     }
+
     pub fn join_to_string(&self) -> FenderValue {
         match self {
             FenderValue::Ref(r) => r.join_to_string(),
@@ -319,6 +321,15 @@ impl FenderValue {
             )),
         }
     }
+
+    pub fn to_literal_display_string(&self) -> String {
+        match self {
+            FenderValue::Ref(v) => format!("Ref({})", v.to_literal_display_string()),
+            FenderValue::Char(c) => format!("'{c}'"),
+            FenderValue::String(s) => format!("\"{}\"", s.deref()),
+            v => v.to_string(),
+        }
+    }
 }
 
 impl ToString for FenderValue {
@@ -330,13 +341,13 @@ impl ToString for FenderValue {
             FenderValue::Char(c) => c.to_string(),
             FenderValue::String(s) => s.deref().clone(),
             FenderValue::Bool(b) => b.to_string(),
-            FenderValue::Error(e) => format!("Error({e})"),
+            FenderValue::Error(e) => format!("Error({e:?})"),
             FenderValue::Function(_) => "Function".to_string(),
             FenderValue::Null => "null".to_string(),
             FenderValue::List(list) => format!(
                 "[{}]",
                 list.iter()
-                    .map(|e| e.to_string())
+                    .map(|e| e.to_literal_display_string())
                     .collect::<Vec<_>>()
                     .join(", ")
             ),
@@ -347,11 +358,10 @@ impl ToString for FenderValue {
                     s.struct_id
                         .fields
                         .iter()
-                        .enumerate()
-                        .map(|(i, (name, _))| format!(
+                        .map(|(name, _, i)| format!(
                             "{}:{}",
                             name,
-                            (*s.data[&(i as i64)]).to_string()
+                            (*s.data[&(*i as i64)]).to_literal_display_string()
                         ))
                         .collect::<Vec<_>>()
                         .join(", ")

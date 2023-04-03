@@ -301,49 +301,50 @@ impl Initializer<FenderTypeSystem> for FenderInitializer {
                 }
                 FenderValue::String(collected.into()).into()
             }
-            FenderInitializer::Struct(id) => {
-                match ctx.context.struct_table.type_list().get(*id).cloned() {
-                    Some(struct_type) => {
-                        let mut ret = FenderStruct {
-                            struct_id: struct_type.clone(),
-                            data: HashMap::new(),
-                        };
-                        for (key, type_id, val) in
-                            struct_type.fields.iter().zip(values.into_iter()).map(
-                                |((name, type_id), val)| {
-                                    (
-                                        ctx.context.struct_table.field_index(name) as i64,
-                                        type_id,
-                                        val.into_ref(),
-                                    )
-                                },
-                            )
+            FenderInitializer::Struct(id) => self.initialize_struct(values, ctx, *id),
+        }
+    }
+}
+impl FenderInitializer {
+    fn initialize_struct(
+        &self,
+        values: Vec<FenderReference>,
+        ctx: &mut ExecutionEngine<FenderTypeSystem>,
+        id: usize,
+    ) -> FenderReference {
+        match ctx.context.struct_table.type_list().get(id).cloned() {
+            Some(struct_type) => {
+                let mut ret = FenderStruct {
+                    struct_id: struct_type.clone(),
+                    data: HashMap::new(),
+                };
+                for (key, type_id, val) in
+                    struct_type.fields.iter().zip(values.into_iter()).map(
+                        |((_, type_id, field_index), val)| (field_index, type_id, val.into_ref()),
+                    )
+                {
+                    match type_id {
+                        Some(type_id)
+                            if *type_id != val.get_type_id()
+                                && val.get_type_id() != FenderTypeId::Null =>
                         {
-                            match type_id {
-                                Some(type_id)
-                                    if *type_id != val.get_type_id()
-                                        && val.get_type_id() != FenderTypeId::Null =>
-                                {
-                                    return FenderValue::make_error(format!(
-                                        "Incorrect type used: expected `{}` found `{}`",
-                                        type_id.to_string(),
-                                        val.get_type_id().to_string()
-                                    ))
-                                    .into();
-                                }
-                                _ => (),
-                            }
-
-                            ret.data.insert(key, InternalReference::from(val));
+                            return FenderValue::make_error(format!(
+                                "Incorrect type used: expected `{}` found `{}`",
+                                type_id.to_string(),
+                                val.get_type_id().to_string()
+                            ))
+                            .into();
                         }
-                        FenderValue::Struct(ret).into()
+                        _ => (),
                     }
-                    None => FenderValue::make_error(format!(
-                        "struct does not exist with internal id {}",
-                        id
-                    ))
-                    .into(),
+
+                    ret.data.insert(*key as i64, InternalReference::from(val));
                 }
+                FenderValue::Struct(ret).into()
+            }
+            None => {
+                FenderValue::make_error(format!("struct does not exist with internal id {}", id))
+                    .into()
             }
         }
     }
