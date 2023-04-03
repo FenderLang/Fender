@@ -192,3 +192,32 @@ fn test_shuffled() {
     assert_ne!(results.1, format!("{:?}", input_list));
     assert_ne!(results.0, results.1);
 }
+
+#[test]
+fn structs() {
+    let script = r#"
+        $assert = (a, b){if }
+        struct StructName {name:String, field2}
+        $tst_val = StructName|name:"the name", field2:[1, 2, 3, 4]|
+
+        (tst_val:name == "the name").else({return false})
+        (tst_val:field2 == [1, 2, 3, 4]).else({return false})
+
+        tst_val:field2[1] = 12345
+        (tst_val:field2 == [1, 12345, 3, 4]).else({return false})
+
+
+        tst_val:field2 = "word"
+        (tst_val:field2 == "word").else({return false})
+
+        $set_name_to_tim = {$:name = "tim"}
+        tst_val.set_name_to_tim()
+        (tst_val:name == "tim").else({return false})
+    "#;
+
+    let (mut engine, main_func) = crate::interpreter::create_engine_main(script).unwrap();
+    assert_eq!(
+        FenderValue::Bool(true),
+        *engine.call(&main_func, Vec::new()).unwrap()
+    );
+}
