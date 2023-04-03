@@ -23,7 +23,6 @@ fn main() {
     let (mut engine, main) = match interpreter::create_engine_main(&script) {
         Ok(v) => v,
         Err(e) => {
-            eprintln!("Error processing fender code: {:#?}", e); // remove later, just for debugging rust
             eprintln!(
                 "Error processing fender code: {}",
                 e.src_relative_string(&script)

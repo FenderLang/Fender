@@ -376,26 +376,28 @@ fn parse_struct_declaration(
             "name" => struct_name = child_token.get_match(),
             "structBody" => {
                 for arg_token in child_token.iter() {
-                    fields.push((
-                        arg_token.children[0].get_match(),
-                        if arg_token.children.len() > 1 {
-                            FenderTypeId::type_from_str(
-                                arg_token.children[1].children[0].get_match(),
-                            )
-                        } else {
-                            None
-                        },
-                        engine
-                            .context
-                            .struct_table
-                            .field_index(&arg_token.children[0].get_match()),
-                    ));
+                    let name = arg_token.children[0].get_match();
+
+                    let type_check = if arg_token.children.len() > 1 {
+                        FenderTypeId::type_from_str(arg_token.children[1].children[0].get_match())
+                    } else {
+                        None
+                    };
+
+                    let id = engine
+                        .context
+                        .struct_table
+                        .field_index(&arg_token.children[0].get_match());
+
+                    fields.push((name, type_check, id));
                 }
             }
             e => unreachable!("{}", e),
         }
     }
     let new_scope = scope.child_scope(ArgCount::Fixed(fields.len()), engine.create_return_target());
+
+
     let mut constructor = FunctionWriter::new(ArgCount::Fixed(fields.len()));
     let mut exprs = Vec::with_capacity(fields.len());
     for i in 0..fields.len() {
@@ -649,8 +651,6 @@ fn parse_struct_instantiation(
                     .struct_table
                     .struct_name_index()
                     .contains_key(&sub.get_match())
-                // .iter()
-                // .any(|v| v.name == )
                 {
                     return Err(InterpreterError::UnresolvedName(
                         sub.get_match(),

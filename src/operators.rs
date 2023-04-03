@@ -318,18 +318,21 @@ impl FenderInitializer {
                     struct_id: struct_type.clone(),
                     data: HashMap::new(),
                 };
-                for (key, type_id, val) in
+
+                let struct_iter =
                     struct_type.fields.iter().zip(values.into_iter()).map(
-                        |((_, type_id, field_index), val)| (field_index, type_id, val.into_ref()),
-                    )
-                {
+                        |((name, type_id, field_index), val)| (name, field_index, type_id, val.into_ref()),
+                    );
+
+                for (name, key, type_id, val) in struct_iter {
                     match type_id {
                         Some(type_id)
                             if *type_id != val.get_type_id()
                                 && val.get_type_id() != FenderTypeId::Null =>
                         {
                             return FenderValue::make_error(format!(
-                                "Incorrect type used: expected `{}` found `{}`",
+                                "Incorrect type used for field {}: expected `{}` found `{}`",
+                                name,
                                 type_id.to_string(),
                                 val.get_type_id().to_string()
                             ))
