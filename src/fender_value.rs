@@ -326,7 +326,7 @@ impl FenderValue {
         match self {
             FenderValue::Ref(v) => format!("Ref({})", v.to_literal_display_string()),
             FenderValue::Char(c) => format!("'{c}'"),
-            FenderValue::String(s) => format!("\"{}\"", s.deref()),
+            FenderValue::String(s) => format!("{:?}", s.deref()),
             v => v.to_string(),
         }
     }
