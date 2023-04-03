@@ -15,3 +15,22 @@ pub struct FenderStructType {
     pub name: String,
     pub fields: Vec<(String, Option<FenderTypeId>, usize)>,
 }
+
+impl ToString for FenderStruct {
+    fn to_string(&self) -> String {
+        format!(
+            "{}{{{}}}",
+            self.struct_id.name,
+            self.struct_id
+                .fields
+                .iter()
+                .map(|(name, _, i)| format!(
+                    "{}:{}",
+                    name,
+                    (*self.data[&(*i as i64)]).to_literal_display_string()
+                ))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    }
+}

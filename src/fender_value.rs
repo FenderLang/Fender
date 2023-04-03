@@ -351,22 +351,7 @@ impl ToString for FenderValue {
                     .collect::<Vec<_>>()
                     .join(", ")
             ),
-            FenderValue::Struct(s) => {
-                format!(
-                    "{}{{{}}}",
-                    s.struct_id.name,
-                    s.struct_id
-                        .fields
-                        .iter()
-                        .map(|(name, _, i)| format!(
-                            "{}:{}",
-                            name,
-                            (*s.data[&(*i as i64)]).to_literal_display_string()
-                        ))
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                )
-            }
+            FenderValue::Struct(s) => s.to_string(),
             FenderValue::Type(t) => format!("Type({})", t.to_string()),
         }
     }
