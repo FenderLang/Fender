@@ -1,10 +1,11 @@
 use crate::{
-    fender_reference::FenderReference, fender_value::FenderValue, interpreter::create_vm,
+    fender_reference::FenderReference, fender_value::FenderValue, interpreter::create_engine_main,
     type_sys::type_id::FenderTypeId,
 };
 
 fn run(source: &str) -> FenderReference {
-    create_vm(source).unwrap().run().unwrap()
+    let (mut engine, main) = create_engine_main(source).unwrap();
+    engine.call(&main, Vec::new()).unwrap()
 }
 
 #[test]
@@ -190,4 +191,32 @@ fn test_shuffled() {
     assert_eq!(results.0, format!("{:?}", input_list));
     assert_ne!(results.1, format!("{:?}", input_list));
     assert_ne!(results.0, results.1);
+}
+
+#[test]
+fn structs() {
+    let script = r#"
+        struct StructName {name:String, field2}
+        $tst_val = StructName(name:"the name", field2:[1, 2, 3, 4])
+
+        (tst_val:name == "the name").else({return false})
+        (tst_val:field2 == [1, 2, 3, 4]).else({return false})
+
+        tst_val:field2[1] = 12345
+        (tst_val:field2 == [1, 12345, 3, 4]).else({return false})
+
+
+        tst_val:field2 = "word"
+        (tst_val:field2 == "word").else({return false})
+
+        $set_name_to_tim = {$:name = "tim"}
+        tst_val.set_name_to_tim()
+        (tst_val:name == "tim").else({return false})
+    "#;
+
+    let (mut engine, main_func) = crate::interpreter::create_engine_main(script).unwrap();
+    assert_eq!(
+        FenderValue::Bool(true),
+        *engine.call(&main_func, Vec::new()).unwrap()
+    );
 }

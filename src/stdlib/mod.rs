@@ -8,8 +8,7 @@ use freight_vm::{
     error::FreightError,
     execution_engine::ExecutionEngine,
     expression::{Expression, NativeFunction},
-    function::{ArgCount, FunctionWriter},
-    vm_writer::VMWriter,
+    function::{ArgCount, FunctionRef, FunctionWriter},
 };
 use std::{collections::HashMap, ops::RangeBounds};
 
@@ -33,19 +32,19 @@ pub fn detect_load(
     token: &Token,
     globals: &mut HashMap<String, usize>,
     main: &mut FunctionWriter<FenderTypeSystem>,
-    vm: &mut VMWriter<FenderTypeSystem>,
+    engine: &mut ExecutionEngine<FenderTypeSystem>,
 ) -> DependencyList<STDLIB_SIZE> {
-    let mut deplist = DependencyList([None; STDLIB_SIZE]);
+    let mut dep_list = DependencyList([None; STDLIB_SIZE]);
     token
         .rec_iter()
         .select_token("name")
         .map(|n| n.get_match())
         .filter_map(|n| FenderResource::from_str(&n))
         .for_each(|res| {
-            let global = res.load(vm, main, &mut deplist);
+            let global = res.load(engine, main, &mut dep_list);
             globals.insert(res.name().to_string(), global);
         });
-    deplist
+    dep_list
 }
 
 /// Shorthand function to create fixed `ArgCount`
@@ -74,16 +73,17 @@ struct FenderNativeFunction {
 impl StdlibResource for FenderNativeFunction {
     fn load_into<const N: usize>(
         &self,
-        writer: &mut VMWriter<FenderTypeSystem>,
+        engine: &mut ExecutionEngine<FenderTypeSystem>,
         main: &mut FunctionWriter<FenderTypeSystem>,
         _: &mut DependencyList<N>,
     ) -> usize {
-        let func = writer.include_native_function(NativeFunction::new(self.func), self.args);
-        let global = writer.create_global();
+        let global = engine.create_global();
+        let func = FunctionRef::new_native(global, NativeFunction::new(self.func), self.args);
         main.evaluate_expression(Expression::AssignGlobal(
             global,
             Box::new(FenderValue::Function(func).into()),
         ));
+
         global
     }
 }

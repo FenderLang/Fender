@@ -1,11 +1,12 @@
-use std::ops::Deref;
-
+use self::fender_structs::FenderStruct;
 use crate::{
     fender_reference::{FenderReference, InternalReference},
     type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
 };
 use freight_vm::{function::FunctionRef, value::Value};
 use rand::{seq::SliceRandom, thread_rng};
+use std::ops::Deref;
+pub mod fender_structs;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum FenderValue {
@@ -18,6 +19,8 @@ pub enum FenderValue {
     Error(String),
     Function(FunctionRef<FenderTypeSystem>),
     List(InternalReference<Vec<FenderReference>>),
+    Struct(FenderStruct),
+    Type(FenderTypeId),
     #[default]
     Null,
 }
@@ -45,6 +48,8 @@ impl FenderValue {
             FenderValue::Function(_) => FenderTypeId::Function,
             FenderValue::String(_) => FenderTypeId::String,
             FenderValue::List(_) => FenderTypeId::List,
+            FenderValue::Struct(_) => FenderTypeId::Struct,
+            FenderValue::Type(_) => FenderTypeId::Type,
         }
     }
 
@@ -68,6 +73,15 @@ impl FenderValue {
             Function(f) => Function(f.clone()),
             List(l) => List(l.iter().map(Value::deep_clone).collect::<Vec<_>>().into()),
             Null => Null,
+            Struct(s) => Struct(FenderStruct {
+                struct_id: s.struct_id.clone(),
+                data: s
+                    .data
+                    .iter()
+                    .map(|(k, v)| (*k, InternalReference::new(v.deep_clone())))
+                    .collect(),
+            }),
+            Type(t) => Type(t.clone()),
         }
     }
 
@@ -169,7 +183,7 @@ impl FenderValue {
         })
     }
 
-    /// return a raw `FenderValue` unwrapping all references
+    /// Return a raw `FenderValue` unwrapping all references
     pub fn unwrap_value(&self) -> FenderValue {
         match self {
             FenderValue::Ref(r) => r.unwrap_value(),
@@ -275,21 +289,25 @@ impl FenderValue {
             )),
         }
     }
+
     pub fn to_bool(&self) -> FenderValue {
         use FenderValue::*;
         match self {
-            FenderValue::Ref(r) => r.to_bool(),
-            FenderValue::Int(i) => Bool(*i != 0),
-            FenderValue::Float(f) => Bool(*f != 0.0),
-            FenderValue::Char(c) => Bool(*c != '\0'),
-            FenderValue::String(s) => Bool(!s.is_empty()),
-            FenderValue::Bool(b) => Bool(*b),
-            FenderValue::Error(_) => Bool(false),
-            FenderValue::Function(_) => Bool(true),
-            FenderValue::List(l) => Bool(!l.is_empty()),
-            FenderValue::Null => Bool(false),
+            Ref(r) => r.to_bool(),
+            Int(i) => Bool(*i != 0),
+            Float(f) => Bool(*f != 0.0),
+            Char(c) => Bool(*c != '\0'),
+            String(s) => Bool(!s.is_empty()),
+            Bool(b) => Bool(*b),
+            Error(_) => Bool(false),
+            Function(_) => Bool(true),
+            List(l) => Bool(!l.is_empty()),
+            Struct(_) => Bool(false),
+            Null => Bool(false),
+            Type(_) => Bool(true),
         }
     }
+
     pub fn join_to_string(&self) -> FenderValue {
         match self {
             FenderValue::Ref(r) => r.join_to_string(),
@@ -303,6 +321,15 @@ impl FenderValue {
             )),
         }
     }
+
+    pub fn to_literal_display_string(&self) -> String {
+        match self {
+            FenderValue::Ref(v) => format!("Ref({})", v.to_literal_display_string()),
+            FenderValue::Char(c) => format!("'{c}'"),
+            FenderValue::String(s) => format!("{:?}", s.deref()),
+            v => v.to_string(),
+        }
+    }
 }
 
 impl ToString for FenderValue {
@@ -314,16 +341,18 @@ impl ToString for FenderValue {
             FenderValue::Char(c) => c.to_string(),
             FenderValue::String(s) => s.deref().clone(),
             FenderValue::Bool(b) => b.to_string(),
-            FenderValue::Error(e) => format!("Error({e})"),
+            FenderValue::Error(e) => format!("Error({e:?})"),
             FenderValue::Function(_) => "Function".to_string(),
             FenderValue::Null => "null".to_string(),
             FenderValue::List(list) => format!(
                 "[{}]",
                 list.iter()
-                    .map(|e| e.to_string())
+                    .map(|e| e.to_literal_display_string())
                     .collect::<Vec<_>>()
                     .join(", ")
             ),
+            FenderValue::Struct(s) => s.to_string(),
+            FenderValue::Type(t) => format!("Type({})", t.to_string()),
         }
     }
 }

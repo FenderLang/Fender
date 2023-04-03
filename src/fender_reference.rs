@@ -45,6 +45,12 @@ impl<T: PartialEq> PartialEq for InternalReference<T> {
     }
 }
 
+impl<T: PartialOrd> PartialOrd for InternalReference<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        (**self).partial_cmp(&**other)
+    }
+}
+
 #[derive(Debug)]
 pub enum FenderReference {
     FRef(InternalReference<FenderValue>),
@@ -138,6 +144,8 @@ impl Value for FenderReference {
             FenderValue::Function(_) => &FenderTypeId::Function,
             FenderValue::String(_) => &FenderTypeId::String,
             FenderValue::List(_) => &FenderTypeId::List,
+            FenderValue::Struct(_) => &FenderTypeId::Struct,
+            FenderValue::Type(_) => &FenderTypeId::Type,
         }
     }
 

@@ -1,12 +1,14 @@
 use crate::{
     fender_reference::{FenderReference, InternalReference},
-    fender_value::FenderValue,
+    fender_value::{fender_structs::FenderStruct, FenderValue},
+    type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
 };
 use freight_vm::{
+    execution_engine::ExecutionEngine,
     operators::{BinaryOperator, Initializer, UnaryOperator},
     value::Value,
 };
-use std::ops::Deref;
+use std::{collections::HashMap, ops::Deref};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FenderBinaryOperator {
@@ -24,6 +26,7 @@ pub enum FenderBinaryOperator {
     Eq,
     Ne,
     Index,
+    FieldAccess,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -36,6 +39,7 @@ pub enum FenderUnaryOperator {
 pub enum FenderInitializer {
     List,
     String,
+    Struct(usize),
 }
 
 macro_rules! num_op_func {
@@ -216,6 +220,13 @@ fn index_op(a: &FenderReference, b: &FenderReference) -> FenderReference {
     }
 }
 
+fn field_access(a: &FenderReference, b: &FenderReference) -> FenderReference {
+    match (&**a, &**b) {
+        (FenderValue::Struct(s), FenderValue::Int(i)) => s.data[i].dupe_ref(),
+        e => unreachable!("{:?}", e),
+    }
+}
+
 impl BinaryOperator<FenderReference> for FenderBinaryOperator {
     fn apply_2(&self, a: &FenderReference, b: &FenderReference) -> FenderReference {
         use FenderBinaryOperator::*;
@@ -234,6 +245,7 @@ impl BinaryOperator<FenderReference> for FenderBinaryOperator {
             And => num_and(a, b),
             Or => num_or(a, b),
             Index => index_op(a, b),
+            FieldAccess => field_access(a, b),
         }
     }
 }
@@ -263,10 +275,14 @@ impl UnaryOperator<FenderReference> for FenderUnaryOperator {
     }
 }
 
-impl Initializer<FenderReference> for FenderInitializer {
-    fn initialize(&self, values: Vec<FenderReference>) -> FenderReference {
+impl Initializer<FenderTypeSystem> for FenderInitializer {
+    fn initialize(
+        &self,
+        values: Vec<FenderReference>,
+        ctx: &mut ExecutionEngine<FenderTypeSystem>,
+    ) -> FenderReference {
         match self {
-            Self::List => FenderValue::List(
+            FenderInitializer::List => FenderValue::List(
                 values
                     .into_iter()
                     .map(|val| FenderReference::FRef(InternalReference::from(val)))
@@ -274,7 +290,7 @@ impl Initializer<FenderReference> for FenderInitializer {
                     .into(),
             )
             .into(),
-            Self::String => {
+            FenderInitializer::String => {
                 let mut collected = String::new();
                 for v in values {
                     if let FenderValue::String(s) = &*v {
@@ -284,6 +300,55 @@ impl Initializer<FenderReference> for FenderInitializer {
                     }
                 }
                 FenderValue::String(collected.into()).into()
+            }
+            FenderInitializer::Struct(id) => self.initialize_struct(values, ctx, *id),
+        }
+    }
+}
+impl FenderInitializer {
+    fn initialize_struct(
+        &self,
+        values: Vec<FenderReference>,
+        ctx: &mut ExecutionEngine<FenderTypeSystem>,
+        id: usize,
+    ) -> FenderReference {
+        match ctx.context.struct_table.type_list().get(id).cloned() {
+            Some(struct_type) => {
+                let mut ret = FenderStruct {
+                    struct_id: struct_type.clone(),
+                    data: HashMap::new(),
+                };
+
+                let struct_iter = struct_type.fields.iter().zip(values.into_iter()).map(
+                    |((name, type_id, field_index), val)| {
+                        (name, field_index, type_id, val.into_ref())
+                    },
+                );
+
+                for (name, key, type_id, val) in struct_iter {
+                    match type_id {
+                        Some(type_id)
+                            if *type_id != val.get_type_id()
+                                && val.get_type_id() != FenderTypeId::Null =>
+                        {
+                            return FenderValue::make_error(format!(
+                                "Incorrect type used for field {}: expected `{}` found `{}`",
+                                name,
+                                type_id.to_string(),
+                                val.get_type_id().to_string()
+                            ))
+                            .into();
+                        }
+                        _ => (),
+                    }
+
+                    ret.data.insert(*key as i64, InternalReference::from(val));
+                }
+                FenderValue::Struct(ret).into()
+            }
+            None => {
+                FenderValue::make_error(format!("struct does not exist with internal id {}", id))
+                    .into()
             }
         }
     }
