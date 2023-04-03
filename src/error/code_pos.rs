@@ -32,9 +32,7 @@ impl CodePos {
             return;
         };
 
-        self.pos = {
-            let src = &src[0..pos].lines().collect::<Vec<_>>();
-            InnerCodePos::LineCol(src.len(), src[src.len() - 1].len())
-        };
+        let src = &src[0..pos].lines().collect::<Vec<_>>();
+        self.pos = InnerCodePos::LineCol(src.len(), src[src.len() - 1].len());
     }
 }
