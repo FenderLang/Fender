@@ -2,7 +2,7 @@
 A functional scripting language, intended for string manipulation and general scripting on the command line
 
 # TODO before beta
-- [ ] Structs
+- [x] Structs
 - [ ] Maps
 - [ ] Imports
 - [ ] REPL
