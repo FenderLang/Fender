@@ -27,24 +27,18 @@ impl<'a> FenderRepl<'a> {
             variables: HashMap::new().into(),
             parent: None,
             return_target: main_ret,
+            num_stack_vars: 0,
         };
         FenderRepl { engine, scope }
     }
 
     pub fn run(&mut self, statement: impl AsRef<str>) -> Result<FenderReference, Box<dyn Error>> {
-        let mut func = FunctionWriter::new(ArgCount::Fixed(0));
         let token = crate::interpreter::LEXER
             .get()
             .as_ref()
             .unwrap()
             .tokenize_with("statement", statement)?;
-        crate::interpreter::parse_statement(
-            &token,
-            &mut self.engine,
-            &mut self.scope,
-            &mut func,
-            true,
-        )?;
+        crate::interpreter::parse_statement(&token, &mut self.engine, &mut self.scope, true)?;
         todo!()
     }
 }

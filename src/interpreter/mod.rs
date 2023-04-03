@@ -42,9 +42,22 @@ pub struct LexicalScope<'a> {
     variables: RefCell<HashMap<String, VariableType>>,
     parent: Option<&'a LexicalScope<'a>>,
     return_target: usize,
+    num_stack_vars: usize,
 }
 
 impl<'a> LexicalScope<'a> {
+    pub fn new(args: ArgCount, return_target: usize) -> LexicalScope<'a> {
+        LexicalScope {
+            return_target,
+            labels: Default::default(),
+            captures: Default::default(),
+            variables: Default::default(),
+            parent: None,
+            num_stack_vars: args.stack_size(),
+            args,
+        }
+    }
+
     pub fn child_scope(&self, args: ArgCount, return_target: usize) -> LexicalScope {
         LexicalScope {
             labels: self.labels.clone(),
@@ -53,6 +66,31 @@ impl<'a> LexicalScope<'a> {
             variables: HashMap::new().into(),
             parent: Some(self),
             return_target,
+            num_stack_vars: args.stack_size(),
+        }
+    }
+
+    pub fn create_stack_var(
+        &mut self,
+        name: String,
+        pos: usize,
+    ) -> Result<usize, InterpreterError> {
+        let mut variables = self.variables.borrow_mut();
+        let existing = variables.get(&name);
+        if matches!(
+            existing,
+            Some(VariableType::Stack(_) | VariableType::Captured(_))
+        ) {
+            return Err(InterpreterError::DuplicateName(name.to_string(), pos).into());
+        }
+        variables.insert(name, VariableType::Stack(self.num_stack_vars));
+        self.num_stack_vars += 1;
+        Ok(self.num_stack_vars - 1)
+    }
+
+    pub fn register_stack_vars(&self, func: &mut FunctionWriter<FenderTypeSystem>) {
+        for _ in 0..self.num_stack_vars {
+            func.create_variable();
         }
     }
 
@@ -188,17 +226,10 @@ fn parse_main_function(
         .map(|(i, name)| (name, i))
         .collect();
 
-    let mut scope = LexicalScope {
-        labels: Rc::new(labels),
-        args: ArgCount::Fixed(0),
-        captures: Default::default(),
-        variables: Default::default(),
-        parent: None,
-        return_target: main_return_target,
-    };
-
+    let mut scope = LexicalScope::new(ArgCount::Fixed(0), main_return_target);
+    scope.labels = Rc::new(labels);
     for statement in &token.children {
-        let statement = parse_statement(statement, &mut engine, &mut scope, &mut main, true)?;
+        let statement = parse_statement(statement, &mut engine, &mut scope, true)?;
         main.evaluate_expression(statement);
     }
     let main_ref = engine.register_function(main, main_return_target);
@@ -304,13 +335,14 @@ pub(crate) fn parse_code_body(
 ) -> FenderResult<FunctionRef<FenderTypeSystem>> {
     let mut function = FunctionWriter::new(new_scope.args);
     for statement in &token.children {
-        let expr = parse_statement(statement, engine, new_scope, &mut function, false)?;
+        let expr = parse_statement(statement, engine, new_scope, false)?;
         function.evaluate_expression(expr);
     }
     let captures = std::mem::take(&mut *new_scope.captures.borrow_mut());
     if !captures.is_empty() {
         function.set_captures(captures);
     }
+    new_scope.register_stack_vars(&mut function);
     Ok(engine.register_function(function, new_scope.return_target))
 }
 
@@ -318,7 +350,6 @@ pub(crate) fn parse_statement(
     token: &Token,
     engine: &mut ExecutionEngine<FenderTypeSystem>,
     scope: &mut LexicalScope,
-    function: &mut FunctionWriter<FenderTypeSystem>,
     use_globals: bool,
 ) -> InterpreterResult {
     let token = &token.children[0];
@@ -337,27 +368,12 @@ pub(crate) fn parse_statement(
         }
         "declaration" if !use_globals => {
             let name = token.children[0].get_match();
-            let variables = scope.variables.borrow();
-            let existing = variables.get(&name);
-            if matches!(
-                existing,
-                Some(VariableType::Stack(_) | VariableType::Captured(_))
-            ) {
-                return Err(
-                    InterpreterError::DuplicateName(name.to_string(), token.range.start).into(),
-                );
-            }
-            drop(variables);
-            let var = function.create_variable();
+            let var = scope.create_stack_var(name, token.range.start)?;
             let expr = &token.children[1];
             let expr = parse_expr(expr, engine, scope)?;
-            scope
-                .variables
-                .borrow_mut()
-                .insert(name.to_string(), VariableType::Stack(var));
             Expression::AssignStack(var, expr.into())
         }
-        "structDeclaration" => parse_struct_declaration(token, engine, scope, function)?,
+        "structDeclaration" => parse_struct_declaration(token, engine, scope)?,
         name => unreachable!("{name}"),
     })
 }
@@ -366,7 +382,6 @@ fn parse_struct_declaration(
     token: &Token,
     engine: &mut ExecutionEngine<FenderTypeSystem>,
     scope: &mut LexicalScope,
-    outer_function: &mut FunctionWriter<FenderTypeSystem>,
 ) -> InterpreterResult {
     let mut struct_name = String::new();
     let mut fields = Vec::new();
@@ -395,6 +410,7 @@ fn parse_struct_declaration(
             e => unreachable!("{}", e),
         }
     }
+    let constructor_var = scope.create_stack_var(struct_name.clone(), token.range.start)?;
     let new_scope = scope.child_scope(ArgCount::Fixed(fields.len()), engine.create_return_target());
 
     let mut constructor = FunctionWriter::new(ArgCount::Fixed(fields.len()));
@@ -408,15 +424,9 @@ fn parse_struct_declaration(
     ));
 
     engine.context.struct_table.insert(FenderStructType {
-        name: struct_name.clone(),
+        name: struct_name,
         fields,
     });
-
-    let constructor_var = outer_function.create_variable();
-    scope
-        .variables
-        .borrow_mut()
-        .insert(struct_name, VariableType::Stack(constructor_var));
 
     Ok(Expression::AssignStack(
         constructor_var,
