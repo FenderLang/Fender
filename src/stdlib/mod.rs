@@ -30,7 +30,6 @@ pub mod val_operation;
 /// Detect which standard library functions are used and load them automatically
 pub fn detect_load(
     token: &Token,
-    globals: &mut HashMap<String, usize>,
     main: &mut FunctionWriter<FenderTypeSystem>,
     engine: &mut ExecutionEngine<FenderTypeSystem>,
 ) -> DependencyList<STDLIB_SIZE> {
@@ -42,7 +41,10 @@ pub fn detect_load(
         .filter_map(|n| FenderResource::from_str(&n))
         .for_each(|res| {
             let global = res.load(engine, main, &mut dep_list);
-            globals.insert(res.name().to_string(), global);
+            engine
+                .context
+                .globals
+                .insert(res.name().to_string(), global);
         });
     dep_list
 }
@@ -83,7 +85,6 @@ impl StdlibResource for FenderNativeFunction {
             global,
             Box::new(FenderValue::Function(func).into()),
         ));
-
         global
     }
 }
