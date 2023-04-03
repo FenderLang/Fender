@@ -629,7 +629,7 @@ fn parse_literal(
         "list" => parse_list(token, engine, scope)?,
         "null" => FenderValue::Null.into(),
         "closure" => parse_closure(token, engine, scope)?,
-        "structInstantiation" => parse_struct_instantiation(token, engine, scope)?,
+        "structInit" => parse_struct_instantiation(token, engine, scope)?,
         name => unreachable!("{name}"),
     })
 }

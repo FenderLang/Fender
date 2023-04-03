@@ -196,9 +196,8 @@ fn test_shuffled() {
 #[test]
 fn structs() {
     let script = r#"
-        $assert = (a, b){if }
         struct StructName {name:String, field2}
-        $tst_val = StructName|name:"the name", field2:[1, 2, 3, 4]|
+        $tst_val = StructName(name:"the name", field2:[1, 2, 3, 4])
 
         (tst_val:name == "the name").else({return false})
         (tst_val:field2 == [1, 2, 3, 4]).else({return false})

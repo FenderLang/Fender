@@ -4,9 +4,9 @@
 struct Thing {name1:String, name2}
 
 
-$new = Thing|name1:"the name", name2:[1, 2, 3, 4]|
+$new = Thing(name1:"the name", name2:[1, 2, 3, 4])
 
-Thing|name1:"the name", name2:'f'|
+Thing(name1:"the name", name2:'f')
 
 new.println()
 new:name2.println()

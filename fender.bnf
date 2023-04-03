@@ -42,7 +42,7 @@ alpha ::= [a-z] | [A-Z]
 alphanum ::= [a-z] | [A-Z] | [0-9] | "_"
 name ::= ("_" | alpha) alphanum*
 
-literal ::= null | float | int | boolean | string | char | list | map | closure | structInstantiation
+literal ::= null | float | int | boolean | string | char | list | map | closure | structInit
 int ::= "-"? [0-9]+
 list ::= wrappedDelimitedList<"[", "]", expr, ",", lineSep>
 mapEntry ::= expr lineSep? ":" lineSep? expr
@@ -64,7 +64,7 @@ invokeArgs ::= wrappedDelimitedList<"(", ")", expr, ",", lineSep>
 structBody ::= wrappedDelimitedList<"{", "}", arg, ",", lineSep>
 structDeclaration ::= "struct" sep? name lineSep? structBody
 structEntry ::= name lineSep? ":" lineSep? expr
-structInstantiation ::= name wrappedDelimitedList<"|", "|", structEntry, ",", lineSep?>
+structInit ::= name "(" lineSep? delimitedList<structEntry, ",", lineSep?> lineSep? ")"
 
 
 arg ::= name (sep? typeAnnotation)?
