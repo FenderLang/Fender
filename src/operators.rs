@@ -319,10 +319,11 @@ impl FenderInitializer {
                     data: HashMap::new(),
                 };
 
-                let struct_iter =
-                    struct_type.fields.iter().zip(values.into_iter()).map(
-                        |((name, type_id, field_index), val)| (name, field_index, type_id, val.into_ref()),
-                    );
+                let struct_iter = struct_type.fields.iter().zip(values.into_iter()).map(
+                    |((name, type_id, field_index), val)| {
+                        (name, field_index, type_id, val.into_ref())
+                    },
+                );
 
                 for (name, key, type_id, val) in struct_iter {
                     match type_id {

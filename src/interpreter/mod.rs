@@ -397,7 +397,6 @@ fn parse_struct_declaration(
     }
     let new_scope = scope.child_scope(ArgCount::Fixed(fields.len()), engine.create_return_target());
 
-
     let mut constructor = FunctionWriter::new(ArgCount::Fixed(fields.len()));
     let mut exprs = Vec::with_capacity(fields.len());
     for i in 0..fields.len() {
