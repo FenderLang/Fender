@@ -11,6 +11,12 @@ pub struct FenderRepl<'a> {
     scope: LexicalScope<'a>,
 }
 
+impl<'a> Default for FenderRepl<'a> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'a> FenderRepl<'a> {
     pub fn new() -> FenderRepl<'a> {
         let mut engine = ExecutionEngine::new_default();

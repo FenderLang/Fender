@@ -1,7 +1,7 @@
 #![deny(missing_docs)]
 use crate::{
     dep_name, deps_enum, fender_reference::FenderReference, fender_value::FenderValue,
-    interpreter::error::InterpreterError, type_sys::type_system::FenderTypeSystem,
+    type_sys::type_system::FenderTypeSystem,
 };
 
 use freight_vm::{
@@ -31,7 +31,6 @@ pub mod val_operation;
 pub fn load<const N: usize>(
     name: &str,
     engine: &mut ExecutionEngine<FenderTypeSystem>,
-    pos: usize,
 ) -> Option<usize> {
     let res = FenderResource::from_str(name)?;
     Some(res.load::<N>(engine))
@@ -64,11 +63,13 @@ impl StdlibResource for FenderNativeFunction {
     fn load_into<const N: usize>(&self, engine: &mut ExecutionEngine<FenderTypeSystem>) -> usize {
         let global = engine.create_global();
         let func = FunctionRef::new_native(global, NativeFunction::new(self.func), self.args);
-        engine.evaluate(
-            &Expression::AssignGlobal(global, Box::new(FenderValue::Function(func).into())),
-            &mut [],
-            &[],
-        );
+        engine
+            .evaluate(
+                &Expression::AssignGlobal(global, Box::new(FenderValue::Function(func).into())),
+                &mut [],
+                &[],
+            )
+            .expect("Assigning value should never fail");
         global
     }
 }

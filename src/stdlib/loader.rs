@@ -1,5 +1,5 @@
 use crate::type_sys::type_system::FenderTypeSystem;
-use freight_vm::{execution_engine::ExecutionEngine, function::FunctionWriter};
+use freight_vm::execution_engine::ExecutionEngine;
 
 #[macro_export]
 /// Resolves the name of a dependency as a string

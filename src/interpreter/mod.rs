@@ -81,7 +81,7 @@ impl<'a> LexicalScope<'a> {
             existing,
             Some(VariableType::Stack(_) | VariableType::Captured(_))
         ) {
-            return Err(InterpreterError::DuplicateName(name.to_string(), pos).into());
+            return Err(InterpreterError::DuplicateName(name.to_string(), pos));
         }
         variables.insert(name, VariableType::Stack(self.num_stack_vars));
         self.num_stack_vars += 1;
@@ -123,7 +123,7 @@ impl<'a> LexicalScope<'a> {
                     if let Some(var) = engine.context.globals.get(name) {
                         return Ok(VariableType::Global(*var));
                     }
-                    if let Some(var) = stdlib::load::<STDLIB_SIZE>(&name, engine, src_pos) {
+                    if let Some(var) = stdlib::load::<STDLIB_SIZE>(name, engine) {
                         return Ok(VariableType::Global(var));
                     } else {
                         return Err(InterpreterError::UnresolvedName(name.to_string(), src_pos));
@@ -363,7 +363,7 @@ pub(crate) fn parse_statement(
         "declaration" if use_globals => {
             let name = token.children[0].get_match();
             let global = engine.create_global();
-            if engine.context.globals.insert(name, global) != None {
+            if engine.context.globals.insert(name, global).is_some() {
                 return Err(InterpreterError::DuplicateName(
                     token.children[0].get_match(),
                     token.range.start,
