@@ -1,5 +1,7 @@
 use crate::{
-    fender_reference::FenderReference, fender_value::FenderValue, interpreter::create_engine_main,
+    fender_reference::{FenderReference, InternalReference},
+    fender_value::FenderValue,
+    interpreter::create_engine_main,
     type_sys::type_id::FenderTypeId,
 };
 
@@ -9,7 +11,7 @@ fn run(source: &str) -> FenderReference {
 }
 
 #[test]
-fn test_simple_values() {
+fn simple_values() {
     assert_eq!(*run("1"), FenderValue::Int(1));
     assert_eq!(*run("1.0"), FenderValue::Float(1.0));
     assert_eq!(
@@ -23,7 +25,7 @@ fn test_simple_values() {
 }
 
 #[test]
-fn test_algebraic_expressions() {
+fn algebraic_expressions() {
     assert_eq!(*run("3 + 2"), FenderValue::Int(5));
     assert_eq!(*run("3 + 2 + 2"), FenderValue::Int(7));
     assert_eq!(*run("3 + 2 / 2"), FenderValue::Int(4));
@@ -32,7 +34,7 @@ fn test_algebraic_expressions() {
 }
 
 #[test]
-fn test_closures() {
+fn closures() {
     assert_eq!(*run("{1}()"), FenderValue::Int(1));
     assert_eq!(*run("{$}(1)"), FenderValue::Int(1));
     assert_eq!(*run("{{$}(1)}()"), FenderValue::Int(1));
@@ -40,7 +42,7 @@ fn test_closures() {
 }
 
 #[test]
-fn test_variables() {
+fn variables() {
     assert_eq!(*run("$x = 4; x"), FenderValue::Int(4));
     assert_eq!(*run("$x = 4; $y = x / 2; y"), FenderValue::Int(2));
     assert_eq!(*run("$add = (a, b) {a + b}; 4.add(5)"), FenderValue::Int(9));
@@ -48,13 +50,13 @@ fn test_variables() {
 }
 
 #[test]
-fn test_capture() {
+fn capture() {
     assert_eq!(*run("{$x = 10; {x}()}()"), FenderValue::Int(10));
     assert_eq!(*run("{$x = 10; {x = x / 2}(); x}()"), FenderValue::Int(5));
 }
 
 #[test]
-fn test_return() {
+fn return_statement() {
     assert_eq!(*run("return 2; 1"), FenderValue::Int(2));
     assert_eq!(*run("{return 2; 1}()"), FenderValue::Int(2));
     assert_eq!(*run("{{return 2; 1}()}()"), FenderValue::Int(2));
@@ -65,7 +67,7 @@ fn test_return() {
 }
 
 #[test]
-fn test_lists() {
+fn lists() {
     assert_eq!(
         *run("[1, 2, 3]"),
         FenderValue::List(
@@ -96,7 +98,7 @@ fn test_lists() {
 }
 
 #[test]
-fn test_pass_by_reference() {
+fn run_pass_by_reference_file() {
     assert_eq!(*run(include_str!("passByRef.fndr")), FenderValue::Int(8));
     assert_eq!(
         *run("$a = 4; $f = (n) {n = 0}; f(a); a"),
@@ -118,7 +120,7 @@ fn test_pass_by_reference() {
 }
 
 #[test]
-fn test_format_strings() {
+fn format_strings() {
     assert_eq!(
         *run("$x = 4; \"x is equal to {x}\""),
         FenderValue::String("x is equal to 4".to_string().into())
@@ -134,7 +136,7 @@ fn test_format_strings() {
 }
 
 #[test]
-fn run_quicksort_test() {
+fn run_quicksort_file() {
     use FenderValue::Int;
     assert_eq!(
         *run(include_str!("quicksort.fndr")),
@@ -155,42 +157,6 @@ fn run_quicksort_test() {
             .into()
         )
     );
-}
-
-#[test]
-fn test_shuffle() {
-    let input_list = (0..100).collect::<Vec<_>>();
-    let test_prog = format!(
-        "$ordered = {:?}; $new = ordered.shuffle(); return [ordered, new]",
-        input_list
-    );
-
-    let results = match (*run(&test_prog)).clone() {
-        FenderValue::List(l) => ((*l[0]).to_string(), (*l[1]).to_string()),
-        _ => unreachable!(),
-    };
-    assert_ne!(results.0, format!("{:?}", input_list));
-    assert_ne!(results.1, format!("{:?}", input_list));
-    assert_eq!(results.0, results.1);
-
-    // -_- I hate this
-}
-
-#[test]
-fn test_shuffled() {
-    let input_list = (0..100).collect::<Vec<_>>();
-    let test_prog = format!(
-        "$ordered = {:?}; $new = ordered.getShuffled(); return [ordered, new]",
-        input_list
-    );
-
-    let results = match (*run(&test_prog)).clone() {
-        FenderValue::List(l) => ((*l[0]).to_string(), (*l[1]).to_string()),
-        _ => unreachable!(),
-    };
-    assert_eq!(results.0, format!("{:?}", input_list));
-    assert_ne!(results.1, format!("{:?}", input_list));
-    assert_ne!(results.0, results.1);
 }
 
 #[test]
@@ -219,4 +185,143 @@ fn structs() {
         FenderValue::Bool(true),
         *engine.call(&main_func, Vec::new()).unwrap()
     );
+}
+
+mod stdlib {
+    use super::*;
+
+    mod cast {
+        use super::*;
+
+        #[test]
+        fn r#ref() {
+            assert_eq!(
+                *run("$x = 1; $y = x.ref(); y"),
+                FenderValue::Ref(InternalReference::new(FenderReference::FRef(
+                    InternalReference::new(FenderValue::Int(1))
+                )))
+            );
+        }
+
+        #[test]
+        fn raw() {
+            assert_eq!(
+                *run("$x = 1; $y = x.ref(); y.raw()"),
+                FenderReference::FRef(InternalReference::new(FenderValue::Int(1))).into()
+            );
+        }
+
+        #[test]
+        fn int() {
+            assert_eq!(
+                *run(r#"$x = "1"; x"#),
+                FenderValue::make_string("1".into()).into()
+            );
+            assert_eq!(*run(r#"$x = "1"; x.int()"#), FenderValue::Int(1));
+        }
+
+        #[test]
+        fn str() {
+            assert_eq!(*run("$x = 1; x"), FenderValue::Int(1));
+            assert_eq!(
+                *run("$x = 1; x.str()"),
+                FenderValue::make_string("1".into()).into()
+            );
+        }
+
+        #[test]
+        fn bool() {
+            assert_eq!(
+                *run(r#"$x = "true"; x"#),
+                FenderValue::make_string("true".into()).into()
+            );
+            assert_eq!(
+                *run(r#"$x = "true"; x.bool()"#),
+                FenderValue::Bool(true).into()
+            );
+        }
+
+        #[test]
+        fn list() {
+            assert_eq!(
+                *run(r#"$x = "hello, world!"; x"#),
+                FenderValue::make_string("hello, world!".into()).into()
+            );
+            assert_eq!(
+                *run(r#"$x = "hello, world!"; x.list()"#),
+                FenderValue::make_list(
+                    "hello, world!"
+                        .chars()
+                        .map(|c| FenderValue::Char(c).into())
+                        .collect()
+                )
+                .into()
+            );
+        }
+
+        #[test]
+        fn join_str() {
+            use FenderValue as FV;
+            assert_eq!(
+                *run(r#"$x = ["hello", " world!"]; x"#),
+                FV::make_list(vec![
+                    FenderReference::FRef(FV::make_string("hello".into()).into()),
+                    FenderReference::FRef(FV::make_string(" world!".into()).into())
+                ])
+                .into()
+            );
+
+            assert_eq!(
+                *run(r#"$x = ["hello", " world!"]; x"#),
+                FV::make_list(vec![
+                    FV::make_string("hello".into()).into(),
+                    FV::make_string(" world!".into()).into()
+                ])
+                .into()
+            );
+
+            assert_eq!(
+                *run(r#"$x = ["hello", " world!"]; x.joinStr()"#),
+                FV::make_string("hello world!".into()).into()
+            );
+        }
+    }
+
+    #[test]
+    fn shuffle() {
+        let input_list = (0..100).collect::<Vec<_>>();
+        let test_prog = format!(
+            "$ordered = {:?}; $new = ordered.shuffle(); return [ordered, new]",
+            input_list
+        );
+
+        let results = match (*run(&test_prog)).clone() {
+            FenderValue::List(l) => ((*l[0]).to_string(), (*l[1]).to_string()),
+            _ => unreachable!(),
+        };
+        assert_ne!(results.0, format!("{:?}", input_list));
+        assert_ne!(results.1, format!("{:?}", input_list));
+        assert_eq!(results.0, results.1);
+
+        // -_- I hate this
+    }
+
+    #[test]
+    fn shuffled() {
+        let input_list = (0..100).collect::<Vec<_>>();
+        let test_prog = format!(
+            "$ordered = {:?}; $new = ordered.getShuffled(); return [ordered, new]",
+            input_list
+        );
+
+        let results = match (*run(&test_prog)).clone() {
+            FenderValue::List(l) => ((*l[0]).to_string(), (*l[1]).to_string()),
+            _ => unreachable!(),
+        };
+        assert_eq!(results.0, format!("{:?}", input_list));
+        assert_ne!(results.1, format!("{:?}", input_list));
+        assert_ne!(results.0, results.1);
+    }
+
+    mod system {}
 }
