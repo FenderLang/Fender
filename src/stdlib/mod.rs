@@ -37,28 +37,6 @@ pub fn load<const N: usize>(
     Some(res.load::<N>(engine))
 }
 
-/// Detect which standard library functions are used and load them automatically
-// pub fn detect_load(
-//     token: &Token,
-//     main: &mut FunctionWriter<FenderTypeSystem>,
-//     engine: &mut ExecutionEngine<FenderTypeSystem>,
-// ) -> DependencyList<STDLIB_SIZE> {
-//     let mut dep_list = DependencyList([None; STDLIB_SIZE]);
-//     token
-//         .rec_iter()
-//         .select_token("name")
-//         .map(|n| n.get_match())
-//         .filter_map(|n| FenderResource::from_str(&n))
-//         .for_each(|res| {
-//             let global = res.load(engine);
-//             engine
-//                 .context
-//                 .globals
-//                 .insert(res.name().to_string(), global);
-//         });
-//     dep_list
-// }
-
 /// Shorthand function to create fixed `ArgCount`
 fn fixed(args: usize) -> ArgCount {
     ArgCount::Fixed(args)
