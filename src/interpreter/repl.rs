@@ -1,7 +1,7 @@
-use rustyline::{error::ReadlineError, DefaultEditor};
 use std::error::Error;
 
 use freight_vm::{execution_engine::ExecutionEngine, function::ArgCount};
+use reedline::{DefaultValidator, Prompt, Reedline, Signal};
 
 use crate::{
     fender_reference::FenderReference, fender_value::FenderValue,
@@ -13,8 +13,7 @@ use super::LexicalScope;
 pub struct FenderRepl<'a> {
     engine: ExecutionEngine<FenderTypeSystem>,
     scope: LexicalScope<'a>,
-    editor: DefaultEditor,
-    buffer: String,
+    editor: Reedline,
 }
 
 impl<'a> Default for FenderRepl<'a> {
@@ -31,6 +30,36 @@ fn display_result(result: Result<FenderReference, Box<dyn Error>>) {
     }
 }
 
+struct FenderPrompt;
+
+impl Prompt for FenderPrompt {
+    fn render_prompt_left(&self) -> std::borrow::Cow<str> {
+        "> ".into()
+    }
+
+    fn render_prompt_right(&self) -> std::borrow::Cow<str> {
+        "".into()
+    }
+
+    fn render_prompt_indicator(
+        &self,
+        _prompt_mode: reedline::PromptEditMode,
+    ) -> std::borrow::Cow<str> {
+        "".into()
+    }
+
+    fn render_prompt_multiline_indicator(&self) -> std::borrow::Cow<str> {
+        "..".into()
+    }
+
+    fn render_prompt_history_search_indicator(
+        &self,
+        _history_search: reedline::PromptHistorySearch,
+    ) -> std::borrow::Cow<str> {
+        todo!()
+    }
+}
+
 impl<'a> FenderRepl<'a> {
     pub fn new() -> FenderRepl<'a> {
         let mut engine = ExecutionEngine::new_default();
@@ -38,8 +67,7 @@ impl<'a> FenderRepl<'a> {
         FenderRepl {
             engine,
             scope,
-            editor: DefaultEditor::new().expect("Prompt created"),
-            buffer: String::new(),
+            editor: Reedline::create().with_validator(Box::new(DefaultValidator)),
         }
     }
 
@@ -52,60 +80,21 @@ impl<'a> FenderRepl<'a> {
             .as_ref()
             .unwrap()
             .tokenize_with("statement", statement.as_ref())?;
-        self.editor
-            .add_history_entry(statement)
-            .expect("Add history entry");
         let expr =
             crate::interpreter::parse_statement(&token, &mut self.engine, &mut self.scope, true)?;
         Ok(self.engine.evaluate(&expr, &mut [], &[])?)
     }
 
-    fn is_balanced(&self) -> bool {
-        let mut depth = 0;
-        let mut quoted = false;
-        let mut escape = false;
-        for c in self.buffer.chars() {
-            if escape {
-                escape = false;
-                continue;
-            }
-            match c {
-                '\\' => escape = true,
-                '"' => quoted = !quoted,
-                '{' | '[' | '(' if !quoted => depth += 1,
-                '}' | ']' | ')' if !quoted => depth -= 1,
-                _ => (),
-            }
-        }
-        depth == 0 && !quoted
-    }
-
     pub fn run(&mut self) {
         loop {
-            let prompt = if self.buffer.is_empty() { "> " } else { ">>" };
-            let line = self.editor.readline(prompt);
+            let line = self.editor.read_line(&FenderPrompt);
             match line {
-                Ok(line) => {
-                    self.buffer.push_str(&line);
-                    if !self.is_balanced() {
-                        self.buffer.push('\n');
-                        continue;
-                    }
-                    let statement = std::mem::take(&mut self.buffer);
-                    display_result(self.run_statement(statement.trim()));
+                Ok(Signal::Success(line)) => {
+                    display_result(self.run_statement(line.trim()));
                 }
-                Err(ReadlineError::Interrupted) => self.buffer.clear(),
-                Err(ReadlineError::Io(e)) => eprintln!("I/O error: {e}"),
-                Err(ReadlineError::WindowResized) => continue,
-                #[cfg(target_os = "windows")]
-                Err(ReadlineError::Decode(e)) => eprintln!("Could not decode input: {e}"),
-                #[cfg(target_os = "windows")]
-                Err(ReadlineError::SystemError(e)) => eprintln!("System error: {e}"),
-                Err(ReadlineError::Eof) => {
-                    println!("\nGoodbye");
-                    break;
-                }
-                Err(e) => eprintln!("Unknown error: {e}"),
+                Ok(Signal::CtrlC) => continue,
+                Ok(Signal::CtrlD) => break,
+                Err(e) => eprintln!("I/O error: {e}"),
             }
         }
     }

@@ -11,8 +11,8 @@ freight_vm = { git = "https://github.com/FenderLang/Freight", rev = "148122ad9d9
 ] }
 flux_bnf = { git = "https://github.com/FenderLang/Flux", rev = "f54d70b77d285cae8e38a3f59072a76495ad14f1" }
 rand = "0.8.5"
-rustyline = {version = "11.0.0", default-features = false, optional = true}
+reedline = "0.18.0"
 
 [features]
 default = ["repl"]
-repl = ["dep:rustyline"]
+repl = []
