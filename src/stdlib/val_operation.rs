@@ -135,7 +135,7 @@ fndr_native_func!(
     |_, a, b| {
         match (a.unwrap_value(), b.unwrap_value()) {
             (String(a), String(b)) => {
-                Ok(FenderValue::make_string(format!("{}{}", a.to_string(), b.to_string())).into())
+                Ok(FenderValue::make_string(format!("{}{}", *a, *b)).into())
             }
             (List(a), List(b)) => {
                 let mut newl = a.to_vec();
