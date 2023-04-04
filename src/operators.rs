@@ -134,6 +134,15 @@ fn eq(a: &FenderReference, b: &FenderReference) -> FenderReference {
         | (FenderValue::Int(_), FenderValue::Float(_))
         | (FenderValue::Float(_), FenderValue::Int(_)) => num_eq(a, b),
         (a, b) if a.get_real_type_id() != b.get_real_type_id() => FenderValue::Bool(false).into(),
+        (FenderValue::Null, FenderValue::Null) => FenderValue::Bool(true).into(),
+        (_, FenderValue::Null) => FenderValue::Bool(false).into(),
+        (FenderValue::List(a_list), FenderValue::List(b_list)) => {
+            if a_list.len() != b_list.len() {
+                FenderValue::Bool(false).into()
+            } else {
+                FenderValue::Bool(a_list.iter().eq(b_list.iter())).into()
+            }
+        }
         _ => FenderValue::make_error(format!(
             "cannot run `eq` on {} and {}",
             a.get_real_type_id().to_string(),

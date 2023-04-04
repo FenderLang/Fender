@@ -187,6 +187,90 @@ fn structs() {
     );
 }
 
+mod variadic_functions {
+    use freight_vm::error::FreightError;
+
+    use super::*;
+
+    #[test]
+    #[ignore = "missing proper fails"]
+    fn fixed_panic() {
+        let script = r#"
+            $fName = (a, b, c){}
+            fName(1, 2, 3)
+            fName(1, 2, 3, 4)
+            null
+        "#;
+
+        let (mut engine, main_func) = crate::interpreter::create_engine_main(script).unwrap();
+        let res = dbg!(engine.call(&main_func, Vec::new()));
+
+        assert!(matches!(
+            res,
+            Err(FreightError::IncorrectArgumentCount {
+                expected_min: 3,
+                expected_max: Some(3),
+                actual: 4
+            })
+        ));
+    }
+
+    #[test]
+    fn optional_args() {
+        let script1 = r#"$fName = (a, b, [c]){};fName(1,2,3);fName(1)"#;
+        let (mut engine, main_func) = crate::interpreter::create_engine_main(script1).unwrap();
+
+        assert!(matches!(
+            engine.call(&main_func, Vec::new()),
+            Err(FreightError::IncorrectArgumentCount {
+                expected_min: 2,
+                expected_max: Some(3),
+                actual: 1
+            })
+        ));
+
+        let script2 = r#"$fName = (a, b, [c]){};fName(1,2,3);fName(1,2,3,4)"#;
+        let (mut engine, main_func) = crate::interpreter::create_engine_main(script2).unwrap();
+
+        assert!(matches!(
+            engine.call(&main_func, Vec::new()),
+            Err(FreightError::IncorrectArgumentCount {
+                expected_min: 2,
+                expected_max: Some(3),
+                actual: 4
+            })
+        ));
+    }
+
+    #[test]
+    fn variadic_args() {
+        let script1 = r#"$fName = (a, [b, c...]){};fName()"#;
+        let (mut engine, main_func) = crate::interpreter::create_engine_main(script1).unwrap();
+
+        let res = dbg!(engine.call(&main_func, Vec::new()));
+        assert!(matches!(
+            res,
+            Err(FreightError::IncorrectArgumentCount {
+                expected_min: 1,
+                expected_max: None,
+                actual: 0
+            })
+        ));
+
+        assert_eq!(
+            run(r#"$fName = (a, [b, c...]){ a == 1 && b == null && c == []};fName(1)"#)
+                .unwrap_value(),
+            FenderValue::Bool(true).into()
+        );
+
+        assert_eq!(
+            run(r#"$fName = (a, [b, c...]){ a == 1 && b == 2 && c == [3, 4, 5]};fName(1,2,3,4,5)"#)
+                .unwrap_value(),
+            FenderValue::Bool(true).into()
+        );
+    }
+}
+
 mod stdlib {
     use super::*;
 
@@ -471,7 +555,6 @@ mod stdlib {
             );
         }
 
-
         #[test]
         fn remove() {
             assert_eq!(
@@ -488,8 +571,8 @@ mod stdlib {
         }
 
         #[test]
-        fn remove_pass (){
-             assert_eq!(
+        fn remove_pass() {
+            assert_eq!(
                 *run(r#"[1, 2, 3, 4, 5]"#),
                 FenderValue::make_list(
                     (1..=5)
