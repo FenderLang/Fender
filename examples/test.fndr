@@ -18,3 +18,5 @@ concat(fhalf, shalf).println();
 
 first.concat(sec).println();
 concat(third, fourth).println();
+
+concat(shalf, third).println();
