@@ -1,13 +1,20 @@
 #!/bin/fender
 
-$end = "ting";
 
 $first = ["te", "st"];
 $sec = ["in", "g"];
 
-$b = "tes";
-b.concat(end).println();
-concat(b, end).println();
+$third = [1, 2];
+$fourth = [3, 4]
+
+$start = "tes";
+$end = "ting";
+
+$shalf = "wards"
+$fhalf = "back"
+
+start.concat(end).println();
+concat(fhalf, shalf).println();
 
 first.concat(sec).println();
-concat(first, sec).println();
+concat(third, fourth).println();
