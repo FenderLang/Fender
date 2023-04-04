@@ -9,6 +9,7 @@ fn main() {
     let args = std::env::args().collect::<Vec<_>>();
     if args.len() < 2 {
         FenderRepl::new().run();
+        return;
     }
     let script = if let Ok(true) = Path::new(&args[1]).try_exists() {
         fs::read_to_string(&args[1]).unwrap()
