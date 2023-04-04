@@ -9,5 +9,6 @@ edition = "2021"
 freight_vm = { git = "https://github.com/FenderLang/Freight", rev = "148122ad9d931da13b8e6f130a8a7b34c987d2ef", features = [
    "variadic_functions",
 ] }
-flux_bnf = { git = "https://github.com/FenderLang/Flux", branch = "master" }
+flux_bnf = { git = "https://github.com/FenderLang/Flux", rev = "f54d70b77d285cae8e38a3f59072a76495ad14f1" }
 rand = "0.8.5"
+rustyline = {version = "11.0.0", features = []}
