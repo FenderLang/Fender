@@ -132,16 +132,16 @@ fndr_native_func!(
 fndr_native_func!(
     /// Returns and String/List with the combined String/List
     concat_func,
-    |_, obj, value| {
-        match obj.unwrap_value().deep_clone() 
+    |_, a, b| {
+        match (a.unwrap_value(), b.unwrap_value())
         {
-            String(s) => Ok(FenderValue::make_string(format!("{}{}", obj.to_string(), value.to_string())).into()),
-            List(l) => {
-                let mut l = l.to_vec();
-                l.push(value);
-                Ok(FenderValue::make_list(l).into())
+            (String(a), String(b)) => Ok(FenderValue::make_string(format!("{}{}", a.to_string(), b.to_string())).into()),
+            (List(a), List(b)) => {
+                let mut newl = a.to_vec();
+                newl.extend(b.iter().cloned());
+                Ok(FenderValue::make_list(newl).into())
             }
-            _ => Ok(FenderValue::make_error(format!("Cannot concat {:?} with {:?}", obj, value)).into()),
+            _ => Ok(FenderValue::make_error(format!("Cannot concat {:?} with {:?}", a, b)).into()),
         }
     }
 );
