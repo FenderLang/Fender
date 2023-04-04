@@ -2,10 +2,12 @@
 
 $end = "ting";
 
-$fn = (a) {
-   $b = "tes";
-   b.concat(a).println();
-   concat(a, b).println();
-}
+$first = ["te", "st"];
+$sec = ["in", "g"];
 
-fn(end)
+$b = "tes";
+b.concat(end).println();
+concat(b, end).println();
+
+first.concat(sec).println();
+concat(first, sec).println();

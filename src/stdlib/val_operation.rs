@@ -135,13 +135,13 @@ fndr_native_func!(
     |_, obj, value| {
         match obj.unwrap_value().deep_clone() 
         {
-            String(s) => Ok(String(format!("{:?}{:?}", s, value).into()).into()),
+            String(s) => Ok(FenderValue::make_string(format!("{}{}", obj.to_string(), value.to_string())).into()),
             List(l) => {
                 let mut l = l.to_vec();
                 l.push(value);
-                Ok(List(l.into()).into())
+                Ok(FenderValue::make_list(l).into())
             }
-            _ => Ok(Error(format!("Cannot concat {:?} with {:?}", obj, value)).into()),
+            _ => Ok(FenderValue::make_error(format!("Cannot concat {:?} with {:?}", obj, value)).into()),
         }
     }
 );
