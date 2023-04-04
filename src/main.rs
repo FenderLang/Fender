@@ -1,20 +1,16 @@
-use fender::{fender_reference::FenderReference, fender_value::FenderValue, interpreter};
-use std::{fs, io::BufRead, path::Path, process::exit};
+use fender::{
+    fender_reference::FenderReference,
+    fender_value::FenderValue,
+    interpreter::{self, repl::FenderRepl},
+};
+use std::{fs, path::Path, process::exit};
 
 fn main() {
     let args = std::env::args().collect::<Vec<_>>();
-    let script = if args.len() < 2 {
-        let mut script = String::new();
-        let stdin = std::io::stdin();
-        for line in stdin.lock().lines() {
-            match line {
-                Ok(l) => script.push_str(&l),
-                Err(_) => break,
-            };
-            script.push('\n');
-        }
-        script
-    } else if let Ok(true) = Path::new(&args[1]).try_exists() {
+    if args.len() < 2 {
+        FenderRepl::new().run();
+    }
+    let script = if let Ok(true) = Path::new(&args[1]).try_exists() {
         fs::read_to_string(&args[1]).unwrap()
     } else {
         args[1].clone()
