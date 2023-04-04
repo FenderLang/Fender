@@ -287,6 +287,55 @@ mod stdlib {
         }
     }
 
+    mod system {
+        use super::*;
+
+        #[test]
+        fn pwd() {
+            assert_eq!(
+                *run("pwd()"),
+                FenderValue::make_string(std::env::current_dir().unwrap().to_string_lossy().into())
+            );
+        }
+
+        #[test]
+        fn cd() {
+            let pwd = std::env::current_dir().unwrap();
+            assert_eq!(
+                *run(r#"pwd().println(); cd(".."); pwd().println()"#),
+                FenderValue::make_string(pwd.parent().unwrap().to_string_lossy().into())
+            );
+            std::env::set_current_dir(pwd).unwrap();
+        }
+        #[test]
+        fn cd2() {
+            let pwd = std::env::current_dir().unwrap();
+            assert_eq!(
+                *run(r#"pwd().println(); cd(".."); pwd().println()"#),
+                FenderValue::make_string(pwd.parent().unwrap().to_string_lossy().into())
+            );
+            std::env::set_current_dir(pwd).unwrap();
+        }
+
+        #[test]
+        fn shell (){
+            assert_eq!(
+                *run(r#"shell("echo hi")"#),
+                FenderValue::make_string("hi\n".into())
+            );
+
+            assert_eq!(
+                *run(r#" "hi".shell("echo")"#),
+                FenderValue::make_string("hi\n".into())
+            );
+
+            assert_eq!(
+                *run(r#" "hi".shell("echo", "bash -c")"#),
+                FenderValue::make_string("hi\n".into())
+            );
+        }
+    }
+
     #[test]
     fn shuffle() {
         let input_list = (0..100).collect::<Vec<_>>();
@@ -322,6 +371,4 @@ mod stdlib {
         assert_ne!(results.1, format!("{:?}", input_list));
         assert_ne!(results.0, results.1);
     }
-
-    mod system {}
 }
