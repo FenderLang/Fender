@@ -27,6 +27,7 @@ impl TypeSystem for FenderTypeSystem {
 pub struct FenderGlobalContext {
     pub deps: DependencyList<STDLIB_SIZE>,
     pub struct_table: StructTable,
+    pub globals: HashMap<String, usize>,
 }
 
 impl FenderGlobalContext {

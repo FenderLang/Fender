@@ -7,7 +7,7 @@ fn main() {
     for arg in args {
         match get_fender_code(&arg) {
             Ok(source) => {
-                let (mut engine, main_func) = match interpreter::create_engine_main(&source) {
+                let (mut engine, main_func) = match interpreter::create_engine_main(source) {
                     Ok(v) => v,
                     Err(e) => {
                         eprintln!("Error proccessing fender code: {}", e);
