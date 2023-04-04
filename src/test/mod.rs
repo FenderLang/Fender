@@ -193,8 +193,7 @@ mod variadic_functions {
     use super::*;
 
     #[test]
-    #[ignore = "missing proper fails"]
-    fn fixed_panic() {
+    fn fixed_args() {
         let script = r#"
             $fName = (a, b, c){}
             fName(1, 2, 3)
