@@ -134,9 +134,7 @@ fndr_native_func!(
     concat_func,
     |_, a, b| {
         match (a.unwrap_value(), b.unwrap_value()) {
-            (String(a), String(b)) => {
-                Ok(FenderValue::make_string(format!("{}{}", *a, *b)).into())
-            }
+            (String(a), String(b)) => Ok(FenderValue::make_string(format!("{}{}", *a, *b)).into()),
             (List(a), List(b)) => {
                 let mut newl = a.to_vec();
                 newl.extend(b.iter().cloned());
