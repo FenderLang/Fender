@@ -1,4 +1,4 @@
-use rustyline::{error::ReadlineError, DefaultEditor, Config, Behavior::PreferTerm};
+use rustyline::{error::ReadlineError, DefaultEditor};
 use std::{error::Error};
 
 use freight_vm::{execution_engine::ExecutionEngine, function::ArgCount};
