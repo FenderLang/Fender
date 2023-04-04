@@ -56,7 +56,7 @@ impl Prompt for FenderPrompt {
         &self,
         _history_search: reedline::PromptHistorySearch,
     ) -> std::borrow::Cow<str> {
-        todo!()
+        "".into()
     }
 }
 
