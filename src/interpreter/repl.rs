@@ -52,7 +52,9 @@ impl<'a> FenderRepl<'a> {
             .as_ref()
             .unwrap()
             .tokenize_with("statement", statement.as_ref())?;
-        self.editor.add_history_entry(statement).expect("Add history entry");
+        self.editor
+            .add_history_entry(statement)
+            .expect("Add history entry");
         let expr =
             crate::interpreter::parse_statement(&token, &mut self.engine, &mut self.scope, true)?;
         Ok(self.engine.evaluate(&expr, &mut [], &[])?)
