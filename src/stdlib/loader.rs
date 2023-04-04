@@ -47,20 +47,18 @@ macro_rules! deps_enum {
             fn load<const N: usize>(
                 &self,
                 engine: &mut ExecutionEngine<FenderTypeSystem>,
-                func: &mut freight_vm::function::FunctionWriter<FenderTypeSystem>,
-                deps: &mut DependencyList<N>,
             ) -> usize {
-                if let Some(dep) = deps.0[*self as usize] {
+                if let Some(dep) = engine.context.deps.0[*self as usize] {
                     return dep;
                 }
                 match self {
                     $(
                         $name::$val => {
                             $($(
-                                $name::$dep.load(engine, func, deps);
+                                $name::$dep.load(engine);
                             )*)?
-                            let loaded = $res.load_into(engine, func, deps);
-                            deps.0[*self as usize] = Some(loaded);
+                            let loaded = $res.load_into::<N>(engine);
+                            engine.context.deps.0[*self as usize] = Some(loaded);
                             loaded
                         }
                     ),*
@@ -89,10 +87,5 @@ impl<const N: usize> Default for DependencyList<N> {
 /// Represents a standard library resource that can be loaded
 pub trait StdlibResource {
     /// Load this resource into the VM and return the address of the global variable it resides in
-    fn load_into<const N: usize>(
-        &self,
-        engine: &mut ExecutionEngine<FenderTypeSystem>,
-        main: &mut FunctionWriter<FenderTypeSystem>,
-        deps: &mut DependencyList<N>,
-    ) -> usize;
+    fn load_into<const N: usize>(&self, engine: &mut ExecutionEngine<FenderTypeSystem>) -> usize;
 }

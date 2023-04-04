@@ -6,7 +6,7 @@ use crate::{
     operators::FenderBinaryOperator,
     operators::FenderInitializer,
     operators::FenderUnaryOperator,
-    stdlib,
+    stdlib::{self, STDLIB_SIZE},
     type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
     unwrap_rust,
 };
@@ -122,6 +122,9 @@ impl<'a> LexicalScope<'a> {
                 None => {
                     if let Some(var) = engine.context.globals.get(name) {
                         return Ok(VariableType::Global(*var));
+                    }
+                    if let Some(var) = stdlib::load::<STDLIB_SIZE>(&name, engine, src_pos) {
+                        return Ok(VariableType::Global(var));
                     } else {
                         return Err(InterpreterError::UnresolvedName(name.to_string(), src_pos));
                     }
@@ -205,17 +208,17 @@ fn parse_main_function(
 )> {
     let mut engine: ExecutionEngine<FenderTypeSystem> = ExecutionEngine::new_default();
     let mut main = FunctionWriter::new(ArgCount::new(..));
-    engine.context.deps = stdlib::detect_load(token, &mut main, &mut engine);
+    // engine.context.deps = stdlib::detect_load(token, &mut main, &mut engine);
 
     let main_return_target = engine.create_return_target();
-    for t in token.children.iter() {
-        let child = &t.children[0];
-        if let Some("declaration") = child.get_name().as_deref() {
-            let name = child.children[0].get_match();
-            let global = engine.create_global();
-            engine.context.globals.insert(name, global);
-        }
-    }
+    // for t in token.children.iter() {
+    //     let child = &t.children[0];
+    //     if let Some("declaration") = child.get_name().as_deref() {
+    //         let name = child.children[0].get_match();
+    //         let global = engine.create_global();
+    //         engine.context.globals.insert(name, global);
+    //     }
+    // }
     let labels = token
         .rec_iter()
         .select_token("label")
@@ -359,12 +362,17 @@ pub(crate) fn parse_statement(
         "return" => parse_return(token, engine, scope)?,
         "declaration" if use_globals => {
             let name = token.children[0].get_match();
-            let var = engine.context.globals.get(&name).copied().ok_or_else(|| {
-                InterpreterError::UnresolvedName(name.to_string(), token.range.start)
-            })?;
+            let global = engine.create_global();
+            if engine.context.globals.insert(name, global) != None {
+                return Err(InterpreterError::DuplicateName(
+                    token.children[0].get_match(),
+                    token.range.start,
+                )
+                .into());
+            }
             let expr = &token.children[1];
             let expr = parse_expr(expr, engine, scope)?;
-            Expression::AssignGlobal(var, expr.into())
+            Expression::AssignGlobal(global, expr.into())
         }
         "declaration" if !use_globals => {
             let name = token.children[0].get_match();
@@ -525,11 +533,15 @@ pub(crate) fn parse_value(
         "literal" => parse_literal(&token.children[0], engine, scope)?,
         "lambdaParameter" => Expression::stack(0),
         "enclosedExpr" => parse_expr(&token.children[0], engine, scope)?,
-        "name" => match scope.resolve_propagate(engine, &token.get_match(), token.range.start)? {
-            VariableType::Captured(addr) => Expression::captured(addr),
-            VariableType::Stack(addr) => Expression::stack(addr),
-            VariableType::Global(addr) => Expression::global(addr),
-        },
+        "name" => {
+            let name = token.get_match();
+            let found = scope.resolve_propagate(engine, &name, token.range.start)?;
+            match found {
+                VariableType::Captured(addr) => Expression::captured(addr),
+                VariableType::Stack(addr) => Expression::stack(addr),
+                VariableType::Global(addr) => Expression::global(addr),
+            }
+        }
         name => unreachable!("{name}"),
     })
 }

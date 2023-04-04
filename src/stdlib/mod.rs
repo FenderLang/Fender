@@ -1,18 +1,18 @@
 #![deny(missing_docs)]
 use crate::{
     dep_name, deps_enum, fender_reference::FenderReference, fender_value::FenderValue,
-    type_sys::type_system::FenderTypeSystem,
+    interpreter::error::InterpreterError, type_sys::type_system::FenderTypeSystem,
 };
-use flux_bnf::tokens::{iterators::SelectTokens, Token};
+
 use freight_vm::{
     error::FreightError,
     execution_engine::ExecutionEngine,
     expression::{Expression, NativeFunction},
-    function::{ArgCount, FunctionRef, FunctionWriter},
+    function::{ArgCount, FunctionRef},
 };
-use std::{collections::HashMap, ops::RangeBounds};
+use std::ops::RangeBounds;
 
-use self::loader::{DependencyList, StdlibResource};
+use self::loader::StdlibResource;
 
 /// functions for converting fender values
 pub mod cast;
@@ -27,27 +27,37 @@ pub mod system;
 /// modify and query existing values
 pub mod val_operation;
 
-/// Detect which standard library functions are used and load them automatically
-pub fn detect_load(
-    token: &Token,
-    main: &mut FunctionWriter<FenderTypeSystem>,
+/// Load a standard library resource
+pub fn load<const N: usize>(
+    name: &str,
     engine: &mut ExecutionEngine<FenderTypeSystem>,
-) -> DependencyList<STDLIB_SIZE> {
-    let mut dep_list = DependencyList([None; STDLIB_SIZE]);
-    token
-        .rec_iter()
-        .select_token("name")
-        .map(|n| n.get_match())
-        .filter_map(|n| FenderResource::from_str(&n))
-        .for_each(|res| {
-            let global = res.load(engine, main, &mut dep_list);
-            engine
-                .context
-                .globals
-                .insert(res.name().to_string(), global);
-        });
-    dep_list
+    pos: usize,
+) -> Option<usize> {
+    let res = FenderResource::from_str(name)?;
+    Some(res.load::<N>(engine))
 }
+
+/// Detect which standard library functions are used and load them automatically
+// pub fn detect_load(
+//     token: &Token,
+//     main: &mut FunctionWriter<FenderTypeSystem>,
+//     engine: &mut ExecutionEngine<FenderTypeSystem>,
+// ) -> DependencyList<STDLIB_SIZE> {
+//     let mut dep_list = DependencyList([None; STDLIB_SIZE]);
+//     token
+//         .rec_iter()
+//         .select_token("name")
+//         .map(|n| n.get_match())
+//         .filter_map(|n| FenderResource::from_str(&n))
+//         .for_each(|res| {
+//             let global = res.load(engine);
+//             engine
+//                 .context
+//                 .globals
+//                 .insert(res.name().to_string(), global);
+//         });
+//     dep_list
+// }
 
 /// Shorthand function to create fixed `ArgCount`
 fn fixed(args: usize) -> ArgCount {
@@ -73,18 +83,14 @@ struct FenderNativeFunction {
 }
 
 impl StdlibResource for FenderNativeFunction {
-    fn load_into<const N: usize>(
-        &self,
-        engine: &mut ExecutionEngine<FenderTypeSystem>,
-        main: &mut FunctionWriter<FenderTypeSystem>,
-        _: &mut DependencyList<N>,
-    ) -> usize {
+    fn load_into<const N: usize>(&self, engine: &mut ExecutionEngine<FenderTypeSystem>) -> usize {
         let global = engine.create_global();
         let func = FunctionRef::new_native(global, NativeFunction::new(self.func), self.args);
-        main.evaluate_expression(Expression::AssignGlobal(
-            global,
-            Box::new(FenderValue::Function(func).into()),
-        ));
+        engine.evaluate(
+            &Expression::AssignGlobal(global, Box::new(FenderValue::Function(func).into())),
+            &mut [],
+            &[],
+        );
         global
     }
 }
