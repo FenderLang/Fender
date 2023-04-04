@@ -94,7 +94,7 @@ impl<'a> FenderRepl<'a> {
                     let statement = std::mem::take(&mut self.buffer);
                     display_result(self.run_statement(statement.trim()));
                 }
-                Err(ReadlineError::Interrupted) => continue,
+                Err(ReadlineError::Interrupted) => self.buffer.clear(),
                 Err(ReadlineError::Io(e)) => eprintln!("I/O error: {e}"),
                 Err(ReadlineError::WindowResized) => continue,
                 Err(ReadlineError::Decode(e)) => eprintln!("Could not decode input: {e}"),
