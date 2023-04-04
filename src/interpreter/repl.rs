@@ -97,7 +97,9 @@ impl<'a> FenderRepl<'a> {
                 Err(ReadlineError::Interrupted) => self.buffer.clear(),
                 Err(ReadlineError::Io(e)) => eprintln!("I/O error: {e}"),
                 Err(ReadlineError::WindowResized) => continue,
+                #[cfg(target_os = "windows")]
                 Err(ReadlineError::Decode(e)) => eprintln!("Could not decode input: {e}"),
+                #[cfg(target_os = "windows")]
                 Err(ReadlineError::SystemError(e)) => eprintln!("System error: {e}"),
                 Err(ReadlineError::Eof) => {
                     println!("\nGoodbye");
