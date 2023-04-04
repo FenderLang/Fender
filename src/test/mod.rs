@@ -302,23 +302,14 @@ mod stdlib {
         fn cd() {
             let pwd = std::env::current_dir().unwrap();
             assert_eq!(
-                *run(r#"pwd().println(); cd(".."); pwd().println()"#),
-                FenderValue::make_string(pwd.parent().unwrap().to_string_lossy().into())
-            );
-            std::env::set_current_dir(pwd).unwrap();
-        }
-        #[test]
-        fn cd2() {
-            let pwd = std::env::current_dir().unwrap();
-            assert_eq!(
-                *run(r#"pwd().println(); cd(".."); pwd().println()"#),
+                *run(r#"pwd().println();cd(".."); pwd().println()"#),
                 FenderValue::make_string(pwd.parent().unwrap().to_string_lossy().into())
             );
             std::env::set_current_dir(pwd).unwrap();
         }
 
         #[test]
-        fn shell (){
+        fn shell() {
             assert_eq!(
                 *run(r#"shell("echo hi")"#),
                 FenderValue::make_string("hi\n".into())
@@ -336,39 +327,187 @@ mod stdlib {
         }
     }
 
-    #[test]
-    fn shuffle() {
-        let input_list = (0..100).collect::<Vec<_>>();
-        let test_prog = format!(
-            "$ordered = {:?}; $new = ordered.shuffle(); return [ordered, new]",
-            input_list
-        );
+    mod val_operations {
+        use super::*;
 
-        let results = match (*run(&test_prog)).clone() {
-            FenderValue::List(l) => ((*l[0]).to_string(), (*l[1]).to_string()),
-            _ => unreachable!(),
-        };
-        assert_ne!(results.0, format!("{:?}", input_list));
-        assert_ne!(results.1, format!("{:?}", input_list));
-        assert_eq!(results.0, results.1);
+        #[test]
+        fn len() {
+            assert_eq!(*run(r#""hello".len()"#), FenderValue::Int(5));
+            assert_eq!(*run(r#"[1, 2, 3, 4, 5].len()"#), FenderValue::Int(5));
 
-        // -_- I hate this
-    }
+            assert!(matches!(*run(r#"2.len()"#), FenderValue::Error(_)))
+        }
 
-    #[test]
-    fn shuffled() {
-        let input_list = (0..100).collect::<Vec<_>>();
-        let test_prog = format!(
-            "$ordered = {:?}; $new = ordered.getShuffled(); return [ordered, new]",
-            input_list
-        );
+        #[test]
+        fn swap() {
+            assert_eq!(
+                *run(r#"[0,1,2,3]"#),
+                FenderValue::make_list(
+                    (0..=3)
+                        .into_iter()
+                        .map(|i| FenderValue::Int(i).into())
+                        .collect()
+                )
+            );
 
-        let results = match (*run(&test_prog)).clone() {
-            FenderValue::List(l) => ((*l[0]).to_string(), (*l[1]).to_string()),
-            _ => unreachable!(),
-        };
-        assert_eq!(results.0, format!("{:?}", input_list));
-        assert_ne!(results.1, format!("{:?}", input_list));
-        assert_ne!(results.0, results.1);
+            assert_eq!(
+                *run(r#"[0,1,2,3].swap(0, 3)"#),
+                FenderValue::make_list(
+                    ([3, 1, 2, 0])
+                        .into_iter()
+                        .map(|i| FenderValue::Int(i).into())
+                        .collect()
+                )
+            );
+            match *run(r#"[0,1,2,3].swap(0, "3")"#) {
+                FenderValue::Error(_) => (),
+                _ => panic!(),
+            }
+        }
+
+        #[test]
+        #[should_panic]
+        fn swap_panic() {
+            run(r#"[0,1,2,3].swap(0, 9)"#);
+        }
+
+        #[test]
+        fn shuffle() {
+            let input_list = (0..100).collect::<Vec<_>>();
+            let test_prog = format!(
+                "$ordered = {:?}; $new = ordered.shuffle(); return [ordered, new]",
+                input_list
+            );
+
+            let results = match (*run(&test_prog)).clone() {
+                FenderValue::List(l) => ((*l[0]).to_string(), (*l[1]).to_string()),
+                _ => unreachable!(),
+            };
+            assert_ne!(results.0, format!("{:?}", input_list));
+            assert_ne!(results.1, format!("{:?}", input_list));
+            assert_eq!(results.0, results.1);
+
+            // -_- I hate this
+        }
+
+        #[test]
+        fn shuffled() {
+            let input_list = (0..100).collect::<Vec<_>>();
+            let test_prog = format!(
+                "$ordered = {:?}; $new = ordered.getShuffled(); return [ordered, new]",
+                input_list
+            );
+
+            let results = match (*run(&test_prog)).clone() {
+                FenderValue::List(l) => ((*l[0]).to_string(), (*l[1]).to_string()),
+                _ => unreachable!(),
+            };
+            assert_eq!(results.0, format!("{:?}", input_list));
+            assert_ne!(results.1, format!("{:?}", input_list));
+            assert_ne!(results.0, results.1);
+        }
+
+        #[test]
+        fn rand() {
+            assert!(matches!(*run(r#"rand()"#), FenderValue::Float(_)))
+        }
+
+        #[test]
+        fn push() {
+            assert_eq!(
+                *run(r#"[1, 2, 3, 4, 5]"#),
+                FenderValue::make_list(
+                    (1..=5)
+                        .into_iter()
+                        .map(|i| FenderValue::Int(i).into())
+                        .collect()
+                )
+            );
+
+            assert_eq!(
+                *run(r#"[1, 2, 3, 4, 5].push(6)"#),
+                FenderValue::make_list(
+                    (1..=6)
+                        .into_iter()
+                        .map(|i| FenderValue::Int(i).into())
+                        .collect()
+                )
+            );
+        }
+
+        #[test]
+        fn pop() {
+            assert_eq!(
+                *run(r#"[1, 2, 3, 4, 5]"#),
+                FenderValue::make_list(
+                    (1..=5)
+                        .into_iter()
+                        .map(|i| FenderValue::Int(i).into())
+                        .collect()
+                )
+            );
+
+            assert_eq!(
+                *run(r#"$l = [1, 2, 3, 4, 5]; $v = l.pop(); [l, v]"#),
+                FenderValue::make_list(vec![
+                    FenderValue::make_list(
+                        (1..=4)
+                            .into_iter()
+                            .map(|i| FenderValue::Int(i).into())
+                            .collect()
+                    )
+                    .into(),
+                    FenderValue::Int(5).into()
+                ])
+            );
+        }
+
+        #[test]
+        fn dbg() {
+            assert_eq!(*run(r#"1"#), FenderValue::Int(1));
+            assert_eq!(
+                *run(r#"1.dbg()"#),
+                FenderValue::make_string("Int(1)".into())
+            );
+        }
+
+
+        #[test]
+        fn remove() {
+            assert_eq!(
+                *run(r#"[1, 2, 3, 4, 5]"#),
+                FenderValue::make_list(
+                    (1..=5)
+                        .into_iter()
+                        .map(|i| FenderValue::Int(i).into())
+                        .collect()
+                )
+            );
+
+            assert_eq!(*run(r#"[1, 2, 3, 4, 5].remove(2)"#), FenderValue::Int(3));
+        }
+
+        #[test]
+        fn remove_pass (){
+             assert_eq!(
+                *run(r#"[1, 2, 3, 4, 5]"#),
+                FenderValue::make_list(
+                    (1..=5)
+                        .into_iter()
+                        .map(|i| FenderValue::Int(i).into())
+                        .collect()
+                )
+            );
+
+            assert_eq!(
+                *run(r#"[1, 2, 3, 4, 5].removePass(2)"#),
+                FenderValue::make_list(
+                    ([1, 2, 4, 5])
+                        .into_iter()
+                        .map(|i| FenderValue::Int(i).into())
+                        .collect()
+                )
+            );
+        }
     }
 }
