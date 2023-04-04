@@ -107,6 +107,7 @@ deps_enum! {FenderResource, STDLIB_SIZE:
         dbg => FenderNativeFunction {func: val_operation::dbg_func, args: fixed(1)},
         remove => FenderNativeFunction {func: val_operation::remove_func, args: fixed(2)},
         removePass => FenderNativeFunction {func: val_operation::remove_pass_func, args: fixed(2), },
+        concat => FenderNativeFunction {func: val_operation::concat_func, args: fixed(2)},
 
         shell => FenderNativeFunction {func: system::shell_func, args: range(1..=3)},
         pwd => FenderNativeFunction {func: system::pwd_func, args: fixed(0)},

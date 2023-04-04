@@ -1,28 +1,11 @@
 #!/bin/fender
 
+$end = "ting";
 
-struct Thing {name1:String, name2}
+$fn = (a) {
+   $b = "tes";
+   b.concat(a).println();
+   concat(a, b).println();
+}
 
-
-$new = Thing(name1:"the name", name2:[1, 2, 3, 4])
-
-Thing(name1:"the name", name2:'f')
-
-new.println()
-new:name2.println()
-new:name2[1] = 478378
-new:name2.println()
-new:name2 = "word"
-new:name2.println()
-new.println()
-
-$set_name_to_tim = {$:name1 = "tim"}
-new.set_name_to_tim()
-
-new.println()
-
-println("value is {$}")
-
-$.println()
-
-null
+fn(end)

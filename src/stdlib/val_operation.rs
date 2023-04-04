@@ -128,3 +128,20 @@ fndr_native_func!(
         })
     }
 );
+
+fndr_native_func!(
+    /// Returns and String/List with the combined String/List
+    concat_func,
+    |_, obj, value| {
+        match obj.unwrap_value().deep_clone() 
+        {
+            String(s) => Ok(String(format!("{:?}{:?}", s, value).into()).into()),
+            List(l) => {
+                let mut l = l.to_vec();
+                l.push(value);
+                Ok(List(l.into()).into())
+            }
+            _ => Ok(Error(format!("Cannot concat {:?} with {:?}", obj, value)).into()),
+        }
+    }
+);
