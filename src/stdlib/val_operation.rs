@@ -141,9 +141,9 @@ fndr_native_func!(
                 Ok(FenderValue::make_list(newl).into())
             }
             _ => Ok(FenderValue::make_error(format!(
-                "Cannot concat {:?} with {:?}",
-                a.get_real_type_id(),
-                b.get_real_type_id()
+                "Cannot concat {} with {}",
+                a.get_real_type_id().to_string(),
+                b.get_real_type_id().to_string()
             ))
             .into()),
         }
