@@ -485,10 +485,14 @@ pub(crate) fn parse_assignment(
         .map(|t| parse_binary_operator(&t.get_match()));
     let target = parse_expr(target, engine, scope)?;
     let value = parse_expr(value, engine, scope)?;
-    if let Some(_op) = op {
-        todo!()
-    }
-    Ok(Expression::AssignDynamic([target, value].into()))
+    Ok(if let Some(op) = op {
+        Expression::BinaryOpEval(
+            FenderBinaryOperator::AssignOperate(op.into()),
+            [target, value].into(),
+        )
+    } else {
+        Expression::AssignDynamic([target, value].into())
+    })
 }
 
 pub(crate) fn parse_return(

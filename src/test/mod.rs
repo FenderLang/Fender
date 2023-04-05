@@ -23,6 +23,17 @@ fn test_simple_values() {
 }
 
 #[test]
+fn assign_operate() {
+    assert_eq!(*run("$x = 4; x += 1; x"), FenderValue::Int(5));
+    assert_eq!(*run("$x = 5; x /= 2; x"), FenderValue::Int(2));
+    assert_eq!(
+        *run(r#"$abc = "abc"; abc += "def"; abc"#),
+        FenderValue::make_string("abcdef".to_string())
+    );
+    assert_eq!(*run("$x = 10; x %= 3; x"), FenderValue::Int(1));
+}
+
+#[test]
 fn test_algebraic_expressions() {
     assert_eq!(*run("3 + 2"), FenderValue::Int(5));
     assert_eq!(*run("3 + 2 + 2"), FenderValue::Int(7));
