@@ -4,10 +4,16 @@ use crate::{
     interpreter::create_engine_main,
     type_sys::type_id::FenderTypeId,
 };
+use freight_vm::error::FreightError;
 
 fn run(source: &str) -> FenderReference {
     let (mut engine, main) = create_engine_main(source).unwrap();
     engine.call(&main, Vec::new()).unwrap()
+}
+
+fn run_error(source: &str) -> FreightError {
+    let (mut engine, main) = create_engine_main(source).unwrap();
+    engine.call(&main, Vec::new()).unwrap_err()
 }
 
 #[test]
@@ -180,11 +186,7 @@ fn structs() {
         (tst_val:name == "tim").else({return false})
     "#;
 
-    let (mut engine, main_func) = crate::interpreter::create_engine_main(script).unwrap();
-    assert_eq!(
-        FenderValue::Bool(true),
-        *engine.call(&main_func, Vec::new()).unwrap()
-    );
+    assert_eq!(run(script), FenderValue::Bool(true).into());
 }
 
 mod variadic_functions {
@@ -201,60 +203,47 @@ mod variadic_functions {
             null
         "#;
 
-        let (mut engine, main_func) = crate::interpreter::create_engine_main(script).unwrap();
-        let res = dbg!(engine.call(&main_func, Vec::new()));
-
         assert!(matches!(
-            res,
-            Err(FreightError::IncorrectArgumentCount {
+            run_error(script),
+            FreightError::IncorrectArgumentCount {
                 expected_min: 3,
                 expected_max: Some(3),
                 actual: 4
-            })
+            }
         ));
     }
 
     #[test]
     fn optional_args() {
-        let script1 = r#"$fName = (a, b, [c]){};fName(1,2,3);fName(1)"#;
-        let (mut engine, main_func) = crate::interpreter::create_engine_main(script1).unwrap();
-
-        assert!(matches!(
-            engine.call(&main_func, Vec::new()),
-            Err(FreightError::IncorrectArgumentCount {
+        assert_eq!(
+            run_error(r#"$fName = (a, b, [c]){};fName(1,2,3);fName(1)"#),
+            FreightError::IncorrectArgumentCount {
                 expected_min: 2,
                 expected_max: Some(3),
                 actual: 1
-            })
-        ));
+            }
+        );
 
-        let script2 = r#"$fName = (a, b, [c]){};fName(1,2,3);fName(1,2,3,4)"#;
-        let (mut engine, main_func) = crate::interpreter::create_engine_main(script2).unwrap();
-
-        assert!(matches!(
-            engine.call(&main_func, Vec::new()),
-            Err(FreightError::IncorrectArgumentCount {
+        assert_eq!(
+            run_error(r#"$fName = (a, b, [c]){};fName(1,2,3);fName(1,2,3,4)"#),
+            FreightError::IncorrectArgumentCount {
                 expected_min: 2,
                 expected_max: Some(3),
                 actual: 4
-            })
-        ));
+            }
+        );
     }
 
     #[test]
     fn variadic_args() {
-        let script1 = r#"$fName = (a, [b, c...]){};fName()"#;
-        let (mut engine, main_func) = crate::interpreter::create_engine_main(script1).unwrap();
-
-        let res = dbg!(engine.call(&main_func, Vec::new()));
-        assert!(matches!(
-            res,
-            Err(FreightError::IncorrectArgumentCount {
+        assert_eq!(
+            run_error(r#"$fName = (a, [b, c...]){};fName()"#),
+            FreightError::IncorrectArgumentCount {
                 expected_min: 1,
                 expected_max: None,
                 actual: 0
-            })
-        ));
+            }
+        );
 
         assert_eq!(
             run(r#"$fName = (a, [b, c...]){ a == 1 && b == null && c == []};fName(1)"#)

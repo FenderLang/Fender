@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-freight_vm = { git = "https://github.com/FenderLang/Freight", rev = "d54272a60f6983754b7d03861e96b2f6f3a5b403", features = [
+freight_vm = { git = "https://github.com/FenderLang/Freight", rev = "2390fa079bf679a2f8de12b479b3976644d04ea3", features = [
    "variadic_functions",
 ] }
 flux_bnf = { git = "https://github.com/FenderLang/Flux", branch = "master" }
