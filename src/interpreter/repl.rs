@@ -25,7 +25,7 @@ impl<'a> Default for FenderRepl<'a> {
 fn display_result(result: Result<FenderReference, Box<dyn Error>>) {
     match result {
         Ok(FenderReference::FRaw(FenderValue::Null)) => (),
-        Ok(val) => println!("{}", val.to_string()),
+        Ok(val) => println!("{}", val.to_literal_display_string()),
         Err(err) => eprintln!("{err:#}"),
     }
 }
