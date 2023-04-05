@@ -31,6 +31,7 @@ use std::{
 };
 
 pub mod error;
+#[cfg(feature = "repl")]
 pub mod repl;
 
 pub type InterpreterResult = FenderResult<Expression<FenderTypeSystem>>;

@@ -1,17 +1,32 @@
-use fender::{
-    fender_reference::FenderReference,
-    fender_value::FenderValue,
-    interpreter::{self, repl::FenderRepl},
-};
+#[cfg(feature = "repl")]
+use fender::interpreter::repl::FenderRepl;
+use fender::{fender_reference::FenderReference, fender_value::FenderValue, interpreter};
+
 use std::{fs, path::Path, process::exit};
 
 fn main() {
     let args = std::env::args().collect::<Vec<_>>();
-    if args.len() < 2 {
-        FenderRepl::new().run();
-        return;
-    }
-    let script = if let Ok(true) = Path::new(&args[1]).try_exists() {
+    let script = if args.len() < 2 {
+        #[cfg(feature = "repl")]
+        {
+            FenderRepl::new().run();
+            return;
+        }
+        #[cfg(not(feature = "repl"))]
+        {
+            let mut script = String::new();
+            let stdin = std::io::stdin();
+
+            for line in stdin.lines() {
+                match line {
+                    Ok(l) => script.push_str(&l),
+                    Err(_) => break,
+                };
+                script.push('\n');
+            }
+            script
+        }
+    } else if let Ok(true) = Path::new(&args[1]).try_exists() {
         fs::read_to_string(&args[1]).unwrap()
     } else {
         args[1].clone()
@@ -30,10 +45,14 @@ fn main() {
 
     match engine.call(
         &main,
-        args[2..]
-            .iter()
-            .map(|v| FenderReference::from(FenderValue::make_string(v.clone())))
-            .collect(),
+        if args.len() > 2 {
+            args[2..]
+                .iter()
+                .map(|v| FenderReference::from(FenderValue::make_string(v.clone())))
+                .collect()
+        } else {
+            Vec::new()
+        },
     ) {
         Ok(v) => match v.unwrap_value() {
             FenderValue::Int(i) => exit(i as i32),
