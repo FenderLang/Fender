@@ -273,6 +273,10 @@ pub(crate) fn parse_args(token: &Token) -> (Vec<String>, Vec<String>, Option<Str
     (arg_names, optional_arg_names, None)
 }
 
+/// Creates the expression to register a variable.
+/// Takes a closure for parsing the expression because global variables have forward declaration,
+/// so the name needs to be registered before the expression is parsed.
+/// For cases where you already have the parsed expression, ignore both parameters and return it.
 pub(crate) fn register_var(
     name: String,
     global: bool,
