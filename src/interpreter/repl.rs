@@ -1,6 +1,7 @@
-use std::{collections::HashMap, error::Error, io::Write};
+use std::error::Error;
 
 use freight_vm::{execution_engine::ExecutionEngine, function::ArgCount};
+use reedline::{DefaultValidator, Prompt, Reedline, Signal};
 
 use crate::{
     fender_reference::FenderReference, fender_value::FenderValue,
@@ -12,6 +13,7 @@ use super::LexicalScope;
 pub struct FenderRepl<'a> {
     engine: ExecutionEngine<FenderTypeSystem>,
     scope: LexicalScope<'a>,
+    editor: Reedline,
 }
 
 impl<'a> Default for FenderRepl<'a> {
@@ -20,50 +22,80 @@ impl<'a> Default for FenderRepl<'a> {
     }
 }
 
+fn display_result(result: Result<FenderReference, Box<dyn Error>>) {
+    match result {
+        Ok(FenderReference::FRaw(FenderValue::Null)) => (),
+        Ok(val) => println!("{}", val.to_literal_display_string()),
+        Err(err) => eprintln!("{err:#}"),
+    }
+}
+
+struct FenderPrompt;
+
+impl Prompt for FenderPrompt {
+    fn render_prompt_left(&self) -> std::borrow::Cow<str> {
+        "> ".into()
+    }
+
+    fn render_prompt_right(&self) -> std::borrow::Cow<str> {
+        "".into()
+    }
+
+    fn render_prompt_indicator(
+        &self,
+        _prompt_mode: reedline::PromptEditMode,
+    ) -> std::borrow::Cow<str> {
+        "".into()
+    }
+
+    fn render_prompt_multiline_indicator(&self) -> std::borrow::Cow<str> {
+        "..".into()
+    }
+
+    fn render_prompt_history_search_indicator(
+        &self,
+        _history_search: reedline::PromptHistorySearch,
+    ) -> std::borrow::Cow<str> {
+        "".into()
+    }
+}
+
 impl<'a> FenderRepl<'a> {
     pub fn new() -> FenderRepl<'a> {
         let mut engine = ExecutionEngine::new_default();
-        let scope = LexicalScope {
-            labels: HashMap::new().into(),
-            args: ArgCount::Fixed(0),
-            captures: vec![].into(),
-            variables: HashMap::new().into(),
-            parent: None,
-            return_target: engine.create_return_target(),
-            num_stack_vars: 0,
-        };
-        FenderRepl { engine, scope }
+        let scope = LexicalScope::new(ArgCount::Fixed(0), engine.create_return_target());
+        FenderRepl {
+            engine,
+            scope,
+            editor: Reedline::create().with_validator(Box::new(DefaultValidator)),
+        }
     }
 
     pub fn run_statement(
         &mut self,
-        statement: impl AsRef<str>,
+        statement: impl AsRef<str> + Into<String>,
     ) -> Result<FenderReference, Box<dyn Error>> {
         let token = crate::interpreter::LEXER
             .get()
             .as_ref()
             .unwrap()
-            .tokenize_with("statement", statement)?;
+            .tokenize_with("statement", statement.as_ref())?;
         let expr =
             crate::interpreter::parse_statement(&token, &mut self.engine, &mut self.scope, true)?;
         Ok(self.engine.evaluate(&expr, &mut [], &[])?)
     }
 
-    fn prompt(&self) {
-        print!("> ");
-        std::io::stdout().flush().unwrap();
-    }
-
     pub fn run(&mut self) {
-        self.prompt();
-        while let Some(line) = std::io::stdin().lines().next() {
-            let line = line.unwrap();
-            match self.run_statement(line) {
-                Ok(FenderReference::FRaw(FenderValue::Null)) => (),
-                Ok(val) => println!("{}", val.to_string()),
-                Err(err) => eprintln!("{err:#}"),
+        loop {
+            let line = self.editor.read_line(&FenderPrompt);
+            match line {
+                Ok(Signal::Success(line)) => {
+                    display_result(self.run_statement(line.trim()));
+                }
+                Ok(Signal::CtrlC) => continue,
+                Ok(Signal::CtrlD) => break,
+                Err(e) => eprintln!("I/O error: {e}"),
             }
-            self.prompt();
         }
     }
 }

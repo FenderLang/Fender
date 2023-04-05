@@ -16,9 +16,13 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --verbose --no-default-features
+    - name: Build --features repl
+      run: cargo build --verbose --no-default-features --features repl
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --verbose  --no-default-features
+    - name: Run tests --features repl
+      run: cargo test --verbose --no-default-features --features repl
 
   lint:
 
@@ -29,4 +33,6 @@ jobs:
     - name: Fmt check
       run: cargo fmt --check
     - name: Clippy
-      run: cargo clippy --no-deps -- -Dwarnings
+      run: cargo clippy --no-deps --no-default-features -- -Dwarnings
+    - name: Clippy --features repl
+      run: cargo clippy --no-deps --no-default-features --features repl -- -Dwarnings

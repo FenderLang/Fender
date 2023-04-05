@@ -12,7 +12,7 @@ root! ::= (break | sep)? (statement break)* statement? break?
 statement ::= (import | functionDeclaration | structDeclaration | declaration | assignment | return | expr) sep? comment?
 return ::= "return" ("@" name)? (lineSep expr)?
 declaration ::= "$" sep? name sep? "=" lineSep? expr
-assignOp ::= [-+/*]
+assignOp ::= [-+/*%^]
 assignment ::= expr sep? assignOp? "=" lineSep? expr
 importPath ::= [^: \t\n]+
 import ::= "import" sep ("*" sep?)? importPath (":" name)? (sep importAs)?

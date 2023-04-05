@@ -27,6 +27,7 @@ pub enum FenderBinaryOperator {
     Ne,
     Index,
     FieldAccess,
+    AssignOperate(Box<FenderBinaryOperator>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -249,6 +250,11 @@ impl BinaryOperator<FenderReference> for FenderBinaryOperator {
             Or => num_or(a, b),
             Index => index_op(a, b),
             FieldAccess => field_access(a, b),
+            AssignOperate(op) => {
+                let result = op.apply_2(a, b);
+                a.dupe_ref().assign(result);
+                Default::default()
+            }
         }
     }
 }
