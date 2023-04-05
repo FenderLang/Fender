@@ -273,6 +273,36 @@ pub(crate) fn parse_args(token: &Token) -> (Vec<String>, Vec<String>, Option<Str
     (arg_names, optional_arg_names, None)
 }
 
+pub(crate) fn register_var(
+    name: String,
+    global: bool,
+    engine: &mut ExecutionEngine<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+    expr: impl for<'a, 'b> FnOnce(
+        &'a mut ExecutionEngine<FenderTypeSystem>,
+        &'a mut LexicalScope<'b>,
+    ) -> InterpreterResult,
+    pos: usize,
+) -> InterpreterResult {
+    Ok(if global {
+        let global = engine.create_global();
+        if engine
+            .context
+            .globals
+            .insert(name.clone(), global)
+            .is_some()
+        {
+            return Err(InterpreterError::DuplicateName(name, pos).into());
+        }
+        let expr = expr(engine, scope)?;
+        Expression::AssignGlobal(global, expr.into())
+    } else {
+        let expr = expr(engine, scope)?;
+        let var = scope.create_stack_var(name, pos)?;
+        Expression::AssignStack(var, expr.into())
+    })
+}
+
 pub(crate) fn parse_closure(
     token: &Token,
     engine: &mut ExecutionEngine<FenderTypeSystem>,
@@ -360,28 +390,19 @@ pub(crate) fn parse_statement(
         "expr" => parse_expr(token, engine, scope)?,
         "assignment" => parse_assignment(token, engine, scope)?,
         "return" => parse_return(token, engine, scope)?,
-        "declaration" if use_globals => {
+        "declaration" => {
             let name = token.children[0].get_match();
-            let global = engine.create_global();
-            if engine.context.globals.insert(name, global).is_some() {
-                return Err(InterpreterError::DuplicateName(
-                    token.children[0].get_match(),
-                    token.range.start,
-                )
-                .into());
-            }
             let expr = &token.children[1];
-            let expr = parse_expr(expr, engine, scope)?;
-            Expression::AssignGlobal(global, expr.into())
+            register_var(
+                name,
+                use_globals,
+                engine,
+                scope,
+                |engine, scope| parse_expr(expr, engine, scope),
+                token.range.start,
+            )?
         }
-        "declaration" if !use_globals => {
-            let name = token.children[0].get_match();
-            let var = scope.create_stack_var(name, token.range.start)?;
-            let expr = &token.children[1];
-            let expr = parse_expr(expr, engine, scope)?;
-            Expression::AssignStack(var, expr.into())
-        }
-        "structDeclaration" => parse_struct_declaration(token, engine, scope)?,
+        "structDeclaration" => parse_struct_declaration(token, engine, scope, use_globals)?,
         name => unreachable!("{name}"),
     })
 }
@@ -390,6 +411,7 @@ fn parse_struct_declaration(
     token: &Token,
     engine: &mut ExecutionEngine<FenderTypeSystem>,
     scope: &mut LexicalScope,
+    use_globals: bool,
 ) -> InterpreterResult {
     let mut struct_name = String::new();
     let mut fields = Vec::new();
@@ -418,7 +440,6 @@ fn parse_struct_declaration(
             e => unreachable!("{}", e),
         }
     }
-    let constructor_var = scope.create_stack_var(struct_name.clone(), token.range.start)?;
     let new_scope = scope.child_scope(ArgCount::Fixed(fields.len()), engine.create_return_target());
 
     let mut constructor = FunctionWriter::new(ArgCount::Fixed(fields.len()));
@@ -432,17 +453,19 @@ fn parse_struct_declaration(
     ));
 
     engine.context.struct_table.insert(FenderStructType {
-        name: struct_name,
+        name: struct_name.clone(),
         fields,
     });
 
-    Ok(Expression::AssignStack(
-        constructor_var,
-        Expression::from(FenderValue::Function(
-            engine.register_function(constructor, new_scope.return_target),
-        ))
-        .into(),
-    ))
+    let function = engine.register_function(constructor, new_scope.return_target);
+    register_var(
+        struct_name,
+        use_globals,
+        engine,
+        scope,
+        move |_, _| Ok(Expression::from(FenderValue::Function(function))),
+        token.range.start,
+    )
 }
 
 pub(crate) fn parse_assignment(
