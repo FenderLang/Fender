@@ -8,7 +8,7 @@ lineBreak! ::= sep? comment? (newLine sep?)+
 lineSep! ::= (lineBreak | sep)+
 comment ::= "#" [^\n]*
 
-root! ::= break? (statement break)* statement? break?
+root! ::= (break | sep)? (statement break)* statement? break?
 statement ::= (import | functionDeclaration | structDeclaration | declaration | assignment | return | expr) sep? comment?
 return ::= "return" ("@" name)? (lineSep expr)?
 declaration ::= "$" sep? name sep? "=" lineSep? expr
