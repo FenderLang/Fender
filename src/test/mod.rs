@@ -27,7 +27,7 @@ fn assign_operate() {
     assert_eq!(*run("$x = 4; x += 1; x"), FenderValue::Int(5));
     assert_eq!(*run("$x = 5; x /= 2; x"), FenderValue::Int(2));
     assert_eq!(
-        *run("$abc = \"abc\"; abc += \"def\"; abc"),
+        *run(r#"$abc = "abc"; abc += "def"; abc"#),
         FenderValue::make_string("abcdef".to_string())
     );
     assert_eq!(*run("$x = 10; x %= 3; x"), FenderValue::Int(1));
