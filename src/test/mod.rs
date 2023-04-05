@@ -23,7 +23,7 @@ fn test_simple_values() {
 }
 
 #[test]
-fn test_assign_operate() {
+fn assign_operate() {
     assert_eq!(*run("$x = 4; x += 1; x"), FenderValue::Int(5));
     assert_eq!(*run("$x = 5; x /= 2; x"), FenderValue::Int(2));
     assert_eq!(
