@@ -189,21 +189,14 @@ fn add(a: &FenderReference, b: &FenderReference) -> FenderReference {
 }
 
 fn index_hash_map(a: &FenderReference, b: &FenderReference) -> FenderReference {
-    // let FenderValue::HashMap(hash_map) = a.deref_mut() else {
-    //     unreachable!()
-    // };
+    let FenderValue::HashMap(hash_map) = a.deref() else {
+        unreachable!()
+    };
 
-    // match hash_map.get(b) {
-    //     Some(v) => v.dupe_ref(),
-    //     None => {
-    //         hash_map.insert(
-    //             b.deep_clone().unwrap_value(),
-    //             InternalReference::new(FenderValue::Null.into()),
-    //         );
-    //         hash_map.get(b).unwrap().dupe_ref()
-    //     }
-    // }
-    todo!()
+    match hash_map.get(b) {
+        Some(v) => v.dupe_ref(),
+        None => FenderValue::Null.into(),
+    }
 }
 
 fn index_op(a: &FenderReference, b: &FenderReference) -> FenderReference {
@@ -340,7 +333,7 @@ impl Initializer<FenderTypeSystem> for FenderInitializer {
                     let val = values.pop().unwrap();
                     let key = values.pop().unwrap();
                     println!("{:?}:{:?}", key, val);
-                    hash_map.insert(key.unwrap_value(), InternalReference::new(val));
+                    hash_map.insert(key.unwrap_value(), InternalReference::new(val.into_ref()));
                 }
 
                 FenderValue::HashMap(hash_map).into()

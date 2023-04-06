@@ -1,4 +1,8 @@
 #!/bin/fender
 
-$m = [1:"hello", 2:"world"]
+$m = [1:"hello", "word":"world"]
+m[1].println()
+m["word"].println()
+m["word"] = "bird"
+m["word"].println()
 m["hello"].println()
