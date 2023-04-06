@@ -5,10 +5,10 @@ use crate::{
 };
 use freight_vm::{function::FunctionRef, value::Value};
 use rand::{seq::SliceRandom, thread_rng};
-use std::ops::Deref;
+use std::{collections::HashMap, hash::Hash, ops::Deref};
 pub mod fender_structs;
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub enum FenderValue {
     Ref(InternalReference<FenderReference>),
     Int(i64),
@@ -21,6 +21,7 @@ pub enum FenderValue {
     List(InternalReference<Vec<FenderReference>>),
     Struct(FenderStruct),
     Type(FenderTypeId),
+    HashMap(HashMap<FenderValue, InternalReference<FenderReference>>),
     #[default]
     Null,
 }
@@ -50,6 +51,7 @@ impl FenderValue {
             FenderValue::List(_) => FenderTypeId::List,
             FenderValue::Struct(_) => FenderTypeId::Struct,
             FenderValue::Type(_) => FenderTypeId::Type,
+            FenderValue::HashMap(_) => FenderTypeId::HashMap,
         }
     }
 
@@ -82,6 +84,11 @@ impl FenderValue {
                     .collect(),
             }),
             Type(t) => Type(t.clone()),
+            HashMap(h) => FenderValue::HashMap(
+                h.iter()
+                    .map(|(k, v)| (k.clone(), InternalReference::new(v.deep_clone())))
+                    .collect(),
+            ),
         }
     }
 
@@ -305,6 +312,7 @@ impl FenderValue {
             Struct(_) => Bool(false),
             Null => Bool(false),
             Type(_) => Bool(true),
+            HashMap(h) => Bool(!h.is_empty()),
         }
     }
 
@@ -353,6 +361,45 @@ impl ToString for FenderValue {
             ),
             FenderValue::Struct(s) => s.to_string(),
             FenderValue::Type(t) => format!("Type({})", t.to_string()),
+            FenderValue::HashMap(h) => format!(
+                "[{}]",
+                h.iter()
+                    .map(|(k, v)| format!(
+                        "{}:{}",
+                        k.to_literal_display_string(),
+                        v.to_literal_display_string()
+                    ))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
         }
+    }
+}
+
+impl PartialEq for FenderValue {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Ref(l0), Self::Ref(r0)) => l0 == r0,
+            (Self::Int(l0), Self::Int(r0)) => l0 == r0,
+            (Self::Float(l0), Self::Float(r0)) => l0 == r0,
+            (Self::Char(l0), Self::Char(r0)) => l0 == r0,
+            (Self::String(l0), Self::String(r0)) => l0 == r0,
+            (Self::Bool(l0), Self::Bool(r0)) => l0 == r0,
+            (Self::Error(l0), Self::Error(r0)) => l0 == r0,
+            (Self::Function(l0), Self::Function(r0)) => l0 == r0,
+            (Self::List(l0), Self::List(r0)) => l0 == r0,
+            (Self::Struct(l0), Self::Struct(r0)) => l0 == r0,
+            (Self::Type(l0), Self::Type(r0)) => l0 == r0,
+            (Self::HashMap(l0), Self::HashMap(r0)) => l0.iter().eq(r0.iter()),
+            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
+        }
+    }
+}
+
+impl Eq for FenderValue {}
+
+impl Hash for FenderValue {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        core::mem::discriminant(self).hash(state);
     }
 }

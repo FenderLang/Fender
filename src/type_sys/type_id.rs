@@ -12,6 +12,7 @@ pub enum FenderTypeId {
     Char,
     Struct,
     Type,
+    HashMap,
 }
 
 impl FenderTypeId {
@@ -30,6 +31,7 @@ impl FenderTypeId {
             Char => true,
             Struct => false,
             Type => true,
+            HashMap => false,
         }
     }
     pub fn type_from_str(value: String) -> Option<FenderTypeId> {
@@ -45,6 +47,7 @@ impl FenderTypeId {
             "Char" => Some(FenderTypeId::Char),
             "Struct" => Some(FenderTypeId::Struct),
             "Null" => Some(FenderTypeId::Null),
+            "HashMap" => Some(FenderTypeId::HashMap),
             _ => None,
         }
     }
@@ -66,6 +69,7 @@ impl ToString for FenderTypeId {
             Char => "Char",
             Struct => "Struct",
             Type => "Type",
+            HashMap => "HashMap",
         }
         .to_owned()
     }

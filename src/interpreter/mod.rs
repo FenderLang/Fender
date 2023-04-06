@@ -36,6 +36,7 @@ pub mod repl;
 
 pub type InterpreterResult = FenderResult<Expression<FenderTypeSystem>>;
 
+#[derive(Debug)]
 pub struct LexicalScope<'a> {
     labels: Rc<HashMap<String, usize>>,
     args: ArgCount,
@@ -685,8 +686,23 @@ pub(crate) fn parse_literal(
         "null" => FenderValue::Null.into(),
         "closure" => parse_closure(token, engine, scope)?,
         "structInit" => parse_struct_instantiation(token, engine, scope)?,
+        "hashMap" => parse_hash_map(token, engine, scope)?,
         name => unreachable!("{name}"),
     })
+}
+
+fn parse_hash_map(
+    token: &Token,
+    engine: &mut ExecutionEngine<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+) -> InterpreterResult {
+    let mut values = Vec::new();
+    for entry in token.children_named("mapEntry") {
+        for value in &entry.children {
+            values.push(parse_expr(value, engine, scope)?)
+        }
+    }
+    Ok(Expression::Initialize(FenderInitializer::HashMap, values))
 }
 
 fn parse_struct_instantiation(

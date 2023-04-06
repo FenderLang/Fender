@@ -3,7 +3,7 @@ A functional scripting language, intended for string manipulation and general sc
 
 # TODO before beta
 - [x] Structs
-- [ ] Maps
+- [ ] HashMaps
 - [ ] Imports
 - [x] Assign-operate
 - [x] REPL

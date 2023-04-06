@@ -1,22 +1,4 @@
 #!/bin/fender
 
-
-$first = ["te", "st"];
-$sec = ["in", "g"];
-
-$third = [1, 2];
-$fourth = [3, 4]
-
-$start = "tes";
-$end = "ting";
-
-$shalf = "wards"
-$fhalf = "back"
-
-start.concat(end).println();
-concat(fhalf, shalf).println();
-
-first.concat(sec).println();
-concat(third, fourth).println();
-
-concat(shalf, third).println();
+$m = [1:"hello", 2:"world"]
+m["hello"].println()

@@ -40,6 +40,7 @@ pub enum FenderUnaryOperator {
 pub enum FenderInitializer {
     List,
     String,
+    HashMap,
     Struct(usize),
 }
 
@@ -187,7 +188,29 @@ fn add(a: &FenderReference, b: &FenderReference) -> FenderReference {
     }
 }
 
+fn index_hash_map(a: &FenderReference, b: &FenderReference) -> FenderReference {
+    // let FenderValue::HashMap(hash_map) = a.deref_mut() else {
+    //     unreachable!()
+    // };
+
+    // match hash_map.get(b) {
+    //     Some(v) => v.dupe_ref(),
+    //     None => {
+    //         hash_map.insert(
+    //             b.deep_clone().unwrap_value(),
+    //             InternalReference::new(FenderValue::Null.into()),
+    //         );
+    //         hash_map.get(b).unwrap().dupe_ref()
+    //     }
+    // }
+    todo!()
+}
+
 fn index_op(a: &FenderReference, b: &FenderReference) -> FenderReference {
+    if let FenderValue::HashMap(_) = a.deref() {
+        return index_hash_map(a, b);
+    }
+
     let FenderValue::Int(pos) =  b.deref() else {
                     return FenderReference::FRaw(FenderValue::Error(format!(
                         "cannot index with `{}` type",
@@ -287,7 +310,7 @@ impl UnaryOperator<FenderReference> for FenderUnaryOperator {
 impl Initializer<FenderTypeSystem> for FenderInitializer {
     fn initialize(
         &self,
-        values: Vec<FenderReference>,
+        mut values: Vec<FenderReference>,
         ctx: &mut ExecutionEngine<FenderTypeSystem>,
     ) -> FenderReference {
         match self {
@@ -310,10 +333,23 @@ impl Initializer<FenderTypeSystem> for FenderInitializer {
                 }
                 FenderValue::String(collected.into()).into()
             }
+            FenderInitializer::HashMap => {
+                let mut hash_map = HashMap::new();
+
+                while !values.is_empty() {
+                    let val = values.pop().unwrap();
+                    let key = values.pop().unwrap();
+                    println!("{:?}:{:?}", key, val);
+                    hash_map.insert(key.unwrap_value(), InternalReference::new(val));
+                }
+
+                FenderValue::HashMap(hash_map).into()
+            }
             FenderInitializer::Struct(id) => self.initialize_struct(values, ctx, *id),
         }
     }
 }
+
 impl FenderInitializer {
     fn initialize_struct(
         &self,
