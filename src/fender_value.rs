@@ -418,18 +418,18 @@ impl ToString for FenderValue {
 impl PartialEq for FenderValue {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::Ref(l0), Self::Ref(r0)) => l0 == r0,
-            (Self::Int(l0), Self::Int(r0)) => l0 == r0,
-            (Self::Float(l0), Self::Float(r0)) => l0 == r0,
-            (Self::Char(l0), Self::Char(r0)) => l0 == r0,
-            (Self::String(l0), Self::String(r0)) => l0 == r0,
-            (Self::Bool(l0), Self::Bool(r0)) => l0 == r0,
-            (Self::Error(l0), Self::Error(r0)) => l0 == r0,
-            (Self::Function(l0), Self::Function(r0)) => l0 == r0,
-            (Self::List(l0), Self::List(r0)) => l0 == r0,
-            (Self::Struct(l0), Self::Struct(r0)) => l0 == r0,
-            (Self::Type(l0), Self::Type(r0)) => l0 == r0,
-            (Self::HashMap(l0), Self::HashMap(r0)) => l0.iter().eq(r0.iter()),
+            (Self::Ref(a), Self::Ref(b)) => a == b,
+            (Self::Int(a), Self::Int(b)) => a == b,
+            (Self::Float(a), Self::Float(b)) => a == b,
+            (Self::Char(a), Self::Char(b)) => a == b,
+            (Self::String(a), Self::String(b)) => a == b,
+            (Self::Bool(a), Self::Bool(b)) => a == b,
+            (Self::Error(a), Self::Error(b)) => a == b,
+            (Self::Function(a), Self::Function(b)) => a == b,
+            (Self::List(a), Self::List(b)) => a == b,
+            (Self::Struct(a), Self::Struct(b)) => a == b,
+            (Self::Type(a), Self::Type(b)) => a == b,
+            (Self::HashMap(a), Self::HashMap(b)) => a == b,
             _ => core::mem::discriminant(self) == core::mem::discriminant(other),
         }
     }

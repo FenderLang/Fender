@@ -135,7 +135,6 @@ fn eq(a: &FenderReference, b: &FenderReference) -> FenderReference {
         | (FenderValue::Float(_), FenderValue::Float(_))
         | (FenderValue::Int(_), FenderValue::Float(_))
         | (FenderValue::Float(_), FenderValue::Int(_)) => num_eq(a, b),
-        (a, b) if a.get_real_type_id() != b.get_real_type_id() => FenderValue::Bool(false).into(),
         (FenderValue::Null, FenderValue::Null) => FenderValue::Bool(true).into(),
         (FenderValue::List(a_list), FenderValue::List(b_list)) => {
             if a_list.len() != b_list.len() {
@@ -144,7 +143,8 @@ fn eq(a: &FenderReference, b: &FenderReference) -> FenderReference {
                 FenderValue::Bool(a_list.iter().eq(b_list.iter())).into()
             }
         }
-        _ => FenderValue::Bool(false).into(),
+        (a, b) if a.get_real_type_id() != b.get_real_type_id() => FenderValue::Bool(false).into(),
+        (a, b) => FenderValue::Bool(a == b).into(),
     }
 }
 
@@ -167,13 +167,16 @@ fn ne(a: &FenderReference, b: &FenderReference) -> FenderReference {
         | (FenderValue::Float(_), FenderValue::Float(_))
         | (FenderValue::Int(_), FenderValue::Float(_))
         | (FenderValue::Float(_), FenderValue::Int(_)) => num_ne(a, b),
+        (FenderValue::Null, FenderValue::Null) => FenderValue::Bool(false).into(),
+        (FenderValue::List(a_list), FenderValue::List(b_list)) => {
+            if a_list.len() != b_list.len() {
+                FenderValue::Bool(true).into()
+            } else {
+                FenderValue::Bool(a_list.iter().ne(b_list.iter())).into()
+            }
+        }
         (a, b) if a.get_real_type_id() != b.get_real_type_id() => FenderValue::Bool(true).into(),
-        _ => FenderValue::make_error(format!(
-            "cannot run `ne` on {} and {}",
-            a.get_real_type_id().to_string(),
-            b.get_real_type_id().to_string()
-        ))
-        .into(),
+        (a, b) => FenderValue::Bool(a != b).into(),
     }
 }
 

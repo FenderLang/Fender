@@ -99,7 +99,7 @@ fndr_native_func!(
 fndr_native_func!(
     /// Returns a `String` that contains the debug text of the given `value`
     dbg_func,
-    |_, value| { Ok(FenderValue::make_string(value.fender_dbg_string()).into())}
+    |_, value| { Ok(FenderValue::make_string(value.fender_dbg_string()).into()) }
 );
 
 fndr_native_func!(
