@@ -332,11 +332,10 @@ impl Initializer<FenderTypeSystem> for FenderInitializer {
                 while !values.is_empty() {
                     let val = values.pop().unwrap();
                     let key = values.pop().unwrap();
-                    println!("{:?}:{:?}", key, val);
                     hash_map.insert(key.unwrap_value(), InternalReference::new(val.into_ref()));
                 }
 
-                FenderValue::HashMap(hash_map).into()
+                FenderValue::HashMap(hash_map.into()).into()
             }
             FenderInitializer::Struct(id) => self.initialize_struct(values, ctx, *id),
         }

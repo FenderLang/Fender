@@ -21,7 +21,7 @@ pub enum FenderValue {
     List(InternalReference<Vec<FenderReference>>),
     Struct(FenderStruct),
     Type(FenderTypeId),
-    HashMap(HashMap<FenderValue, InternalReference<FenderReference>>),
+    HashMap(InternalReference<HashMap<FenderValue, InternalReference<FenderReference>>>),
     #[default]
     Null,
 }
@@ -84,11 +84,11 @@ impl FenderValue {
                     .collect(),
             }),
             Type(t) => Type(t.clone()),
-            HashMap(h) => FenderValue::HashMap(
+            HashMap(h) => FenderValue::HashMap(InternalReference::new(
                 h.iter()
                     .map(|(k, v)| (k.clone(), InternalReference::new(v.deep_clone())))
                     .collect(),
-            ),
+            )),
         }
     }
 
@@ -230,6 +230,45 @@ impl FenderValue {
         }
 
         Ok(list.remove(pos))
+    }
+
+    pub fn insert(
+        &mut self,
+        key: FenderValue,
+        val: FenderReference,
+    ) -> Result<FenderReference, String> {
+        use FenderValue::*;
+
+        match (self, key) {
+            (List(list), Int(index)) => {
+                list.insert(index as usize, val);
+                Ok(match list.get(index as usize + 1) {
+                    Some(v) => v.dupe_ref(),
+                    None => Null.into(),
+                })
+            }
+            (HashMap(hash_map), key) => {
+                Ok(match hash_map.insert(key, InternalReference::new(val)) {
+                    Some(v) => v.dupe_ref(),
+                    None => Null.into(),
+                })
+            }
+            (t, _) => Err(format!(
+                "Cannot call `Insert` on type `{}`",
+                t.get_real_type_id().to_string()
+            )),
+        }
+    }
+
+    pub fn fender_dbg_string(&self) -> String {
+        match self {
+            FenderValue::Ref(r) => format!("Ref({})", r.fender_dbg_string()),
+            v => format!(
+                "{}({})",
+                v.get_type_id().to_string(),
+                v.to_literal_display_string()
+            ),
+        }
     }
 }
 
