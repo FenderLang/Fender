@@ -419,7 +419,7 @@ macro_rules! gen_eq {
         match ($self, $other) {
             $(
                 $((FenderValue::$ftype ($i1), FenderValue::$ftype ($i2)) => $i1 == $i2,)?
-                (FenderValue::$ftype $(($i1))?, _) => false
+                (FenderValue::$ftype $(($i1))?, _) => core::mem::discriminant($self) == core::mem::discriminant($other)
             ),*
         }
     }
