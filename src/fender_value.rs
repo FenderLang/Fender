@@ -5,10 +5,10 @@ use crate::{
 };
 use freight_vm::{function::FunctionRef, value::Value};
 use rand::{seq::SliceRandom, thread_rng};
-use std::ops::Deref;
+use std::{collections::HashMap, hash::Hash, ops::Deref};
 pub mod fender_structs;
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub enum FenderValue {
     Ref(InternalReference<FenderReference>),
     Int(i64),
@@ -21,6 +21,7 @@ pub enum FenderValue {
     List(InternalReference<Vec<FenderReference>>),
     Struct(FenderStruct),
     Type(FenderTypeId),
+    HashMap(InternalReference<HashMap<FenderValue, FenderReference>>),
     #[default]
     Null,
 }
@@ -50,6 +51,7 @@ impl FenderValue {
             FenderValue::List(_) => FenderTypeId::List,
             FenderValue::Struct(_) => FenderTypeId::Struct,
             FenderValue::Type(_) => FenderTypeId::Type,
+            FenderValue::HashMap(_) => FenderTypeId::HashMap,
         }
     }
 
@@ -82,6 +84,11 @@ impl FenderValue {
                     .collect(),
             }),
             Type(t) => Type(t.clone()),
+            HashMap(h) => FenderValue::HashMap(InternalReference::new(
+                h.iter()
+                    .map(|(k, v)| (k.clone(), (v.deep_clone())))
+                    .collect(),
+            )),
         }
     }
 
@@ -224,6 +231,43 @@ impl FenderValue {
 
         Ok(list.remove(pos))
     }
+
+    pub fn insert(
+        &mut self,
+        key: FenderValue,
+        val: FenderReference,
+    ) -> Result<FenderReference, String> {
+        use FenderValue::*;
+
+        match (self, key) {
+            (List(list), Int(index)) => {
+                list.insert(index as usize, val);
+                Ok(match list.get(index as usize + 1) {
+                    Some(v) => v.dupe_ref(),
+                    None => Null.into(),
+                })
+            }
+            (HashMap(hash_map), key) => Ok(match hash_map.insert(key, val) {
+                Some(v) => v.dupe_ref(),
+                None => Null.into(),
+            }),
+            (t, _) => Err(format!(
+                "Cannot call `Insert` on type `{}`",
+                t.get_real_type_id().to_string()
+            )),
+        }
+    }
+
+    pub fn fender_dbg_string(&self) -> String {
+        match self {
+            FenderValue::Ref(r) => format!("Ref({})", r.fender_dbg_string()),
+            v => format!(
+                "{}({})",
+                v.get_type_id().to_string(),
+                v.to_literal_display_string()
+            ),
+        }
+    }
 }
 
 /// Cast functions
@@ -305,6 +349,7 @@ impl FenderValue {
             Struct(_) => Bool(false),
             Null => Bool(false),
             Type(_) => Bool(true),
+            HashMap(h) => Bool(!h.is_empty()),
         }
     }
 
@@ -353,6 +398,69 @@ impl ToString for FenderValue {
             ),
             FenderValue::Struct(s) => s.to_string(),
             FenderValue::Type(t) => format!("Type({})", t.to_string()),
+            FenderValue::HashMap(h) => format!(
+                "[{}]",
+                h.iter()
+                    .map(|(k, v)| format!(
+                        "{}:{}",
+                        k.to_literal_display_string(),
+                        v.to_literal_display_string()
+                    ))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+        }
+    }
+}
+
+impl PartialEq for FenderValue {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Ref(a), Self::Ref(b)) => a == b,
+            (Self::Int(a), Self::Int(b)) => a == b,
+            (Self::Float(a), Self::Float(b)) => a == b,
+            (Self::Char(a), Self::Char(b)) => a == b,
+            (Self::String(a), Self::String(b)) => a == b,
+            (Self::Bool(a), Self::Bool(b)) => a == b,
+            (Self::Error(a), Self::Error(b)) => a == b,
+            (Self::Function(a), Self::Function(b)) => a == b,
+            (Self::List(a), Self::List(b)) => a == b,
+            (Self::Struct(a), Self::Struct(b)) => a == b,
+            (Self::Type(a), Self::Type(b)) => a == b,
+            (Self::HashMap(a), Self::HashMap(b)) => a == b,
+            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
+        }
+    }
+}
+
+impl Eq for FenderValue {}
+
+impl Hash for FenderValue {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            FenderValue::Ref(r) => r.hash(state),
+            FenderValue::Int(i) => i.hash(state),
+            FenderValue::Float(f) => {
+                core::mem::discriminant(self).hash(state);
+                if f.is_finite() {
+                    f.to_bits().hash(state)
+                } else {
+                    format!("{}", f).hash(state)
+                }
+            }
+            FenderValue::Char(c) => c.hash(state),
+            FenderValue::String(s) => s.hash(state),
+            FenderValue::Bool(b) => b.hash(state),
+            FenderValue::Error(e) => e.hash(state),
+            FenderValue::Function(f) => f.address().hash(state),
+            FenderValue::List(l) => l.iter().for_each(|i| i.hash(state)),
+            FenderValue::Struct(s) => s.hash(state),
+            FenderValue::Type(t) => t.hash(state),
+            FenderValue::HashMap(m) => m.iter().for_each(|(k, v)| {
+                k.hash(state);
+                v.hash(state)
+            }),
+            FenderValue::Null => core::mem::discriminant(self).hash(state),
         }
     }
 }

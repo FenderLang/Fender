@@ -200,6 +200,78 @@ fn structs() {
     assert_eq!(run(script), FenderValue::Bool(true).into());
 }
 
+mod hash_maps {
+    use super::*;
+    use std::collections::HashMap;
+
+    fn make_test_map() -> HashMap<FenderValue, FenderReference> {
+        ('a'..='e')
+            .into_iter()
+            .zip(1..=5)
+            .map(|(k, v)| {
+                (
+                    FenderValue::Char(k),
+                    FenderReference::from(FenderValue::Int(v)).into(),
+                )
+            })
+            .collect::<HashMap<_, _>>()
+    }
+
+    #[test]
+    fn create() {
+        assert_eq!(
+            run("['a':1,'b':2,'c':3,'d':4,'e':5]"),
+            FenderValue::HashMap(make_test_map().into()).into()
+        );
+    }
+
+    #[test]
+    fn check_eq() {
+        assert_eq!(
+            run("$x = ['a':1,'b':2,'c':3,'d':4,'e':5]; $y = ['a':1,'b':2,'c':3,'d':4,'e':5]; x == y"),
+            FenderValue::Bool(true).into()
+        );
+        assert_eq!(
+            run("$x = ['a':1,'b':2,'c':3,'d':4,'e':5]; $y = ['a':1,'b':2,'c':3,'d':4,'e':17]; x == y"),
+            FenderValue::Bool(false).into()
+        );
+        assert_eq!(
+            run("$x = ['a':1,'b':2,'c':3,'d':4,'e':5]; $y = ['a':1,'b':2,'c':3]; x == y"),
+            FenderValue::Bool(false).into()
+        );
+        assert_eq!(
+            run("$x = ['a':1,'b':2,'c':3,'d':4,'e':5]; $y = ['a':1,'b':2,'c':3,'d':4,'e':5]; x != y"),
+            FenderValue::Bool(false).into()
+        );
+    }
+
+    #[test]
+    fn insert() {
+        assert_eq!(
+            run("$x = ['a':1,'c':3,'d':4,'e':5]; x.insert('b', 2); x"),
+            FenderValue::HashMap(make_test_map().into()).into()
+        );
+
+        assert_eq!(
+            run("$x = ['a':1,'b':3,'c':3,'d':4,'e':5]; x.insert('b', 2); x"),
+            FenderValue::HashMap(make_test_map().into()).into()
+        );
+
+        assert_eq!(
+            run("$x = ['a':1,'b':3,'c':3,'d':4,'e':5]; x.insert('b', 2)"),
+            FenderValue::Int(3).into()
+        );
+    }
+
+    #[test]
+    fn assignment() {
+        assert_eq!(
+            run("$x = ['a':1,'b':2,'c':0,'d':4,'e':5]; x['c'] = 3; x"),
+            FenderValue::HashMap(make_test_map().into()).into()
+        );
+    }
+}
+
 mod variadic_functions {
     use freight_vm::error::FreightError;
 

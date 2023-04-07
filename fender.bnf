@@ -42,12 +42,12 @@ alpha ::= [a-z] | [A-Z]
 alphanum ::= [a-z] | [A-Z] | [0-9] | "_"
 name ::= ("_" | alpha) alphanum*
 
-literal ::= null | float | int | boolean | string | char | list | map | closure | structInit
+literal ::= null | float | int | boolean | string | char | list | hashMap | closure | structInit
 int ::= "-"? [0-9]+
 list ::= wrappedDelimitedList<"[", "]", expr, ",", lineSep>
 mapEntry ::= expr lineSep? ":" lineSep? expr
 emptyMap ::= "[" lineSep? ":" lineSep? "]"
-map ::= emptyMap | wrappedDelimitedList<"[", "]", mapEntry, ",", lineSep>
+hashMap ::= emptyMap | wrappedDelimitedList<"[", "]", mapEntry, ",", lineSep>
 float ::= "-"? ([0-9]+)? "." [0-9]+
 strChar ::= [^"{]
 string ::= "\"" (escapeSequence | strExpr | strChar)* "\""

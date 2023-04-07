@@ -10,7 +10,17 @@ pub struct FenderStruct {
     pub data: HashMap<i64, InternalReference<FenderReference>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+impl std::hash::Hash for FenderStruct {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.struct_id.hash(state);
+        self.data.iter().for_each(|(k, v)| {
+            k.hash(state);
+            v.hash(state)
+        });
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Hash)]
 pub struct FenderStructType {
     pub name: String,
     pub fields: Vec<(String, Option<FenderTypeId>, usize)>,

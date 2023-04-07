@@ -1,22 +1,20 @@
 #!/bin/fender
 
+$m = [1:"hello", "word":"world"]
+m[1].println()
+m["word"].println()
+m["word"] = "bird"
+m["word"].println()
 
-$first = ["te", "st"];
-$sec = ["in", "g"];
 
-$third = [1, 2];
-$fourth = [3, 4]
+m["hello"].println()
 
-$start = "tes";
-$end = "ting";
+m.insert("hello", "first")
 
-$shalf = "wards"
-$fhalf = "back"
+m.println()
 
-start.concat(end).println();
-concat(fhalf, shalf).println();
+println("value in m[\"hello\"] ", m["hello"].dbg())
 
-first.concat(sec).println();
-concat(third, fourth).println();
+{println("value that was at \"hello\" {$.dbg()}")}(m.insert("hello", "second"))
 
-concat(shalf, third).println();
+println("value in m[\"hello\"] ", m["hello"].dbg())
