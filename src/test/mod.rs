@@ -180,7 +180,7 @@ fn run_quicksort_file() {
 fn structs() {
     let script = r#"
         struct StructName {name:String, field2}
-        $tst_val = StructName(name:"the name", field2:[1, 2, 3, 4])
+        $tst_val = StructName("the name", [1, 2, 3, 4])
 
         (tst_val:name == "the name").else({return false})
         (tst_val:field2 == [1, 2, 3, 4]).else({return false})
@@ -255,7 +255,6 @@ mod variadic_functions {
                 actual: 0
             }
         );
-
         assert_eq!(
             run(r#"$fName = (a, [b, c...]){ a == 1 && b == null && c == []};fName(1)"#)
                 .unwrap_value(),

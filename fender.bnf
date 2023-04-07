@@ -9,14 +9,15 @@ lineSep! ::= (lineBreak | sep)+
 comment ::= "#" [^\n]*
 
 root! ::= (break | sep)? (statement break)* statement? break?
-statement ::= (import | functionDeclaration | structDeclaration | declaration | assignment | return | expr) sep? comment?
+statement ::= (import | export | functionDeclaration | structDeclaration | declaration | assignment | return | expr) sep? comment?
 return ::= "return" ("@" name)? (lineSep expr)?
 declaration ::= "$" sep? name sep? "=" lineSep? expr
 assignOp ::= [-+/*%^]
 assignment ::= expr sep? assignOp? "=" lineSep? expr
-importPath ::= [^: \t\n]+
-import ::= "import" sep ("*" sep?)? importPath (":" name)? (sep importAs)?
-importAs ::= "as" sep name
+import ::= "@import" sep filename
+filename ::= delimitedList<name, "/", ""> ("::" importFields)?
+importFields ::= "*" | name ("::" importFields)? | wrappedDelimitedList<"(", ")", importFields, ",", sep>
+export ::= "@export" sep ("*" | codeBody)
 
 binaryOperator ::= "||" | "&&" | "==" | "<=" | ">=" | ".." "="? | [-+*/^<>]
 unaryOperator ::= [-!]
@@ -42,7 +43,7 @@ alpha ::= [a-z] | [A-Z]
 alphanum ::= [a-z] | [A-Z] | [0-9] | "_"
 name ::= ("_" | alpha) alphanum*
 
-literal ::= null | float | int | boolean | string | char | list | map | closure | structInit
+literal ::= null | float | int | boolean | string | char | list | map | closure
 int ::= "-"? [0-9]+
 list ::= wrappedDelimitedList<"[", "]", expr, ",", lineSep>
 mapEntry ::= expr lineSep? ":" lineSep? expr
@@ -64,8 +65,6 @@ invokeArgs ::= wrappedDelimitedList<"(", ")", expr, ",", lineSep>
 structBody ::= wrappedDelimitedList<"{", "}", arg, ",", lineSep>
 structDeclaration ::= "struct" sep? name lineSep? structBody
 structEntry ::= name lineSep? ":" lineSep? expr
-structInit ::= name "(" lineSep? delimitedList<structEntry, ",", lineSep?> lineSep? ")"
-
 
 arg ::= name (sep? typeAnnotation)?
 typeAnnotation ::= ":" lineSep? name

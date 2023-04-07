@@ -31,6 +31,7 @@ use std::{
 };
 
 pub mod error;
+mod namespacing;
 #[cfg(feature = "repl")]
 pub mod repl;
 
@@ -44,6 +45,7 @@ pub struct LexicalScope<'a> {
     parent: Option<&'a LexicalScope<'a>>,
     return_target: usize,
     num_stack_vars: usize,
+    exports: Vec<String>,
 }
 
 impl<'a> LexicalScope<'a> {
@@ -56,6 +58,7 @@ impl<'a> LexicalScope<'a> {
             parent: None,
             num_stack_vars: args.stack_size(),
             args,
+            exports: vec![],
         }
     }
 
@@ -68,6 +71,7 @@ impl<'a> LexicalScope<'a> {
             parent: Some(self),
             return_target,
             num_stack_vars: args.stack_size(),
+            exports: vec![],
         }
     }
 
@@ -275,7 +279,7 @@ pub(crate) fn parse_args(token: &Token) -> (Vec<String>, Vec<String>, Option<Str
 }
 
 /// Creates the expression to register a variable.
-/// Takes a closure for parsing the expression because global variables have forward declaration,
+/// Takes a closure for parsing the expression because variables may be set to expressions that reference themselves,
 /// so the name needs to be registered before the expression is parsed.
 /// For cases where you already have the parsed expression, ignore both parameters and return it.
 pub(crate) fn register_var(
@@ -302,8 +306,8 @@ pub(crate) fn register_var(
         let expr = expr(engine, scope)?;
         Expression::AssignGlobal(global, expr.into())
     } else {
-        let expr = expr(engine, scope)?;
         let var = scope.create_stack_var(name, pos)?;
+        let expr = expr(engine, scope)?;
         Expression::AssignStack(var, expr.into())
     })
 }
@@ -684,70 +688,8 @@ pub(crate) fn parse_literal(
         "list" => parse_list(token, engine, scope)?,
         "null" => FenderValue::Null.into(),
         "closure" => parse_closure(token, engine, scope)?,
-        "structInit" => parse_struct_instantiation(token, engine, scope)?,
         name => unreachable!("{name}"),
     })
-}
-
-fn parse_struct_instantiation(
-    token: &Token,
-    engine: &mut ExecutionEngine<FenderTypeSystem>,
-    scope: &mut LexicalScope,
-) -> InterpreterResult {
-    let mut name = String::new();
-    let mut fields = HashMap::new();
-    for sub in token.children.iter() {
-        match sub.get_name().as_deref().unwrap() {
-            "name" => {
-                if !engine
-                    .context
-                    .struct_table
-                    .struct_name_index()
-                    .contains_key(&sub.get_match())
-                {
-                    return Err(InterpreterError::UnresolvedName(
-                        sub.get_match(),
-                        token.range.start,
-                    )
-                    .into());
-                }
-                name = sub.get_match()
-            }
-            "structEntry" => {
-                fields.insert(sub.children[0].get_match(), &sub.children[1]);
-            }
-            e => unreachable!("{:?}", e),
-        }
-    }
-
-    let mut values = Vec::new();
-
-    let id = engine.context.struct_table.struct_name_index()[&name];
-    for f_name in engine.context.struct_table.type_list()[id]
-        .fields
-        .iter()
-        .map(|v| v.0.clone())
-        .collect::<Vec<_>>()
-    {
-        match fields.get(&f_name) {
-            Some(t) => values.push(parse_expr(t, engine, scope)?),
-            None => {
-                return Err(FenderError {
-                    error_type: ParentErrorType::FenderInterpreterError(
-                        InterpreterError::UnresolvedName(f_name, token.range.start),
-                    ),
-                    fender_code_pos: Some(CodePos::new_abs(None, token.range.start)),
-                    rust_code_pos: CodePos::new_rel(Some(file!().into()), line!(), column!()),
-                }
-                .into())
-            }
-        }
-    }
-
-    Ok(Expression::Initialize(
-        FenderInitializer::Struct(id),
-        values,
-    ))
 }
 
 fn parse_list(
