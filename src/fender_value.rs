@@ -413,50 +413,37 @@ impl ToString for FenderValue {
     }
 }
 
+macro_rules! gen_eq {
+    ($self:ident, $other:ident, $($ftype:ident $(($i1:ident, $i2:ident))?),*) => {
+        #[allow(unused_variables)]
+        match ($self, $other) {
+            $(
+                $((FenderValue::$ftype ($i1), FenderValue::$ftype ($i2)) => $i1 == $i2,)?
+                (FenderValue::$ftype $(($i1))?, _) => false
+            ),*
+        }
+    }
+}
+
 impl PartialEq for FenderValue {
     fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (FenderValue::Ref(a), FenderValue::Ref(b)) => a == b,
-            (FenderValue::Int(a), FenderValue::Int(b)) => a == b,
-            (FenderValue::Float(a), FenderValue::Float(b)) => a == b,
-            (FenderValue::Char(a), FenderValue::Char(b)) => a == b,
-            (FenderValue::String(a), FenderValue::String(b)) => a == b,
-            (FenderValue::Bool(a), FenderValue::Bool(b)) => a == b,
-            (FenderValue::Error(a), FenderValue::Error(b)) => a == b,
-            (FenderValue::Function(a), FenderValue::Function(b)) => a == b,
-            (FenderValue::List(a), FenderValue::List(b)) => a == b,
-            (FenderValue::Struct(a), FenderValue::Struct(b)) => a == b,
-            (FenderValue::Type(a), FenderValue::Type(b)) => a == b,
-            (FenderValue::HashMap(a), FenderValue::HashMap(b)) => a == b,
-            (
-                FenderValue::Ref(_)
-                | FenderValue::Int(_)
-                | FenderValue::Float(_)
-                | FenderValue::Char(_)
-                | FenderValue::String(_)
-                | FenderValue::Bool(_)
-                | FenderValue::Error(_)
-                | FenderValue::Function(_)
-                | FenderValue::List(_)
-                | FenderValue::Struct(_)
-                | FenderValue::Type(_)
-                | FenderValue::HashMap(_)
-                | FenderValue::Null,
-                FenderValue::Ref(_)
-                | FenderValue::Int(_)
-                | FenderValue::Float(_)
-                | FenderValue::Char(_)
-                | FenderValue::String(_)
-                | FenderValue::Bool(_)
-                | FenderValue::Error(_)
-                | FenderValue::Function(_)
-                | FenderValue::List(_)
-                | FenderValue::Struct(_)
-                | FenderValue::Type(_)
-                | FenderValue::HashMap(_)
-                | FenderValue::Null,
-            ) => core::mem::discriminant(self) == core::mem::discriminant(other),
-        }
+        gen_eq!(
+            self,
+            other,
+            Ref(a, b),
+            Int(a, b),
+            Float(a, b),
+            Char(a, b),
+            String(a, b),
+            Bool(a, b),
+            Error(a, b),
+            Function(a, b),
+            List(a, b),
+            Struct(a, b),
+            Type(a, b),
+            HashMap(a, b),
+            Null
+        )
     }
 }
 
