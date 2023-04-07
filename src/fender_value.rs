@@ -416,19 +416,46 @@ impl ToString for FenderValue {
 impl PartialEq for FenderValue {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::Ref(a), Self::Ref(b)) => a == b,
-            (Self::Int(a), Self::Int(b)) => a == b,
-            (Self::Float(a), Self::Float(b)) => a == b,
-            (Self::Char(a), Self::Char(b)) => a == b,
-            (Self::String(a), Self::String(b)) => a == b,
-            (Self::Bool(a), Self::Bool(b)) => a == b,
-            (Self::Error(a), Self::Error(b)) => a == b,
-            (Self::Function(a), Self::Function(b)) => a == b,
-            (Self::List(a), Self::List(b)) => a == b,
-            (Self::Struct(a), Self::Struct(b)) => a == b,
-            (Self::Type(a), Self::Type(b)) => a == b,
-            (Self::HashMap(a), Self::HashMap(b)) => a == b,
-            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
+            (FenderValue::Ref(a), FenderValue::Ref(b)) => a == b,
+            (FenderValue::Int(a), FenderValue::Int(b)) => a == b,
+            (FenderValue::Float(a), FenderValue::Float(b)) => a == b,
+            (FenderValue::Char(a), FenderValue::Char(b)) => a == b,
+            (FenderValue::String(a), FenderValue::String(b)) => a == b,
+            (FenderValue::Bool(a), FenderValue::Bool(b)) => a == b,
+            (FenderValue::Error(a), FenderValue::Error(b)) => a == b,
+            (FenderValue::Function(a), FenderValue::Function(b)) => a == b,
+            (FenderValue::List(a), FenderValue::List(b)) => a == b,
+            (FenderValue::Struct(a), FenderValue::Struct(b)) => a == b,
+            (FenderValue::Type(a), FenderValue::Type(b)) => a == b,
+            (FenderValue::HashMap(a), FenderValue::HashMap(b)) => a == b,
+            (
+                FenderValue::Ref(_)
+                | FenderValue::Int(_)
+                | FenderValue::Float(_)
+                | FenderValue::Char(_)
+                | FenderValue::String(_)
+                | FenderValue::Bool(_)
+                | FenderValue::Error(_)
+                | FenderValue::Function(_)
+                | FenderValue::List(_)
+                | FenderValue::Struct(_)
+                | FenderValue::Type(_)
+                | FenderValue::HashMap(_)
+                | FenderValue::Null,
+                FenderValue::Ref(_)
+                | FenderValue::Int(_)
+                | FenderValue::Float(_)
+                | FenderValue::Char(_)
+                | FenderValue::String(_)
+                | FenderValue::Bool(_)
+                | FenderValue::Error(_)
+                | FenderValue::Function(_)
+                | FenderValue::List(_)
+                | FenderValue::Struct(_)
+                | FenderValue::Type(_)
+                | FenderValue::HashMap(_)
+                | FenderValue::Null,
+            ) => core::mem::discriminant(self) == core::mem::discriminant(other),
         }
     }
 }
