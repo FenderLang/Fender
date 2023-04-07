@@ -454,7 +454,6 @@ impl Hash for FenderValue {
             FenderValue::String(s) => s.hash(state),
             FenderValue::Bool(b) => b.hash(state),
             FenderValue::Error(e) => e.hash(state),
-
             FenderValue::Function(f) => f.address().hash(state),
             FenderValue::List(l) => l.iter().for_each(|i| i.hash(state)),
             FenderValue::Struct(s) => s.hash(state),
