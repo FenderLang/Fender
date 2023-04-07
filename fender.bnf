@@ -76,7 +76,7 @@ args ::= ("(" sep? delimitedList<arg, ",", sep> sep? ("," sep? optionalArgs)? se
 closure ::= args? lineSep? codeBody
 functionDeclaration ::= "fn" sep? name lineSep? args lineSep? ("=" lineSep? expr | codeBody)
 
-fieldAccess ::= ":" lineSep? name
+fieldAccess ::= "::" lineSep? name
 receiverCall ::= "." lineSep? name sep? invoke
 index ::= "[" expr "]"
 tailOperation ::= (sep? invoke) | (lineSep? (receiverCall | index | fieldAccess))
