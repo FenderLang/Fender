@@ -414,12 +414,12 @@ impl ToString for FenderValue {
 }
 
 macro_rules! gen_eq {
-    ($self:ident, $other:ident, $($ftype:ident $(($i1:ident, $i2:ident))?),*) => {
+    ($self:ident, $other:ident, $($f_type:ident $(($i1:ident, $i2:ident))?),*) => {
         #[allow(unused_variables)]
         match ($self, $other) {
             $(
-                $((FenderValue::$ftype ($i1), FenderValue::$ftype ($i2)) => $i1 == $i2,)?
-                (FenderValue::$ftype $(($i1))?, _) => core::mem::discriminant($self) == core::mem::discriminant($other)
+                $((FenderValue::$f_type ($i1), FenderValue::$f_type ($i2)) => $i1 == $i2,)?
+                (FenderValue::$f_type $(($i1))?, _) => core::mem::discriminant($self) == core::mem::discriminant($other)
             ),*
         }
     }
