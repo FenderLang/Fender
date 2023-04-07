@@ -443,6 +443,7 @@ impl Hash for FenderValue {
             FenderValue::Ref(r) => r.hash(state),
             FenderValue::Int(i) => i.hash(state),
             FenderValue::Float(f) => {
+                core::mem::discriminant(self).hash(state);
                 if f.is_finite() {
                     f.to_bits().hash(state)
                 } else {
@@ -453,7 +454,11 @@ impl Hash for FenderValue {
             FenderValue::String(s) => s.hash(state),
             FenderValue::Bool(b) => b.hash(state),
             FenderValue::Error(e) => e.hash(state),
-            FenderValue::Function(f) => format!("{f:?}").hash(state),
+
+            FenderValue::Function(f) => {
+                core::mem::discriminant(self).hash(state);
+                format!("{f:?}").hash(state)
+            }
             FenderValue::List(l) => l.iter().for_each(|i| i.hash(state)),
             FenderValue::Struct(s) => s.hash(state),
             FenderValue::Type(t) => t.hash(state),
@@ -461,8 +466,7 @@ impl Hash for FenderValue {
                 k.hash(state);
                 v.hash(state)
             }),
-            FenderValue::Null => 0.hash(state),
+            FenderValue::Null => core::mem::discriminant(self).hash(state),
         }
-        core::mem::discriminant(self).hash(state);
     }
 }
