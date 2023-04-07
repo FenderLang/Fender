@@ -335,7 +335,7 @@ impl Initializer<FenderTypeSystem> for FenderInitializer {
                 while !values.is_empty() {
                     let val = values.pop().unwrap();
                     let key = values.pop().unwrap();
-                    hash_map.insert(key.unwrap_value(), InternalReference::new(val.into_ref()));
+                    hash_map.insert(key.unwrap_value(), val.into_ref());
                 }
 
                 FenderValue::HashMap(hash_map.into()).into()

@@ -21,7 +21,7 @@ pub enum FenderValue {
     List(InternalReference<Vec<FenderReference>>),
     Struct(FenderStruct),
     Type(FenderTypeId),
-    HashMap(InternalReference<HashMap<FenderValue, InternalReference<FenderReference>>>),
+    HashMap(InternalReference<HashMap<FenderValue, FenderReference>>),
     #[default]
     Null,
 }
@@ -86,7 +86,7 @@ impl FenderValue {
             Type(t) => Type(t.clone()),
             HashMap(h) => FenderValue::HashMap(InternalReference::new(
                 h.iter()
-                    .map(|(k, v)| (k.clone(), InternalReference::new(v.deep_clone())))
+                    .map(|(k, v)| (k.clone(), (v.deep_clone())))
                     .collect(),
             )),
         }
@@ -247,12 +247,10 @@ impl FenderValue {
                     None => Null.into(),
                 })
             }
-            (HashMap(hash_map), key) => {
-                Ok(match hash_map.insert(key, InternalReference::new(val)) {
-                    Some(v) => v.dupe_ref(),
-                    None => Null.into(),
-                })
-            }
+            (HashMap(hash_map), key) => Ok(match hash_map.insert(key, val) {
+                Some(v) => v.dupe_ref(),
+                None => Null.into(),
+            }),
             (t, _) => Err(format!(
                 "Cannot call `Insert` on type `{}`",
                 t.get_real_type_id().to_string()

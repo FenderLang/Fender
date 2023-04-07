@@ -204,7 +204,7 @@ mod hash_maps {
     use super::*;
     use std::collections::HashMap;
 
-    fn make_test_map() -> HashMap<FenderValue, InternalReference<FenderReference>> {
+    fn make_test_map() -> HashMap<FenderValue, FenderReference> {
         ('a'..='e')
             .into_iter()
             .zip(1..=5)
