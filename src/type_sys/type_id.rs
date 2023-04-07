@@ -1,4 +1,4 @@
-#[derive(PartialEq, Debug, Clone, PartialOrd)]
+#[derive(PartialEq, Debug, Clone, PartialOrd, Hash)]
 pub enum FenderTypeId {
     Int,
     Float,

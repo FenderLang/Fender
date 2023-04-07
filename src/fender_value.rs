@@ -439,6 +439,30 @@ impl Eq for FenderValue {}
 
 impl Hash for FenderValue {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            FenderValue::Ref(r) => r.hash(state),
+            FenderValue::Int(i) => i.hash(state),
+            FenderValue::Float(f) => {
+                if f.is_finite() {
+                    f.to_bits().hash(state)
+                } else {
+                    format!("{}", f).hash(state)
+                }
+            }
+            FenderValue::Char(c) => c.hash(state),
+            FenderValue::String(s) => s.hash(state),
+            FenderValue::Bool(b) => b.hash(state),
+            FenderValue::Error(e) => e.hash(state),
+            FenderValue::Function(f) => format!("{f:?}").hash(state),
+            FenderValue::List(l) => l.iter().for_each(|i| i.hash(state)),
+            FenderValue::Struct(s) => s.hash(state),
+            FenderValue::Type(t) => t.hash(state),
+            FenderValue::HashMap(m) => m.iter().for_each(|(k, v)| {
+                k.hash(state);
+                v.hash(state)
+            }),
+            FenderValue::Null => 0.hash(state),
+        }
         core::mem::discriminant(self).hash(state);
     }
 }
