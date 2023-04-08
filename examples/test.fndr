@@ -1,20 +1,20 @@
 #!/bin/fender
 
-$m = [1:"hello", "word":"world"]
-m[1].println()
-m["word"].println()
-m["word"] = "bird"
-m["word"].println()
+# struct Test {name: String, age:Int}
+
+# $t = Test("jim", 10)
+# $t = StdLibTest(name: "jim", age: "hih")
+IterRes(true, "hih").println()
 
 
-m["hello"].println()
+$l = [2,4,6,8]
+$t = l.iter()
 
-m.insert("hello", "first")
 
-m.println()
-
-println("value in m[\"hello\"] ", m["hello"].dbg())
-
-{println("value that was at \"hello\" {$.dbg()}")}(m.insert("hello", "second"))
-
-println("value in m[\"hello\"] ", m["hello"].dbg())
+t.println()
+t.next().println()
+t.next().println()
+t.next().println()
+t.next().println()
+t.next().println()
+t.println()

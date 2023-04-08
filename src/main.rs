@@ -35,6 +35,7 @@ fn main() {
     let (mut engine, main) = match interpreter::create_engine_main(&script) {
         Ok(v) => v,
         Err(e) => {
+            eprintln!("{:?}", e);
             eprintln!(
                 "Error processing fender code: {}",
                 e.src_relative_string(&script)

@@ -55,7 +55,7 @@ macro_rules! deps_enum {
                     $(
                         $name::$val => {
                             $($(
-                                $name::$dep.load(engine);
+                                $name::$dep.load::<N>(engine);
                             )*)?
                             let loaded = $res.load_into::<N>(engine);
                             engine.context.deps.0[*self as usize] = Some(loaded);

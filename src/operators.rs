@@ -243,7 +243,7 @@ fn index_op(a: &FenderReference, b: &FenderReference) -> FenderReference {
     }
 }
 
-fn field_access(a: &FenderReference, b: &FenderReference) -> FenderReference {
+pub fn field_access(a: &FenderReference, b: &FenderReference) -> FenderReference {
     match (&**a, &**b) {
         (FenderValue::Struct(s), FenderValue::Int(i)) => s.data[i].dupe_ref(),
         e => unreachable!("{:?}", e),
