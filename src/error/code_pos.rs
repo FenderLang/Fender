@@ -36,3 +36,16 @@ impl CodePos {
         self.pos = InnerCodePos::LineCol(src.len(), src[src.len() - 1].len());
     }
 }
+
+#[macro_export]
+macro_rules! code_pos_here {
+    () => {
+        CodePos {
+            file_name: Some(file!().into()),
+            pos: $crate::error::code_pos::InnerCodePos::LineCol(
+                line!() as usize,
+                column!() as usize,
+            ),
+        }
+    };
+}

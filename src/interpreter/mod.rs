@@ -1,5 +1,6 @@
 use self::error::InterpreterError;
 use crate::{
+    code_pos_here,
     error::{code_pos::CodePos, parent_type::ParentErrorType, FenderError, FenderResult},
     fender_value::{fender_structs::FenderStructType, FenderValue},
     lazy_cell::LazyCell,
@@ -96,11 +97,17 @@ impl<'a> LexicalScope<'a> {
         }
     }
 
-    pub fn capture(&self, name: &str, src_pos: usize) -> Result<(), InterpreterError> {
+    pub fn capture(&self, name: &str, src_pos: usize) -> Result<(), FenderError> {
         let parent_var = self
             .parent
             .and_then(|parent| parent.variables.borrow().get(name).cloned())
-            .ok_or_else(|| InterpreterError::UnresolvedName(name.to_string(), src_pos))?;
+            .ok_or_else(|| FenderError {
+                error_type: ParentErrorType::FenderInterpreterError(
+                    InterpreterError::UnresolvedName(name.to_string(), src_pos),
+                ),
+                rust_code_pos: code_pos_here!(),
+                fender_code_pos: Some(CodePos::new_abs(None, src_pos)),
+            })?;
         let mut captures = self.captures.borrow_mut();
         captures.push(parent_var);
         self.variables
@@ -114,7 +121,7 @@ impl<'a> LexicalScope<'a> {
         engine: &mut ExecutionEngine<FenderTypeSystem>,
         name: &str,
         src_pos: usize,
-    ) -> Result<VariableType, InterpreterError> {
+    ) -> Result<VariableType, FenderError> {
         let mut parent_scopes = Vec::new();
         let mut cur = self;
         while !cur.variables.borrow().contains_key(name) {
@@ -128,7 +135,13 @@ impl<'a> LexicalScope<'a> {
                     if let Some(var) = stdlib::load::<STDLIB_SIZE>(name, engine) {
                         return Ok(VariableType::Global(var));
                     } else {
-                        return Err(InterpreterError::UnresolvedName(name.to_string(), src_pos));
+                        return Err(FenderError {
+                            error_type: ParentErrorType::FenderInterpreterError(
+                                InterpreterError::UnresolvedName(name.to_string(), src_pos),
+                            ),
+                            rust_code_pos: code_pos_here!(),
+                            fender_code_pos: Some(CodePos::new_abs(None, src_pos)),
+                        });
                     }
                 }
             }
@@ -721,11 +734,19 @@ fn parse_struct_instantiation(
                     .struct_name_index()
                     .contains_key(&sub.get_match())
                 {
-                    return Err(InterpreterError::UnresolvedName(
-                        sub.get_match(),
-                        token.range.start,
-                    )
-                    .into());
+                    if let None = stdlib::load::<STDLIB_SIZE>(&sub.get_match(), engine) {
+                        return Err(FenderError {
+                            error_type: ParentErrorType::FenderInterpreterError(
+                                InterpreterError::UnresolvedName(
+                                    sub.get_match(),
+                                    token.range.start,
+                                ),
+                            ),
+                            rust_code_pos: code_pos_here!(),
+                            fender_code_pos: Some(CodePos::new_abs(None, token.range.start)),
+                        }
+                        .into());
+                    }
                 }
                 name = sub.get_match()
             }
@@ -739,6 +760,8 @@ fn parse_struct_instantiation(
     let mut values = Vec::new();
 
     let id = engine.context.struct_table.struct_name_index()[&name];
+
+    let mut count = 0;
     for f_name in engine.context.struct_table.type_list()[id]
         .fields
         .iter()
@@ -746,9 +769,34 @@ fn parse_struct_instantiation(
         .collect::<Vec<_>>()
     {
         match fields.get(&f_name) {
-            Some(t) => values.push(parse_expr(t, engine, scope)?),
+            Some(t) => {
+                count += 1;
+                values.push(parse_expr(t, engine, scope)?)
+            }
             None => values.push(FenderValue::Null.into()),
         }
+    }
+    if count < fields.len() {
+        let unused_name = fields
+            .iter()
+            .find(|(o_name, ..)| {
+                engine.context.struct_table.type_list()[id]
+                    .fields
+                    .iter()
+                    .find(|(i_name, ..)| **o_name == *i_name)
+                    .is_none()
+            })
+            .unwrap();
+
+        return Err(FenderError {
+            error_type: ParentErrorType::FenderInterpreterError(InterpreterError::UnresolvedName(
+                unused_name.0.clone(),
+                unused_name.1.range.start,
+            )),
+            fender_code_pos: Some(CodePos::new_abs(None, unused_name.1.range.start)),
+            rust_code_pos: CodePos::new_rel(Some(file!().into()), line!(), column!()),
+        }
+        .into());
     }
 
     Ok(Expression::Initialize(
