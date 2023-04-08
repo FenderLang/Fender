@@ -1,18 +1,16 @@
 #![deny(missing_docs)]
 use crate::{
-    dep_name, deps_enum, fender_reference::FenderReference, fender_value::FenderValue,
-    type_sys::type_system::FenderTypeSystem,
+    dep_name, deps_enum,
+    type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
 };
 
-use freight_vm::{
-    error::FreightError,
-    execution_engine::ExecutionEngine,
-    expression::{Expression, NativeFunction},
-    function::{ArgCount, FunctionRef},
-};
+use freight_vm::{execution_engine::ExecutionEngine, function::ArgCount};
 use std::ops::RangeBounds;
 
-use self::loader::StdlibResource;
+use self::{
+    loader::StdlibResource,
+    native_types::{FenderNativeFunction, FenderNativeStructType},
+};
 
 /// functions for converting fender values
 pub mod cast;
@@ -20,8 +18,12 @@ pub mod cast;
 pub mod control_flow;
 /// stdin, stdout, and file IO
 pub mod io;
+/// Default iterator types and their functions
+pub mod iterators;
 /// loads stdlib resources
 pub mod loader;
+/// native rust types to be loaded by `stdlib::load`
+pub mod native_types;
 /// system interface
 pub mod system;
 /// modify and query existing values
@@ -32,6 +34,7 @@ pub fn load<const N: usize>(
     name: &str,
     engine: &mut ExecutionEngine<FenderTypeSystem>,
 ) -> Option<usize> {
+    dbg!(name);
     let res = FenderResource::from_str(name)?;
     Some(res.load::<N>(engine))
 }
@@ -49,29 +52,6 @@ fn variadic<RB: RangeBounds<usize>>(args: RB) -> ArgCount {
 /// Shorthand function to create `ArgCount::Range`
 fn range<RB: RangeBounds<usize>>(args: RB) -> ArgCount {
     ArgCount::new(args)
-}
-
-struct FenderNativeFunction {
-    func: fn(
-        &mut ExecutionEngine<FenderTypeSystem>,
-        Vec<FenderReference>,
-    ) -> Result<FenderReference, FreightError>,
-    args: ArgCount,
-}
-
-impl StdlibResource for FenderNativeFunction {
-    fn load_into<const N: usize>(&self, engine: &mut ExecutionEngine<FenderTypeSystem>) -> usize {
-        let global = engine.create_global();
-        let func = FunctionRef::new_native(global, NativeFunction::new(self.func), self.args);
-        engine
-            .evaluate(
-                &Expression::AssignGlobal(global, Box::new(FenderValue::Function(func).into())),
-                &mut [],
-                &[],
-            )
-            .expect("Assigning value should never fail");
-        global
-    }
 }
 
 deps_enum! {FenderResource, STDLIB_SIZE:
@@ -113,6 +93,8 @@ deps_enum! {FenderResource, STDLIB_SIZE:
         shell => FenderNativeFunction {func: system::shell_func, args: range(1..=3)},
         pwd => FenderNativeFunction {func: system::pwd_func, args: fixed(0)},
         cd => FenderNativeFunction {func: system::cd_func, args: fixed(1)},
+
+        StdLibTest => FenderNativeStructType{fields:vec![("name".into(),Some(FenderTypeId::String)),("age".into(),None)],name:"StdLibTest".into(),constructor:FenderNativeFunction{func:iterators::test_constructor, args: fixed(2) }},
 }
 
 #[macro_export]
