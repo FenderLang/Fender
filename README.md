@@ -4,7 +4,7 @@ A functional scripting language, intended for string manipulation and general sc
 # TODO before beta
 - [x] Structs
 - [ ] Maps
-- [ ] Imports
+- [x] Imports
 - [x] Assign-operate
 - [x] REPL
 - [ ] Higher-order functions (map, filter, reduce, each, fold, scan, enumerate, zip, memoize)
