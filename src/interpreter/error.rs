@@ -5,6 +5,7 @@ pub enum InterpreterError {
     UnresolvedName(String, usize),
     DuplicateName(String, usize),
     UnresolvedLabel(String, usize),
+    NonStructField(String, usize),
 }
 
 impl InterpreterError {
@@ -17,6 +18,10 @@ impl InterpreterError {
             InterpreterError::UnresolvedLabel(name, pos) => {
                 (format!("Unresolved label `{name}`"), pos)
             }
+            InterpreterError::NonStructField(name, pos) => (
+                format!("Attempted to read field `{name}` on non-struct value"),
+                pos,
+            ),
         };
 
         let (line, col) = {
@@ -39,6 +44,12 @@ impl Display for InterpreterError {
             }
             Self::DuplicateName(name, pos) => {
                 write!(f, "Duplicate name `{}` at position {pos}", name)
+            }
+            Self::NonStructField(name, pos) => {
+                write!(
+                    f,
+                    "Attempted to read field `{name}` on non-struct value at position {pos}"
+                )
             }
         }
     }

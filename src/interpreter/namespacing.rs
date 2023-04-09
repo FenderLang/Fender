@@ -1,10 +1,12 @@
 use std::path::PathBuf;
 
 use flux_bnf::tokens::Token;
-use freight_vm::expression::{Expression, VariableType};
+use freight_vm::expression::Expression;
+use freight_vm::value::Value;
 use freight_vm::{execution_engine::ExecutionEngine, function::ArgCount};
 
 use crate::fender_reference::FenderReference;
+use crate::fender_value::FenderValue;
 use crate::interpreter::CodePos;
 use crate::{
     error::{FenderError, FenderResult},
@@ -12,6 +14,7 @@ use crate::{
     unwrap_rust,
 };
 
+use super::error::InterpreterError;
 use super::{parse_statements, register_struct, register_var, LexicalScope, RegisterVarType};
 
 pub(crate) fn parse_module(
@@ -56,6 +59,57 @@ pub(crate) fn parse_module(
     ))
 }
 
+enum ImportTarget {
+    /// Directly import the target, packed into a struct
+    Direct,
+    /// Import all of the fields of the target individually
+    All,
+    /// Import a single field from the target
+    Field(String),
+    /// Import targets within a field on this target
+    UnpackField(String, Box<ImportTarget>),
+    /// Import multiple specific targets
+    Multi(Vec<ImportTarget>),
+}
+
+fn get_struct_field(
+    val: &FenderReference,
+    engine: &mut ExecutionEngine<FenderTypeSystem>,
+    name: &str,
+    pos: usize,
+) -> FenderResult<FenderReference> {
+    let FenderValue::Struct(val) = &**val else {
+        return Err(InterpreterError::NonStructField(name.to_string(), pos).into())
+    };
+    let index = engine.context.struct_table.field_index(name);
+    let field = val
+        .data
+        .get(&(index as i64))
+        .ok_or_else(|| InterpreterError::UnresolvedName(name.to_string(), pos))?;
+    Ok(field.dupe_ref())
+}
+
+fn parse_import_target(token: &Token) -> ImportTarget {
+    if token.children.is_empty() {
+        return ImportTarget::All;
+    }
+    let child = &token.children[0];
+    match child.get_name().as_deref().unwrap() {
+        "name" => {
+            let name = child.get_match();
+            if token.children.len() == 1 {
+                ImportTarget::Field(name)
+            } else {
+                ImportTarget::UnpackField(name, parse_import_target(&token.children[1]).into())
+            }
+        }
+        "importTargetMulti" => {
+            ImportTarget::Multi(child.children.iter().map(parse_import_target).collect())
+        }
+        name => unreachable!("{}", name),
+    }
+}
+
 pub(crate) fn parse_import(
     token: &Token,
     engine: &mut ExecutionEngine<FenderTypeSystem>,
@@ -71,25 +125,100 @@ pub(crate) fn parse_import(
         .to_string();
     path.set_extension("fndr");
     let path = path.canonicalize().expect("Invalid file path format");
-    if let Some(loc) = engine.context.imports.get(&path) {
-        scope
-            .variables
-            .borrow_mut()
-            .insert(var_name, VariableType::Global(*loc));
-        return Ok(());
-    }
-    let contents = unwrap_rust!(std::fs::read_to_string(&path))?;
-    let lexer = crate::interpreter::LEXER.get();
-    let token = unwrap_rust!(lexer.as_ref().unwrap().tokenize(contents))?;
-    let module = parse_module(&token.children, engine, var_name.to_string(), 0)?;
-    let expr = register_var(
+    let module = if let Some(loc) = engine.context.imports.get(&path) {
+        unwrap_rust!(engine.evaluate(&Expression::global(*loc), &mut [], &[]))?
+    } else {
+        let contents = unwrap_rust!(std::fs::read_to_string(&path))?;
+        let lexer = crate::interpreter::LEXER.get();
+        let token = unwrap_rust!(lexer.as_ref().unwrap().tokenize(contents))?;
+        parse_module(&token.children, engine, var_name.to_string(), 0)?
+    };
+    let targets = if token.children.len() == 1 {
+        ImportTarget::Direct
+    } else {
+        parse_import_target(&token.children[1])
+    };
+    let pos = token.range.start;
+    import_targets(
+        &module,
         var_name,
-        registration_type,
         engine,
         scope,
-        |_, _| Ok(Expression::RawValue(module)),
-        token.range.start,
+        registration_type,
+        &targets,
+        pos,
     )?;
-    engine.evaluate(&expr, &mut [], &[]).unwrap();
+    Ok(())
+}
+
+fn import_targets(
+    module: &FenderReference,
+    name: String,
+    engine: &mut ExecutionEngine<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+    registration_type: RegisterVarType,
+    targets: &ImportTarget,
+    pos: usize,
+) -> FenderResult<()> {
+    let mut exprs = vec![];
+    match targets {
+        ImportTarget::Direct => {
+            let expr = register_var(
+                name,
+                registration_type,
+                engine,
+                scope,
+                |_, _| Ok(Expression::RawValue(module.dupe_ref())),
+                pos,
+            )?;
+            exprs.push(expr);
+        }
+        ImportTarget::All => {
+            let FenderValue::Struct(module) = &**module else {
+                return Err(InterpreterError::NonStructField("*".to_string(), pos).into());
+            };
+            for field in &module.struct_id.fields {
+                let (field_name, _, field_index) = field;
+                let data = module.data.get(&(*field_index as i64)).unwrap().dupe_ref();
+                let expr = register_var(
+                    field_name.clone(),
+                    registration_type,
+                    engine,
+                    scope,
+                    |_, _| Ok(Expression::RawValue(data)),
+                    pos,
+                )?;
+                exprs.push(expr);
+            }
+        }
+        ImportTarget::Field(name) => {
+            let data = get_struct_field(module, engine, name, pos)?;
+            let expr = register_var(
+                name.to_string(),
+                registration_type,
+                engine,
+                scope,
+                |_, _| Ok(Expression::RawValue(data)),
+                pos,
+            )?;
+            exprs.push(expr);
+        }
+        ImportTarget::UnpackField(name, target) => {
+            let data = get_struct_field(module, engine, name, pos)?;
+            import_targets(
+                &data,
+                name.to_string(),
+                engine,
+                scope,
+                registration_type,
+                target,
+                pos,
+            )?;
+        }
+        ImportTarget::Multi(_) => todo!(),
+    }
+    for expr in exprs {
+        unwrap_rust!(engine.evaluate(&expr, &mut [], &[]))?;
+    }
     Ok(())
 }

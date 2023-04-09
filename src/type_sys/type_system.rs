@@ -62,13 +62,13 @@ impl StructTable {
         self.type_list.len()
     }
 
-    pub(crate) fn field_index(&mut self, name: &String) -> usize {
+    pub(crate) fn field_index(&mut self, name: &str) -> usize {
         let next = self.field_map.len();
 
         match self.field_map.get(name) {
             Some(v) => *v,
             None => {
-                self.field_map.insert(name.clone(), next);
+                self.field_map.insert(name.to_string(), next);
                 next
             }
         }

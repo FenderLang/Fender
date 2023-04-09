@@ -106,6 +106,7 @@ impl From<InterpreterError> for FenderError {
         let pos = match value {
             InterpreterError::UnresolvedName(_, pos)
             | InterpreterError::DuplicateName(_, pos)
+            | InterpreterError::NonStructField(_, pos)
             | InterpreterError::UnresolvedLabel(_, pos) => pos,
         };
 
@@ -122,6 +123,7 @@ impl From<InterpreterError> for Box<FenderError> {
         let pos = match value {
             InterpreterError::UnresolvedName(_, pos)
             | InterpreterError::DuplicateName(_, pos)
+            | InterpreterError::NonStructField(_, pos)
             | InterpreterError::UnresolvedLabel(_, pos) => pos,
         };
 
