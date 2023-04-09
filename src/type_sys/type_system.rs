@@ -1,4 +1,4 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, path::PathBuf, rc::Rc};
 
 use super::type_id::FenderTypeId;
 use crate::{
@@ -28,6 +28,7 @@ pub struct FenderGlobalContext {
     pub deps: DependencyList<STDLIB_SIZE>,
     pub struct_table: StructTable,
     pub globals: HashMap<String, usize>,
+    pub imports: HashMap<PathBuf, usize>,
 }
 
 impl FenderGlobalContext {

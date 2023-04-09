@@ -22,10 +22,16 @@ impl<'a> Default for FenderRepl<'a> {
     }
 }
 
-fn display_result(result: Result<FenderReference, Box<dyn Error>>) {
+fn display_result(result: Result<Vec<FenderReference>, Box<dyn Error>>) {
     match result {
-        Ok(FenderReference::FRaw(FenderValue::Null)) => (),
-        Ok(val) => println!("{}", val.to_literal_display_string()),
+        Ok(vals) => {
+            for val in vals {
+                if let FenderValue::Null = &*val {
+                    continue;
+                }
+                println!("{}", val.to_literal_display_string());
+            }
+        }
         Err(err) => eprintln!("{err:#}"),
     }
 }
@@ -74,15 +80,26 @@ impl<'a> FenderRepl<'a> {
     pub fn run_statement(
         &mut self,
         statement: impl AsRef<str> + Into<String>,
-    ) -> Result<FenderReference, Box<dyn Error>> {
+    ) -> Result<Vec<FenderReference>, Box<dyn Error>> {
         let token = crate::interpreter::LEXER
             .get()
             .as_ref()
             .unwrap()
-            .tokenize_with("statement", statement.as_ref())?;
-        let expr =
-            crate::interpreter::parse_statement(&token, &mut self.engine, &mut self.scope, true)?;
-        Ok(self.engine.evaluate(&expr, &mut [], &[])?)
+            .tokenize(statement.as_ref())?;
+        let exprs = crate::interpreter::parse_statements(
+            &token.children,
+            &mut self.engine,
+            &mut self.scope,
+            super::RegisterVarType::Global,
+        )?;
+        exprs
+            .into_iter()
+            .map(|expr| {
+                self.engine
+                    .evaluate(&expr, &mut [], &[])
+                    .map_err(Into::into)
+            })
+            .collect()
     }
 
     pub fn run(&mut self) {
@@ -90,7 +107,7 @@ impl<'a> FenderRepl<'a> {
             let line = self.editor.read_line(&FenderPrompt);
             match line {
                 Ok(Signal::Success(line)) => {
-                    display_result(self.run_statement(line.trim()));
+                    display_result(self.run_statement(line));
                 }
                 Ok(Signal::CtrlC) => continue,
                 Ok(Signal::CtrlD) => break,
