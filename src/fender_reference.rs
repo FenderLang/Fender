@@ -146,10 +146,11 @@ impl Value for FenderReference {
             FenderValue::List(_) => &FenderTypeId::List,
             FenderValue::Struct(_) => &FenderTypeId::Struct,
             FenderValue::Type(_) => &FenderTypeId::Type,
+            FenderValue::HashMap(_) => &FenderTypeId::HashMap,
         }
     }
 
-    fn deep_clone(&self) -> Self {
+    fn deep_clone(&self) -> FenderReference {
         match self {
             FenderReference::FRaw(v) => FenderReference::FRaw(v.deep_clone()),
             FenderReference::FRef(r) => {
@@ -158,7 +159,7 @@ impl Value for FenderReference {
         }
     }
 
-    fn dupe_ref(&self) -> Self {
+    fn dupe_ref(&self) -> FenderReference {
         match self {
             FenderReference::FRef(internal_ref) => FenderReference::FRef(internal_ref.clone()),
             FenderReference::FRaw(_) => self.deep_clone(),

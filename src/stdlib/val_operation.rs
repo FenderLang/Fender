@@ -1,6 +1,7 @@
 use crate::{
     fender_value::FenderValue::{self, *},
     fndr_native_func,
+    type_sys::type_id::FenderTypeId,
 };
 use std::ops::DerefMut;
 
@@ -22,9 +23,9 @@ fndr_native_func!(
     |_, mut variable, pos_a, pos_b| {
         let (Int(pos_a), Int(pos_b)) =  (&*pos_a, &*pos_b) else{
         return Ok(FenderValue::make_error(format!(
-            "Swap indices must be of type Int, values provided were of following types ({:?}, {:?})",
-            pos_a.get_real_type_id(),
-            pos_b.get_real_type_id(),
+            "Swap indices must be of type Int, values provided were of following types (`{}`, `{}`)",
+            pos_a.get_real_type_id().to_string(),
+            pos_b.get_real_type_id().to_string(),
         ))
         .into());
     };
@@ -36,8 +37,8 @@ fndr_native_func!(
             }
 
             _ => Error(format!(
-                "Cannot call swap on value of type {:?}",
-                variable.get_real_type_id()
+                "Cannot call swap on value of type `{}`",
+                variable.get_real_type_id().to_string()
             ))
             .into(),
         })
@@ -98,7 +99,7 @@ fndr_native_func!(
 fndr_native_func!(
     /// Returns a `String` that contains the debug text of the given `value`
     dbg_func,
-    |_, value| { Ok(String(format!("{:?}", *value).into()).into()) }
+    |_, value| { Ok(FenderValue::make_string(value.fender_dbg_string()).into()) }
 );
 
 fndr_native_func!(
@@ -106,7 +107,7 @@ fndr_native_func!(
     remove_func,
     |_, mut value, pos| {
         let Int(pos) = *pos else {
-            return Ok(FenderValue::make_error(format!("remove must be indexed with an int: expected type `Int` found type `{}`", pos.get_type_id().to_string())).into());
+            return Ok(FenderValue::make_error(format!("Remove must be indexed with an int: expected type `Int` found type `{}`", pos.get_type_id().to_string())).into());
         };
         Ok(match value.remove_at(pos) {
             Ok(v) => v,
@@ -120,7 +121,7 @@ fndr_native_func!(
     remove_pass_func,
     |_, mut value, pos| {
         let Int(pos) = *pos else {
-            return Ok(FenderValue::make_error(format!("remove must be indexed with an int: expected type `Int` found type `{}`", pos.get_type_id().to_string())).into());
+            return Ok(FenderValue::make_error(format!("Remove must be indexed with an int: expected type `Int` found type `{}`", pos.get_type_id().to_string())).into());
         };
         Ok(match value.remove_at(pos) {
             Ok(_) => value,
@@ -136,16 +137,39 @@ fndr_native_func!(
         match (a.unwrap_value(), b.unwrap_value()) {
             (String(a), String(b)) => Ok(FenderValue::make_string(format!("{}{}", *a, *b)).into()),
             (List(a), List(b)) => {
-                let mut newl = a.to_vec();
-                newl.extend(b.iter().cloned());
-                Ok(FenderValue::make_list(newl).into())
+                let mut new_list = a.to_vec();
+                new_list.extend(b.iter().cloned());
+                Ok(FenderValue::make_list(new_list).into())
             }
             _ => Ok(FenderValue::make_error(format!(
-                "Cannot concat {} with {}",
+                "Cannot call concat on type `{}` and `{}`",
                 a.get_real_type_id().to_string(),
                 b.get_real_type_id().to_string()
             ))
             .into()),
         }
+    }
+);
+
+fndr_native_func!(
+    /// Insert a key-value pair into a HashMap, or insert into a list at a given index
+    insert_func,
+    |_, mut collection, key, value| {
+        let res = match collection.get_real_type_id() {
+            FenderTypeId::HashMap => (*collection).insert(key.unwrap_value(), value),
+            FenderTypeId::List if key.get_real_type_id() == FenderTypeId::Int => {
+                collection.insert(key.unwrap_value(), value)
+            }
+            FenderTypeId::List => Err(format!(
+                "Cannot index `List` with type `{}`",
+                key.get_type_id().to_string()
+            )),
+            t => Err(format!("Cannot call `insert` on type `{}`", t.to_string())),
+        };
+
+        Ok(match res {
+            Ok(v) => v,
+            Err(e) => FenderValue::make_error(e).into(),
+        })
     }
 );

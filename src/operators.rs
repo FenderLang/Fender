@@ -40,6 +40,7 @@ pub enum FenderUnaryOperator {
 pub enum FenderInitializer {
     List,
     String,
+    HashMap,
     Struct(usize),
 }
 
@@ -134,7 +135,6 @@ fn eq(a: &FenderReference, b: &FenderReference) -> FenderReference {
         | (FenderValue::Float(_), FenderValue::Float(_))
         | (FenderValue::Int(_), FenderValue::Float(_))
         | (FenderValue::Float(_), FenderValue::Int(_)) => num_eq(a, b),
-        (a, b) if a.get_real_type_id() != b.get_real_type_id() => FenderValue::Bool(false).into(),
         (FenderValue::Null, FenderValue::Null) => FenderValue::Bool(true).into(),
         (FenderValue::List(a_list), FenderValue::List(b_list)) => {
             if a_list.len() != b_list.len() {
@@ -143,7 +143,8 @@ fn eq(a: &FenderReference, b: &FenderReference) -> FenderReference {
                 FenderValue::Bool(a_list.iter().eq(b_list.iter())).into()
             }
         }
-        _ => FenderValue::Bool(false).into(),
+        (a, b) if a.get_real_type_id() != b.get_real_type_id() => FenderValue::Bool(false).into(),
+        (a, b) => FenderValue::Bool(a == b).into(),
     }
 }
 
@@ -166,13 +167,16 @@ fn ne(a: &FenderReference, b: &FenderReference) -> FenderReference {
         | (FenderValue::Float(_), FenderValue::Float(_))
         | (FenderValue::Int(_), FenderValue::Float(_))
         | (FenderValue::Float(_), FenderValue::Int(_)) => num_ne(a, b),
+        (FenderValue::Null, FenderValue::Null) => FenderValue::Bool(false).into(),
+        (FenderValue::List(a_list), FenderValue::List(b_list)) => {
+            if a_list.len() != b_list.len() {
+                FenderValue::Bool(true).into()
+            } else {
+                FenderValue::Bool(a_list.iter().ne(b_list.iter())).into()
+            }
+        }
         (a, b) if a.get_real_type_id() != b.get_real_type_id() => FenderValue::Bool(true).into(),
-        _ => FenderValue::make_error(format!(
-            "cannot run `ne` on {} and {}",
-            a.get_real_type_id().to_string(),
-            b.get_real_type_id().to_string()
-        ))
-        .into(),
+        (a, b) => FenderValue::Bool(a != b).into(),
     }
 }
 
@@ -187,7 +191,22 @@ fn add(a: &FenderReference, b: &FenderReference) -> FenderReference {
     }
 }
 
+fn index_hash_map(a: &FenderReference, b: &FenderReference) -> FenderReference {
+    let FenderValue::HashMap(hash_map) = a.deref() else {
+        unreachable!()
+    };
+
+    match hash_map.get(b) {
+        Some(v) => v.dupe_ref(),
+        None => FenderValue::Null.into(),
+    }
+}
+
 fn index_op(a: &FenderReference, b: &FenderReference) -> FenderReference {
+    if let FenderValue::HashMap(_) = a.deref() {
+        return index_hash_map(a, b);
+    }
+
     let FenderValue::Int(pos) =  b.deref() else {
                     return FenderReference::FRaw(FenderValue::Error(format!(
                         "cannot index with `{}` type",
@@ -287,7 +306,7 @@ impl UnaryOperator<FenderReference> for FenderUnaryOperator {
 impl Initializer<FenderTypeSystem> for FenderInitializer {
     fn initialize(
         &self,
-        values: Vec<FenderReference>,
+        mut values: Vec<FenderReference>,
         ctx: &mut ExecutionEngine<FenderTypeSystem>,
     ) -> FenderReference {
         match self {
@@ -310,10 +329,22 @@ impl Initializer<FenderTypeSystem> for FenderInitializer {
                 }
                 FenderValue::String(collected.into()).into()
             }
+            FenderInitializer::HashMap => {
+                let mut hash_map = HashMap::new();
+
+                while !values.is_empty() {
+                    let val = values.pop().unwrap();
+                    let key = values.pop().unwrap();
+                    hash_map.insert(key.unwrap_value(), val.into_ref());
+                }
+
+                FenderValue::HashMap(hash_map.into()).into()
+            }
             FenderInitializer::Struct(id) => self.initialize_struct(values, ctx, *id),
         }
     }
 }
+
 impl FenderInitializer {
     fn initialize_struct(
         &self,
