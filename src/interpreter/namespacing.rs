@@ -39,7 +39,7 @@ pub(crate) fn parse_module(
         .map(|f| Expression::Variable(scope.variables.borrow()[f].clone()))
         .collect();
     let fields = fields.into_iter().map(|field| (field, None)).collect();
-    register_struct(
+    let register_expr = register_struct(
         mod_name.clone(),
         fields,
         engine,
@@ -47,6 +47,7 @@ pub(crate) fn parse_module(
         super::RegisterVarType::AnonymousGlobal,
         pos,
     )?;
+    unwrap_rust!(engine.evaluate(&register_expr, &mut [], &[]))?;
     let struct_pos = scope.variables.borrow()[&mod_name].clone();
     unwrap_rust!(engine.evaluate(
         &Expression::DynamicFunctionCall(Expression::Variable(struct_pos).into(), field_locs),
@@ -62,15 +63,14 @@ pub(crate) fn parse_import(
     registration_type: RegisterVarType,
 ) -> FenderResult<()> {
     let filename = &token.children[0].get_match();
-    let mut path = PathBuf::from(filename)
-        .canonicalize()
-        .expect("Invalid filepath format");
+    let mut path = PathBuf::from(filename);
     let var_name = path
         .file_name()
         .and_then(|p| p.to_str())
         .expect("Empty path")
         .to_string();
     path.set_extension("fndr");
+    let path = path.canonicalize().expect("Invalid file path format");
     if let Some(loc) = engine.context.imports.get(&path) {
         scope
             .variables
