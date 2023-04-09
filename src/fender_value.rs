@@ -413,23 +413,37 @@ impl ToString for FenderValue {
     }
 }
 
+macro_rules! gen_eq {
+    ($self:ident, $other:ident, $($f_type:ident $(($i1:ident, $i2:ident))?),*) => {
+        #[allow(unused_variables)]
+        match ($self, $other) {
+            $(
+                $((FenderValue::$f_type ($i1), FenderValue::$f_type ($i2)) => $i1 == $i2,)?
+                (FenderValue::$f_type $(($i1))?, _) => core::mem::discriminant($self) == core::mem::discriminant($other)
+            ),*
+        }
+    }
+}
+
 impl PartialEq for FenderValue {
     fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Ref(a), Self::Ref(b)) => a == b,
-            (Self::Int(a), Self::Int(b)) => a == b,
-            (Self::Float(a), Self::Float(b)) => a == b,
-            (Self::Char(a), Self::Char(b)) => a == b,
-            (Self::String(a), Self::String(b)) => a == b,
-            (Self::Bool(a), Self::Bool(b)) => a == b,
-            (Self::Error(a), Self::Error(b)) => a == b,
-            (Self::Function(a), Self::Function(b)) => a == b,
-            (Self::List(a), Self::List(b)) => a == b,
-            (Self::Struct(a), Self::Struct(b)) => a == b,
-            (Self::Type(a), Self::Type(b)) => a == b,
-            (Self::HashMap(a), Self::HashMap(b)) => a == b,
-            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
-        }
+        gen_eq!(
+            self,
+            other,
+            Ref(a, b),
+            Int(a, b),
+            Float(a, b),
+            Char(a, b),
+            String(a, b),
+            Bool(a, b),
+            Error(a, b),
+            Function(a, b),
+            List(a, b),
+            Struct(a, b),
+            Type(a, b),
+            HashMap(a, b),
+            Null
+        )
     }
 }
 
