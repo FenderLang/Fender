@@ -215,7 +215,19 @@ fn import_targets(
                 pos,
             )?;
         }
-        ImportTarget::Multi(_) => todo!(),
+        ImportTarget::Multi(targets) => {
+            for target in targets {
+                import_targets(
+                    module,
+                    name.clone(),
+                    engine,
+                    scope,
+                    registration_type,
+                    target,
+                    pos,
+                )?;
+            }
+        }
     }
     for expr in exprs {
         unwrap_rust!(engine.evaluate(&expr, &mut [], &[]))?;
