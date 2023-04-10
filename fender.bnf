@@ -33,7 +33,7 @@ cmpOp ::= ">=" | "<=" | "==" | "!=" | [<>]
 pow! ::= delimitedList<term, "^", lineSep>
 mul! ::= delimitedList<pow, [*%/], lineSep>
 add! ::= delimitedList<mul, [-+], lineSep>
-range! ::= delimitedList<add, ".." "="?, lineSep>
+range! ::= delimitedList<(add | "*"), ".." "="?, lineSep>
 cmp! ::= delimitedList<range, cmpOp, lineSep>
 and! ::= delimitedList<cmp, "&&", lineSep>
 or! ::= delimitedList<and, "||", lineSep>

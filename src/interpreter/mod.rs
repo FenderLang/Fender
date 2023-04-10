@@ -782,6 +782,14 @@ fn parse_escape_seq(token: &Token) -> FenderResult<char> {
     })
 }
 
+fn parse_range (
+    token: &Token,
+    engine: &mut ExecutionEngine<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+) -> InterpreterResult {
+    
+}
+
 pub(crate) fn parse_expr(
     token: &Token,
     engine: &mut ExecutionEngine<FenderTypeSystem>,
@@ -791,6 +799,7 @@ pub(crate) fn parse_expr(
         "add" | "mul" | "pow" | "range" | "cmp" | "or" | "and" => {
             parse_binary_operation(token, engine, scope)?
         }
+        "range" => parse_range(token, engine, scope)?, 
         "term" => parse_term(token, engine, scope)?,
         "expr" | "enclosedExpr" => {
             let label = token.children_named("label").next().map(|t| t.get_match());
