@@ -17,6 +17,7 @@ pub enum FenderValue {
     String(InternalReference<String>),
     Bool(bool),
     Error(String),
+    Range(Option<Box<FenderValue>>, Option<Box<FenderValue>>, bool),
     Function(FunctionRef<FenderTypeSystem>),
     List(InternalReference<Vec<FenderReference>>),
     Struct(FenderStruct),
@@ -50,6 +51,7 @@ impl FenderValue {
             FenderValue::List(_) => FenderTypeId::List,
             FenderValue::Struct(_) => FenderTypeId::Struct,
             FenderValue::Type(_) => FenderTypeId::Type,
+            FenderValue::Range(_, _, _) => FenderTypeId::Range,
         }
     }
 
@@ -82,6 +84,11 @@ impl FenderValue {
                     .collect(),
             }),
             Type(t) => Type(t.clone()),
+            Range(start, end, inclusive) => Range(
+                start.as_ref().map(|v| Box::new(v.deep_clone())),
+                end.as_ref().map(|v| Box::new(v.deep_clone())),
+                *inclusive,
+            ),
         }
     }
 
@@ -305,6 +312,7 @@ impl FenderValue {
             Struct(_) => Bool(false),
             Null => Bool(false),
             Type(_) => Bool(true),
+            Range(_,_,_) => Bool(false),
         }
     }
 
@@ -353,6 +361,7 @@ impl ToString for FenderValue {
             ),
             FenderValue::Struct(s) => s.to_string(),
             FenderValue::Type(t) => format!("Type({})", t.to_string()),
+            FenderValue::Range(rmin, rmax, rbool) => format!("Range({:?},{:?},{})", rmin, rmax, rbool.to_string()),
         }
     }
 }

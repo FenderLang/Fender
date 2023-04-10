@@ -781,7 +781,7 @@ fn parse_escape_seq(token: &Token) -> FenderResult<char> {
         _ => escape[1] as char,
     })
 }
-
+// Add contains if time permits
 fn parse_range (
     token: &Token,
     engine: &mut ExecutionEngine<FenderTypeSystem>,

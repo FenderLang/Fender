@@ -146,6 +146,7 @@ impl Value for FenderReference {
             FenderValue::List(_) => &FenderTypeId::List,
             FenderValue::Struct(_) => &FenderTypeId::Struct,
             FenderValue::Type(_) => &FenderTypeId::Type,
+            FenderValue::Range(_,_,_) => &FenderTypeId::Range,
         }
     }
 
