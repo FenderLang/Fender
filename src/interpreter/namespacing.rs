@@ -124,7 +124,7 @@ pub(crate) fn parse_import(
         .expect("Empty path")
         .to_string();
     path.set_extension("fndr");
-    let path = path.canonicalize().expect("Invalid file path format");
+    let path = path.canonicalize().unwrap_or_else(|e| panic!("Invalid file path {:?}", path, ));
     let module = if let Some(loc) = engine.context.imports.get(&path) {
         unwrap_rust!(engine.evaluate(&Expression::global(*loc), &mut [], &[]))?
     } else {
