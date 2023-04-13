@@ -263,6 +263,12 @@ pub(crate) fn parse_plugin(
             })
             .collect::<Vec<_>>();
 
+        let value_parts = plugins[plugins.len() - 1]
+            .get_values()
+            .iter()
+            .map(|(name, value)| ((*name).to_owned(), (*value).clone()))
+            .collect::<Vec<_>>();
+
         for (name, native_func, arg_count) in function_parts.into_iter() {
             let global = engine.create_global();
             let expr = register_var(
@@ -280,6 +286,18 @@ pub(crate) fn parse_plugin(
                         .into(),
                     ))
                 },
+                token.range.start,
+            )?;
+            exprs.push(expr);
+        }
+
+        for (name, value) in value_parts.into_iter() {
+            let expr = register_var(
+                name.into(),
+                registration_type,
+                engine,
+                scope,
+                |_, _| Ok(Expression::RawValue(value.clone().into())),
                 token.range.start,
             )?;
             exprs.push(expr);

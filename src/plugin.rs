@@ -1,15 +1,16 @@
 use crate::{fender_value::FenderValue, type_sys::type_system::FenderTypeSystem};
 use freight_vm::{expression::NativeFunction, function::ArgCount};
 use libloading::{Library, Symbol};
-use std::cell::RefCell;
+use std::error::Error;
 use std::fmt::Debug;
-use std::rc::Rc;
 use std::{collections::HashMap, ffi::OsStr};
+
+pub type PluginConstructorType = unsafe fn() -> *mut dyn Plugin;
 
 pub trait Plugin: Debug {
     fn name(&self) -> &'static str;
     fn on_plugin_load(&self) {}
-    fn get_values(&self) -> HashMap<&str, FenderValue>;
+    fn get_values(&self) -> HashMap<&str, &FenderValue>;
     fn get_functions(&self) -> HashMap<&str, (&NativeFunction<FenderTypeSystem>, ArgCount)>;
 }
 
@@ -17,7 +18,7 @@ pub trait Plugin: Debug {
 macro_rules! declare_plugin {
     ($plugin_type:ty, $constructor:path) => {
         #[no_mangle]
-        pub extern "C" fn _plugin_create() -> *mut dyn $crate::plugin::Plugin {
+        pub extern "C" fn __plugin_constructor() -> *mut dyn $crate::plugin::Plugin {
             let constructor: fn() -> $plugin_type = $constructor;
 
             let object = constructor();
@@ -38,19 +39,18 @@ impl PluginManager {
         &self.plugins
     }
 
-    pub unsafe fn load_plugin<P: AsRef<OsStr>>(&mut self, filename: P) -> Result<(), ()> {
-        type PluginCreate = unsafe fn() -> *mut dyn Plugin;
+    pub unsafe fn load_plugin<P: AsRef<OsStr>>(
+        &mut self,
+        filename: P,
+    ) -> Result<(), Box<dyn Error>> {
 
-        let lib = Library::new(filename.as_ref()).unwrap();
 
-        self.loaded_libraries.push(lib);
-
+        self.loaded_libraries.push(Library::new(filename.as_ref())?);
         let lib = self.loaded_libraries.last().unwrap();
 
-        let constructor: Symbol<PluginCreate> = lib.get(b"_plugin_create").unwrap();
-        let boxed_raw = constructor();
+        let constructor: Symbol<PluginConstructorType> = lib.get(b"__plugin_constructor").unwrap();
 
-        let plugin = Box::from_raw(boxed_raw);
+        let plugin = Box::from_raw(constructor());
         plugin.on_plugin_load();
         self.plugins.push(plugin);
 
