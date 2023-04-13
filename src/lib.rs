@@ -12,5 +12,6 @@ pub mod lazy_cell;
 pub mod operators;
 /// The freight standard library
 pub mod stdlib;
+pub mod plugin;
 #[cfg(test)]
 mod test;

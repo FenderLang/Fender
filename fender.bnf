@@ -9,7 +9,7 @@ lineSep! ::= (lineBreak | sep)+
 comment ::= "#" [^\n]*
 
 root! ::= (break | sep)? (statement break)* statement? break?
-statement ::= (import | export | functionDeclaration | structDeclaration | declaration | assignment | return | expr) sep? comment?
+statement ::= (plugin | import | export | functionDeclaration | structDeclaration | declaration | assignment | return | expr) sep? comment?
 return ::= "return" ("@" name)? (lineSep expr)?
 declaration ::= "$" sep? name sep? "=" lineSep? expr
 assignOp ::= [-+/*%^]
@@ -19,6 +19,7 @@ filename ::= ([a-z] | [A-Z] | [0-9] | [./_])+
 importFields ::= "*" | name ("::" importFields)? | importTargetMulti
 importTargetMulti ::= wrappedDelimitedList<"(", ")", importFields, ",", sep>
 export ::= "@export" sep ("*" | codeBody)
+plugin ::= "@plugin" sep filename 
 
 binaryOperator ::= "||" | "&&" | "==" | "<=" | ">=" | ".." "="? | [-+*/^<>]
 unaryOperator ::= [-!]

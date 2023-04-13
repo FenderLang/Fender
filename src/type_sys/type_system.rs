@@ -7,7 +7,7 @@ use crate::{
     operators::FenderBinaryOperator,
     operators::FenderInitializer,
     operators::FenderUnaryOperator,
-    stdlib::{loader::DependencyList, FenderResource, STDLIB_SIZE},
+    stdlib::{loader::DependencyList, FenderResource, STDLIB_SIZE}, plugin::PluginManager,
 };
 use freight_vm::TypeSystem;
 
@@ -29,6 +29,7 @@ pub struct FenderGlobalContext {
     pub struct_table: StructTable,
     pub globals: HashMap<String, usize>,
     pub imports: HashMap<PathBuf, usize>,
+    pub plugin_manager: PluginManager
 }
 
 impl FenderGlobalContext {

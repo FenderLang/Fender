@@ -1,4 +1,4 @@
-use self::{error::InterpreterError, namespacing::parse_import};
+use self::{error::InterpreterError, namespacing::{parse_import, parse_plugin}};
 use crate::{
     error::{code_pos::CodePos, parent_type::ParentErrorType, FenderError, FenderResult},
     fender_value::{fender_structs::FenderStructType, FenderValue},
@@ -473,6 +473,10 @@ pub(crate) fn parse_statements(
             }
             "import" => {
                 parse_import(token, engine, scope, registration_type)?;
+                continue;
+            }
+            "plugin" => {
+                parse_plugin(token, engine, scope, registration_type)?;
                 continue;
             }
             name => unreachable!("{name}"),
