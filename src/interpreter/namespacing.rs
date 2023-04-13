@@ -269,7 +269,7 @@ pub(crate) fn parse_plugin(
             .collect::<Vec<_>>();
 
         for (name, native_func, arg_count) in function_parts.into_iter() {
-            let global = engine.create_global();
+            let global = engine.globals.len();
             let expr = register_var(
                 name,
                 RegisterVarType::AnonymousGlobal,
