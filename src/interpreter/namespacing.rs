@@ -111,57 +111,6 @@ fn parse_import_target(token: &Token) -> ImportTarget {
     }
 }
 
-pub(crate) fn parse_plugin(
-    token: &Token,
-    engine: &mut ExecutionEngine<FenderTypeSystem>,
-    scope: &mut LexicalScope,
-    registration_type: RegisterVarType,
-) -> FenderResult<()> {
-    let file_name = token.children[0].get_match();
-    let mut exprs = Vec::new();
-    unsafe {
-        engine.context.plugin_manager.load_plugin(&file_name).unwrap();
-
-        // let constructor: Symbol<unsafe fn() -> *mut dyn Plugin> =
-        //     lib.get("_plugin_create".as_bytes()).unwrap();
-        // let tmp_plugin = Box::from_raw(constructor());
-
-        let plugins = engine.context.plugin_manager.plugins();
-        let len = plugins.borrow().len();
-
-        for (name, (native_func, arg_count)) in plugins.borrow()[len - 1].get_functions() {
-
-            let global = engine.create_global();
-            let expr = register_var(
-                    name.into(),
-                    registration_type,
-                    engine,
-                    scope,
-                    |_, _| Ok(Expression::RawValue(FenderValue::Function(FunctionRef::new_native(global, native_func.to_owned(), arg_count)).into())),
-                    token.range.start,
-                )?;
-                exprs.push(expr);
-
-
-                // let func = FunctionRef::new_native(global, native_func.to_owned(), arg_count);
-
-
-                // engine.context.globals.insert(name.into(), global);
-
-                // engine.evaluate(
-                    //     &Expression::AssignGlobal(global, Box::new(FenderValue::Function(func).into())),
-                    //     &mut [],
-                    //     &[],
-                    // )
-                    // .expect("Assigning value should never fail");
-                }
-            };
-            for expr in exprs{
-                unwrap_rust!(engine.evaluate(&expr, &mut [], &[]))?;
-            }
-            Ok(())
-}
-
 pub(crate) fn parse_import(
     token: &Token,
     engine: &mut ExecutionEngine<FenderTypeSystem>,
@@ -283,6 +232,59 @@ fn import_targets(
             }
         }
     }
+    for expr in exprs {
+        unwrap_rust!(engine.evaluate(&expr, &mut [], &[]))?;
+    }
+    Ok(())
+}
+
+pub(crate) fn parse_plugin(
+    token: &Token,
+    engine: &mut ExecutionEngine<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+    registration_type: RegisterVarType,
+) -> FenderResult<()> {
+    let file_name = token.children[0].get_match();
+    let mut exprs = Vec::new();
+    unsafe {
+        engine
+            .context
+            .plugin_manager
+            .load_plugin(&file_name)
+            .unwrap();
+
+        let plugins = engine.context.plugin_manager.plugins();
+
+        let function_parts = plugins[plugins.len() - 1]
+            .get_functions()
+            .iter()
+            .map(|(name, (native_func, arg_count))| {
+                ((*name).to_owned(), (*native_func).clone(), *arg_count)
+            })
+            .collect::<Vec<_>>();
+
+        for (name, native_func, arg_count) in function_parts.into_iter() {
+            let global = engine.create_global();
+            let expr = register_var(
+                name.into(),
+                registration_type,
+                engine,
+                scope,
+                |_, _| {
+                    Ok(Expression::RawValue(
+                        FenderValue::Function(FunctionRef::new_native(
+                            global,
+                            native_func.to_owned(),
+                            arg_count,
+                        ))
+                        .into(),
+                    ))
+                },
+                token.range.start,
+            )?;
+            exprs.push(expr);
+        }
+    };
     for expr in exprs {
         unwrap_rust!(engine.evaluate(&expr, &mut [], &[]))?;
     }

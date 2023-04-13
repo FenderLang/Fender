@@ -29,13 +29,13 @@ macro_rules! declare_plugin {
 
 #[derive(Default, Debug)]
 pub struct PluginManager {
-    plugins: Rc<RefCell<Vec<Box<dyn Plugin>>>>,
+    plugins: Vec<Box<dyn Plugin>>,
     loaded_libraries: Vec<Library>,
 }
 
 impl PluginManager {
-    pub fn plugins(&self) -> Rc<RefCell<Vec<Box<dyn Plugin>>>> {
-        self.plugins.clone()
+    pub fn plugins(&self) -> &Vec<Box<dyn Plugin>> {
+        &self.plugins
     }
 
     pub unsafe fn load_plugin<P: AsRef<OsStr>>(&mut self, filename: P) -> Result<(), ()> {
@@ -52,7 +52,7 @@ impl PluginManager {
 
         let plugin = Box::from_raw(boxed_raw);
         plugin.on_plugin_load();
-        self.plugins.borrow_mut().push(plugin);
+        self.plugins.push(plugin);
 
         Ok(())
     }
