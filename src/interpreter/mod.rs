@@ -555,6 +555,7 @@ pub(crate) fn parse_struct_declaration(
             e => unreachable!("{}", e),
         }
     }
+
     register_struct(
         struct_name,
         fields,
@@ -776,6 +777,7 @@ pub(crate) fn parse_literal(
         "list" => parse_list(token, engine, scope)?,
         "null" => FenderValue::Null.into(),
         "closure" => parse_closure(token, engine, scope)?,
+        "structInit" => parse_struct_instantiation(token, engine, scope)?,
         "hashMap" => parse_hash_map(token, engine, scope)?,
         name => unreachable!("{name}"),
     })
@@ -795,6 +797,57 @@ fn parse_hash_map(
     Ok(Expression::Initialize(FenderInitializer::HashMap, values))
 }
 
+fn parse_struct_instantiation(
+    token: &Token,
+    engine: &mut ExecutionEngine<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+) -> InterpreterResult {
+    let mut name = String::new();
+    let mut fields = HashMap::new();
+    for sub in token.children.iter() {
+        match sub.get_name().as_deref().unwrap() {
+            "name" => {
+                if !engine
+                    .context
+                    .struct_table
+                    .struct_name_index()
+                    .contains_key(&sub.get_match())
+                {
+                    return Err(InterpreterError::UnresolvedName(
+                        sub.get_match(),
+                        token.range.start,
+                    )
+                    .into());
+                }
+                name = sub.get_match()
+            }
+            "structEntry" => {
+                fields.insert(sub.children[0].get_match(), &sub.children[1]);
+            }
+            e => unreachable!("{:?}", e),
+        }
+    }
+
+    let mut values = Vec::new();
+
+    let id = engine.context.struct_table.struct_name_index()[&name];
+    for f_name in engine.context.struct_table.type_list()[id]
+        .fields
+        .iter()
+        .map(|v| v.0.clone())
+        .collect::<Vec<_>>()
+    {
+        match fields.get(&f_name) {
+            Some(t) => values.push(parse_expr(t, engine, scope)?),
+            None => values.push(FenderValue::Null.into()),
+        }
+    }
+
+    Ok(Expression::Initialize(
+        FenderInitializer::Struct(id),
+        values,
+    ))
+}
 fn parse_list(
     token: &Token,
     engine: &mut ExecutionEngine<FenderTypeSystem>,
