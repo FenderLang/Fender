@@ -15,8 +15,7 @@ declaration ::= "$" sep? name sep? "=" lineSep? expr
 assignOp ::= [-+/*%^]
 assignment ::= expr sep? assignOp? "=" lineSep? expr
 import ::= "@import" sep filename ("::" importFields)?
-filePart ::= name | "." | ".."
-filename ::= "/"? filePart ("/" filePart)*
+filename ::= ([a-z] | [A-Z] | [0-9] | [./])+
 importFields ::= "*" | name ("::" importFields)? | importTargetMulti
 importTargetMulti ::= wrappedDelimitedList<"(", ")", importFields, ",", sep>
 export ::= "@export" sep ("*" | codeBody)
