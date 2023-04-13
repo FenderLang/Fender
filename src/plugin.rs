@@ -39,12 +39,13 @@ impl PluginManager {
         &self.plugins
     }
 
+    /// # Safety
+    ///
+    /// This function should only be called on a dynamic library using rust calling convention
     pub unsafe fn load_plugin<P: AsRef<OsStr>>(
         &mut self,
         filename: P,
     ) -> Result<(), Box<dyn Error>> {
-
-
         self.loaded_libraries.push(Library::new(filename.as_ref())?);
         let lib = self.loaded_libraries.last().unwrap();
 

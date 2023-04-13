@@ -10,8 +10,8 @@ pub mod error;
 pub mod interpreter;
 pub mod lazy_cell;
 pub mod operators;
+pub mod plugin;
 /// The freight standard library
 pub mod stdlib;
-pub mod plugin;
 #[cfg(test)]
 mod test;

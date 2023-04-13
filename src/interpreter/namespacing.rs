@@ -271,7 +271,7 @@ pub(crate) fn parse_plugin(
         for (name, native_func, arg_count) in function_parts.into_iter() {
             let global = engine.create_global();
             let expr = register_var(
-                name.into(),
+                name,
                 RegisterVarType::AnonymousGlobal,
                 engine,
                 scope,
@@ -292,7 +292,7 @@ pub(crate) fn parse_plugin(
 
         for (name, value) in value_parts.into_iter() {
             let expr = register_var(
-                name.into(),
+                name,
                 RegisterVarType::AnonymousGlobal,
                 engine,
                 scope,
