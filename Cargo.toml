@@ -12,6 +12,7 @@ freight_vm = { git = "https://github.com/FenderLang/Freight", rev = "2390fa079bf
 flux_bnf = { git = "https://github.com/FenderLang/Flux", rev = "f54d70b77d285cae8e38a3f59072a76495ad14f1" }
 rand = "0.8.5"
 reedline = {version = "0.18.0", optional = true}
+libloading = "0.8.0"
 
 [features]
 default = ["repl"]
