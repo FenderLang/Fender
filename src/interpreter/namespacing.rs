@@ -242,7 +242,6 @@ pub(crate) fn parse_plugin(
     token: &Token,
     engine: &mut ExecutionEngine<FenderTypeSystem>,
     scope: &mut LexicalScope,
-    registration_type: RegisterVarType,
 ) -> FenderResult<()> {
     let file_name = token.children[0].get_match();
     let mut exprs = Vec::new();
@@ -273,7 +272,7 @@ pub(crate) fn parse_plugin(
             let global = engine.create_global();
             let expr = register_var(
                 name.into(),
-                registration_type,
+                RegisterVarType::AnonymousGlobal,
                 engine,
                 scope,
                 |_, _| {
@@ -294,7 +293,7 @@ pub(crate) fn parse_plugin(
         for (name, value) in value_parts.into_iter() {
             let expr = register_var(
                 name.into(),
-                registration_type,
+                RegisterVarType::AnonymousGlobal,
                 engine,
                 scope,
                 |_, _| Ok(Expression::RawValue(value.clone().into())),
