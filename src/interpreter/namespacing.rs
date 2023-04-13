@@ -269,7 +269,7 @@ pub(crate) fn parse_plugin(
             .collect::<Vec<_>>();
 
         for (name, native_func, arg_count) in function_parts.into_iter() {
-            let global = engine.globals.len();
+            let func_id = engine.globals.len();
             let expr = register_var(
                 name,
                 RegisterVarType::AnonymousGlobal,
@@ -278,7 +278,7 @@ pub(crate) fn parse_plugin(
                 |_, _| {
                     Ok(Expression::RawValue(
                         FenderValue::Function(FunctionRef::new_native(
-                            global,
+                            func_id,
                             native_func.to_owned(),
                             arg_count,
                         ))
