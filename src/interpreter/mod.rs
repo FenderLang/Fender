@@ -1,4 +1,4 @@
-use self::error::InterpreterError;
+use self::{error::InterpreterError, namespacing::parse_import};
 use crate::{
     error::{code_pos::CodePos, parent_type::ParentErrorType, FenderError, FenderResult},
     fender_value::{fender_structs::FenderStructType, FenderValue},
@@ -31,10 +31,29 @@ use std::{
 };
 
 pub mod error;
+mod namespacing;
 #[cfg(feature = "repl")]
 pub mod repl;
 
 pub type InterpreterResult = FenderResult<Expression<FenderTypeSystem>>;
+
+/// Specifies how new declarations should be registered
+#[derive(Clone, Copy)]
+pub enum RegisterVarType {
+    /// Register variables on the stack
+    Stack,
+    /// Register variables globally
+    Global,
+    /// Register variables globally, but only register their names within the local scope
+    AnonymousGlobal,
+}
+
+#[derive(Debug)]
+pub enum Exports {
+    None,
+    All,
+    Some(Vec<String>),
+}
 
 #[derive(Debug)]
 pub struct LexicalScope<'a> {
@@ -45,6 +64,7 @@ pub struct LexicalScope<'a> {
     parent: Option<&'a LexicalScope<'a>>,
     return_target: usize,
     num_stack_vars: usize,
+    exports: Exports,
 }
 
 impl<'a> LexicalScope<'a> {
@@ -57,6 +77,7 @@ impl<'a> LexicalScope<'a> {
             parent: None,
             num_stack_vars: args.stack_size(),
             args,
+            exports: Exports::None,
         }
     }
 
@@ -69,6 +90,7 @@ impl<'a> LexicalScope<'a> {
             parent: Some(self),
             return_target,
             num_stack_vars: args.stack_size(),
+            exports: Exports::None,
         }
     }
 
@@ -210,17 +232,8 @@ fn parse_main_function(
 )> {
     let mut engine: ExecutionEngine<FenderTypeSystem> = ExecutionEngine::new_default();
     let mut main = FunctionWriter::new(ArgCount::new(..));
-    // engine.context.deps = stdlib::detect_load(token, &mut main, &mut engine);
-
     let main_return_target = engine.create_return_target();
-    // for t in token.children.iter() {
-    //     let child = &t.children[0];
-    //     if let Some("declaration") = child.get_name().as_deref() {
-    //         let name = child.children[0].get_match();
-    //         let global = engine.create_global();
-    //         engine.context.globals.insert(name, global);
-    //     }
-    // }
+    let mut scope = LexicalScope::new(ArgCount::Fixed(0), main_return_target);
     let labels = token
         .rec_iter()
         .select_token("label")
@@ -231,10 +244,13 @@ fn parse_main_function(
         .map(|(i, name)| (name, i))
         .collect();
 
-    let mut scope = LexicalScope::new(ArgCount::Fixed(0), main_return_target);
     scope.labels = Rc::new(labels);
-    for statement in &token.children {
-        let statement = parse_statement(statement, &mut engine, &mut scope, true)?;
+    for statement in parse_statements(
+        &token.children,
+        &mut engine,
+        &mut scope,
+        RegisterVarType::Global,
+    )? {
         main.evaluate_expression(statement);
     }
     let main_ref = engine.register_function(main, main_return_target);
@@ -276,12 +292,12 @@ pub(crate) fn parse_args(token: &Token) -> (Vec<String>, Vec<String>, Option<Str
 }
 
 /// Creates the expression to register a variable.
-/// Takes a closure for parsing the expression because global variables have forward declaration,
+/// Takes a closure for parsing the expression because variables may be set to expressions that reference themselves,
 /// so the name needs to be registered before the expression is parsed.
 /// For cases where you already have the parsed expression, ignore both parameters and return it.
 pub(crate) fn register_var(
     name: String,
-    global: bool,
+    registration_type: RegisterVarType,
     engine: &mut ExecutionEngine<FenderTypeSystem>,
     scope: &mut LexicalScope,
     expr: impl for<'a, 'b> FnOnce(
@@ -290,22 +306,35 @@ pub(crate) fn register_var(
     ) -> InterpreterResult,
     pos: usize,
 ) -> InterpreterResult {
-    Ok(if global {
-        let global = engine.create_global();
-        if engine
-            .context
-            .globals
-            .insert(name.clone(), global)
-            .is_some()
-        {
-            return Err(InterpreterError::DuplicateName(name, pos).into());
+    Ok(match registration_type {
+        RegisterVarType::Stack => {
+            let var = scope.create_stack_var(name, pos)?;
+            let expr = expr(engine, scope)?;
+            Expression::AssignStack(var, expr.into())
         }
-        let expr = expr(engine, scope)?;
-        Expression::AssignGlobal(global, expr.into())
-    } else {
-        let expr = expr(engine, scope)?;
-        let var = scope.create_stack_var(name, pos)?;
-        Expression::AssignStack(var, expr.into())
+        RegisterVarType::Global => {
+            let global = engine.create_global();
+            if engine
+                .context
+                .globals
+                .insert(name.clone(), global)
+                .is_some()
+            {
+                return Err(InterpreterError::DuplicateName(name, pos).into());
+            }
+            let expr = expr(engine, scope)?;
+            Expression::AssignGlobal(global, expr.into())
+        }
+        RegisterVarType::AnonymousGlobal => {
+            let global = engine.create_global();
+            scope.create_stack_var(name.clone(), pos)?;
+            scope
+                .variables
+                .borrow_mut()
+                .insert(name, VariableType::Global(global));
+            let expr = expr(engine, scope)?;
+            Expression::AssignGlobal(global, expr.into())
+        }
     })
 }
 
@@ -373,8 +402,7 @@ pub(crate) fn parse_code_body(
     new_scope: &mut LexicalScope,
 ) -> FenderResult<FunctionRef<FenderTypeSystem>> {
     let mut function = FunctionWriter::new(new_scope.args);
-    for statement in &token.children {
-        let expr = parse_statement(statement, engine, new_scope, false)?;
+    for expr in parse_statements(&token.children, engine, new_scope, RegisterVarType::Stack)? {
         function.evaluate_expression(expr);
     }
     let captures = std::mem::take(&mut *new_scope.captures.borrow_mut());
@@ -385,39 +413,125 @@ pub(crate) fn parse_code_body(
     Ok(engine.register_function(function, new_scope.return_target))
 }
 
-pub(crate) fn parse_statement(
+pub(crate) fn parse_exports(
     token: &Token,
     engine: &mut ExecutionEngine<FenderTypeSystem>,
     scope: &mut LexicalScope,
-    use_globals: bool,
-) -> InterpreterResult {
-    let token = &token.children[0];
-    Ok(match token.get_name().as_deref().unwrap() {
-        "expr" => parse_expr(token, engine, scope)?,
-        "assignment" => parse_assignment(token, engine, scope)?,
-        "return" => parse_return(token, engine, scope)?,
-        "declaration" => {
-            let name = token.children[0].get_match();
-            let expr = &token.children[1];
-            register_var(
-                name,
-                use_globals,
-                engine,
-                scope,
-                |engine, scope| parse_expr(expr, engine, scope),
-                token.range.start,
-            )?
-        }
-        "structDeclaration" => parse_struct_declaration(token, engine, scope, use_globals)?,
-        name => unreachable!("{name}"),
-    })
+    registration_type: RegisterVarType,
+) -> FenderResult<Vec<Expression<FenderTypeSystem>>> {
+    if token.children.is_empty() {
+        scope.exports = Exports::All;
+        return Ok(vec![]);
+    }
+    let names_before: HashSet<_> = scope.variables.borrow().keys().cloned().collect();
+    let code_body = &token.children[0];
+    let exprs = parse_statements(&code_body.children, engine, scope, registration_type)?;
+    let exports = Exports::Some(
+        scope
+            .variables
+            .borrow()
+            .keys()
+            .filter(|&s| !names_before.contains(s))
+            .cloned()
+            .collect(),
+    );
+    scope.exports = exports;
+    Ok(exprs)
 }
 
-fn parse_struct_declaration(
+pub(crate) fn parse_statements(
+    statements: &[Token],
+    engine: &mut ExecutionEngine<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+    registration_type: RegisterVarType,
+) -> FenderResult<Vec<Expression<FenderTypeSystem>>> {
+    let mut exprs = vec![];
+    for token in statements {
+        let token = &token.children[0];
+        let expr = match token.get_name().as_deref().unwrap() {
+            "expr" => parse_expr(token, engine, scope)?,
+            "assignment" => parse_assignment(token, engine, scope)?,
+            "return" => parse_return(token, engine, scope)?,
+            "declaration" => {
+                let name = token.children[0].get_match();
+                let expr = &token.children[1];
+                register_var(
+                    name,
+                    registration_type,
+                    engine,
+                    scope,
+                    |engine, scope| parse_expr(expr, engine, scope),
+                    token.range.start,
+                )?
+            }
+            "structDeclaration" => {
+                parse_struct_declaration(token, engine, scope, registration_type)?
+            }
+            "export" => {
+                exprs.extend(parse_exports(token, engine, scope, registration_type)?);
+                continue;
+            }
+            "import" => {
+                parse_import(token, engine, scope, registration_type)?;
+                continue;
+            }
+            name => unreachable!("{name}"),
+        };
+        exprs.push(expr);
+    }
+    Ok(exprs)
+}
+
+pub(crate) fn register_struct(
+    name: String,
+    fields: Vec<(String, Option<FenderTypeId>)>,
+    engine: &mut ExecutionEngine<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+    registration_type: RegisterVarType,
+    pos: usize,
+) -> InterpreterResult {
+    let fields: Vec<_> = fields
+        .into_iter()
+        .map(|(name, bound)| {
+            let index = engine.context.struct_table.field_index(&name);
+            (name, bound, index)
+        })
+        .collect();
+    let field_count = fields.len();
+    let new_scope = scope.child_scope(ArgCount::Fixed(field_count), engine.create_return_target());
+
+    let struct_type = FenderStructType { name, fields };
+    let mut constructor = FunctionWriter::new(ArgCount::Fixed(field_count));
+    let mut exprs = Vec::with_capacity(field_count);
+    for i in 0..field_count {
+        exprs.push(Expression::Variable(VariableType::Stack(i)));
+    }
+    constructor.evaluate_expression(Expression::Initialize(
+        FenderInitializer::Struct(engine.context.struct_table.len()),
+        exprs,
+    ));
+
+    engine.context.struct_table.insert(FenderStructType {
+        name: struct_type.name.clone(),
+        fields: struct_type.fields,
+    });
+
+    let function = engine.register_function(constructor, new_scope.return_target);
+    register_var(
+        struct_type.name,
+        registration_type,
+        engine,
+        scope,
+        move |_, _| Ok(Expression::from(FenderValue::Function(function))),
+        pos,
+    )
+}
+
+pub(crate) fn parse_struct_declaration(
     token: &Token,
     engine: &mut ExecutionEngine<FenderTypeSystem>,
     scope: &mut LexicalScope,
-    use_globals: bool,
+    registration_type: RegisterVarType,
 ) -> InterpreterResult {
     let mut struct_name = String::new();
     let mut fields = Vec::new();
@@ -435,41 +549,19 @@ fn parse_struct_declaration(
                         None
                     };
 
-                    let id = engine
-                        .context
-                        .struct_table
-                        .field_index(&arg_token.children[0].get_match());
-
-                    fields.push((name, type_check, id));
+                    fields.push((name, type_check));
                 }
             }
             e => unreachable!("{}", e),
         }
     }
-    let new_scope = scope.child_scope(ArgCount::Fixed(fields.len()), engine.create_return_target());
 
-    let mut constructor = FunctionWriter::new(ArgCount::Fixed(fields.len()));
-    let mut exprs = Vec::with_capacity(fields.len());
-    for i in 0..fields.len() {
-        exprs.push(Expression::Variable(VariableType::Stack(i)));
-    }
-    constructor.evaluate_expression(Expression::Initialize(
-        FenderInitializer::Struct(engine.context.struct_table.len()),
-        exprs,
-    ));
-
-    engine.context.struct_table.insert(FenderStructType {
-        name: struct_name.clone(),
-        fields,
-    });
-
-    let function = engine.register_function(constructor, new_scope.return_target);
-    register_var(
+    register_struct(
         struct_name,
-        use_globals,
+        fields,
         engine,
         scope,
-        move |_, _| Ok(Expression::from(FenderValue::Function(function))),
+        registration_type,
         token.range.start,
     )
 }
@@ -747,16 +839,7 @@ fn parse_struct_instantiation(
     {
         match fields.get(&f_name) {
             Some(t) => values.push(parse_expr(t, engine, scope)?),
-            None => {
-                return Err(FenderError {
-                    error_type: ParentErrorType::FenderInterpreterError(
-                        InterpreterError::UnresolvedName(f_name, token.range.start),
-                    ),
-                    fender_code_pos: Some(CodePos::new_abs(None, token.range.start)),
-                    rust_code_pos: CodePos::new_rel(Some(file!().into()), line!(), column!()),
-                }
-                .into())
-            }
+            None => values.push(FenderValue::Null.into()),
         }
     }
 
@@ -765,7 +848,6 @@ fn parse_struct_instantiation(
         values,
     ))
 }
-
 fn parse_list(
     token: &Token,
     engine: &mut ExecutionEngine<FenderTypeSystem>,

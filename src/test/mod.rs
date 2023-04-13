@@ -31,6 +31,23 @@ fn simple_values() {
 }
 
 #[test]
+fn imports() {
+    assert_eq!(
+        *run("@import src/test/exports; exports::x"),
+        FenderValue::Int(1)
+    );
+    assert_eq!(*run("@import src/test/exports::x; x"), FenderValue::Int(1));
+    assert_eq!(
+        *run("@import src/test/exports::*; x + y"),
+        FenderValue::Int(3)
+    );
+    assert_eq!(
+        *run("@import src/test/exports::(x, y); x + y"),
+        FenderValue::Int(3)
+    );
+}
+
+#[test]
 fn assign_operate() {
     assert_eq!(*run("$x = 4; x += 1; x"), FenderValue::Int(5));
     assert_eq!(*run("$x = 5; x /= 2; x"), FenderValue::Int(2));
@@ -327,17 +344,16 @@ mod variadic_functions {
                 actual: 0
             }
         );
-
         assert_eq!(
             run(r#"$fName = (a, [b, c...]){ a == 1 && b == null && c == []};fName(1)"#)
                 .unwrap_value(),
-            FenderValue::Bool(true).into()
+            FenderValue::Bool(true)
         );
 
         assert_eq!(
             run(r#"$fName = (a, [b, c...]){ a == 1 && b == 2 && c == [3, 4, 5]};fName(1,2,3,4,5)"#)
                 .unwrap_value(),
-            FenderValue::Bool(true).into()
+            FenderValue::Bool(true)
         );
     }
 }
@@ -368,10 +384,7 @@ mod stdlib {
 
         #[test]
         fn int() {
-            assert_eq!(
-                *run(r#"$x = "1"; x"#),
-                FenderValue::make_string("1".into()).into()
-            );
+            assert_eq!(*run(r#"$x = "1"; x"#), FenderValue::make_string("1".into()));
             assert_eq!(*run(r#"$x = "1"; x.int()"#), FenderValue::Int(1));
         }
 
@@ -380,7 +393,7 @@ mod stdlib {
             assert_eq!(*run("$x = 1; x"), FenderValue::Int(1));
             assert_eq!(
                 *run("$x = 1; x.str()"),
-                FenderValue::make_string("1".into()).into()
+                FenderValue::make_string("1".into())
             );
         }
 
@@ -388,19 +401,16 @@ mod stdlib {
         fn bool() {
             assert_eq!(
                 *run(r#"$x = "true"; x"#),
-                FenderValue::make_string("true".into()).into()
+                FenderValue::make_string("true".into())
             );
-            assert_eq!(
-                *run(r#"$x = "true"; x.bool()"#),
-                FenderValue::Bool(true).into()
-            );
+            assert_eq!(*run(r#"$x = "true"; x.bool()"#), FenderValue::Bool(true));
         }
 
         #[test]
         fn list() {
             assert_eq!(
                 *run(r#"$x = "hello, world!"; x"#),
-                FenderValue::make_string("hello, world!".into()).into()
+                FenderValue::make_string("hello, world!".into())
             );
             assert_eq!(
                 *run(r#"$x = "hello, world!"; x.list()"#),
@@ -410,7 +420,6 @@ mod stdlib {
                         .map(|c| FenderValue::Char(c).into())
                         .collect()
                 )
-                .into()
             );
         }
 
@@ -423,7 +432,6 @@ mod stdlib {
                     FenderReference::FRef(FV::make_string("hello".into()).into()),
                     FenderReference::FRef(FV::make_string(" world!".into()).into())
                 ])
-                .into()
             );
 
             assert_eq!(
@@ -432,12 +440,11 @@ mod stdlib {
                     FV::make_string("hello".into()).into(),
                     FV::make_string(" world!".into()).into()
                 ])
-                .into()
             );
 
             assert_eq!(
                 *run(r#"$x = ["hello", " world!"]; x.joinStr()"#),
-                FV::make_string("hello world!".into()).into()
+                FV::make_string("hello world!".into())
             );
         }
     }
@@ -497,12 +504,7 @@ mod stdlib {
         fn swap() {
             assert_eq!(
                 *run(r#"[0,1,2,3]"#),
-                FenderValue::make_list(
-                    (0..=3)
-                        .into_iter()
-                        .map(|i| FenderValue::Int(i).into())
-                        .collect()
-                )
+                FenderValue::make_list((0..=3).map(|i| FenderValue::Int(i).into()).collect())
             );
 
             assert_eq!(
@@ -571,22 +573,12 @@ mod stdlib {
         fn push() {
             assert_eq!(
                 *run(r#"[1, 2, 3, 4, 5]"#),
-                FenderValue::make_list(
-                    (1..=5)
-                        .into_iter()
-                        .map(|i| FenderValue::Int(i).into())
-                        .collect()
-                )
+                FenderValue::make_list((1..=5).map(|i| FenderValue::Int(i).into()).collect())
             );
 
             assert_eq!(
                 *run(r#"[1, 2, 3, 4, 5].push(6)"#),
-                FenderValue::make_list(
-                    (1..=6)
-                        .into_iter()
-                        .map(|i| FenderValue::Int(i).into())
-                        .collect()
-                )
+                FenderValue::make_list((1..=6).map(|i| FenderValue::Int(i).into()).collect())
             );
         }
 
@@ -594,24 +586,14 @@ mod stdlib {
         fn pop() {
             assert_eq!(
                 *run(r#"[1, 2, 3, 4, 5]"#),
-                FenderValue::make_list(
-                    (1..=5)
-                        .into_iter()
-                        .map(|i| FenderValue::Int(i).into())
-                        .collect()
-                )
+                FenderValue::make_list((1..=5).map(|i| FenderValue::Int(i).into()).collect())
             );
 
             assert_eq!(
                 *run(r#"$l = [1, 2, 3, 4, 5]; $v = l.pop(); [l, v]"#),
                 FenderValue::make_list(vec![
-                    FenderValue::make_list(
-                        (1..=4)
-                            .into_iter()
-                            .map(|i| FenderValue::Int(i).into())
-                            .collect()
-                    )
-                    .into(),
+                    FenderValue::make_list((1..=4).map(|i| FenderValue::Int(i).into()).collect())
+                        .into(),
                     FenderValue::Int(5).into()
                 ])
             );
@@ -630,12 +612,7 @@ mod stdlib {
         fn remove() {
             assert_eq!(
                 *run(r#"[1, 2, 3, 4, 5]"#),
-                FenderValue::make_list(
-                    (1..=5)
-                        .into_iter()
-                        .map(|i| FenderValue::Int(i).into())
-                        .collect()
-                )
+                FenderValue::make_list((1..=5).map(|i| FenderValue::Int(i).into()).collect())
             );
 
             assert_eq!(*run(r#"[1, 2, 3, 4, 5].remove(2)"#), FenderValue::Int(3));
@@ -645,12 +622,7 @@ mod stdlib {
         fn remove_pass() {
             assert_eq!(
                 *run(r#"[1, 2, 3, 4, 5]"#),
-                FenderValue::make_list(
-                    (1..=5)
-                        .into_iter()
-                        .map(|i| FenderValue::Int(i).into())
-                        .collect()
-                )
+                FenderValue::make_list((1..=5).map(|i| FenderValue::Int(i).into()).collect())
             );
 
             assert_eq!(
