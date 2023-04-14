@@ -134,20 +134,16 @@ fndr_native_func!(
     /// Returns and String/List with the combined String/List
     concat_func,
     |_, a, b| {
-        match (a.unwrap_value(), b.unwrap_value()) {
-            (String(a), String(b)) => Ok(FenderValue::make_string(format!("{}{}", *a, *b)).into()),
-            (List(a), List(b)) => {
-                let mut new_list = a.to_vec();
-                new_list.extend(b.iter().cloned());
-                Ok(FenderValue::make_list(new_list).into())
+        type_match!(
+            a, b {
+                (String(a), String(b)) => Ok(FenderValue::make_string(format!("{}{}", *a, *b)).into()),
+                (List(a), List(b)) => {
+                    let mut new_list = a.to_vec();
+                    new_list.extend(b.iter().cloned());
+                    Ok(FenderValue::make_list(new_list).into())
+                }
             }
-            _ => Ok(FenderValue::make_error(format!(
-                "Cannot call concat on type `{}` and `{}`",
-                a.get_real_type_id().to_string(),
-                b.get_real_type_id().to_string()
-            ))
-            .into()),
-        }
+        )
     }
 );
 
