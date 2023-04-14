@@ -11,14 +11,14 @@ pub trait Plugin: Debug {
     fn name(&self) -> &'static str;
     fn on_plugin_load(&self) {}
     fn get_values(&self) -> HashMap<&str, &FenderValue>;
-    fn get_functions(&self) -> HashMap<&str, (&NativeFunction<FenderTypeSystem>, ArgCount)>;
+    fn get_functions(&self) -> HashMap<&str, &(NativeFunction<FenderTypeSystem>, ArgCount)>;
 }
 
 #[macro_export]
 macro_rules! declare_plugin {
     ($plugin_type:ty, $constructor:path) => {
         #[no_mangle]
-        pub extern "C" fn __plugin_constructor() -> *mut dyn $crate::plugin::Plugin {
+        pub extern "Rust" fn __plugin_constructor() -> *mut dyn $crate::plugin::Plugin {
             let constructor: fn() -> $plugin_type = $constructor;
 
             let object = constructor();
