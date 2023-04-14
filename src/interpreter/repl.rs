@@ -81,17 +81,18 @@ impl<'a> FenderRepl<'a> {
         &mut self,
         statement: impl AsRef<str> + Into<String>,
     ) -> Result<Vec<FenderReference>, Box<dyn Error>> {
-        let token = crate::interpreter::LEXER
-            .get()
-            .as_ref()
-            .unwrap()
-            .tokenize(statement.as_ref())?;
-        let exprs = crate::interpreter::parse_statements(
-            &token.children,
-            &mut self.engine,
-            &mut self.scope,
-            super::RegisterVarType::Global,
+        let exprs = crate::interpreter::LEXER.get().as_ref().unwrap().tokenize(
+            statement.as_ref(),
+            |token| {
+                crate::interpreter::parse_statements(
+                    &token.children,
+                    &mut self.engine,
+                    &mut self.scope,
+                    super::RegisterVarType::Global,
+                )
+            },
         )?;
+        let exprs = exprs?;
         exprs
             .into_iter()
             .map(|expr| {
