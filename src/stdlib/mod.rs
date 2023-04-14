@@ -126,7 +126,7 @@ macro_rules! count {
 }
 
 #[macro_export]
-/// Create a type error for invalid arguments
+/// Match arguments against their types and generate a nice error message for invalid argument types
 macro_rules! type_match {
     ($($arg:ident),* {
         $(
