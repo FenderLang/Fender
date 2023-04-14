@@ -41,7 +41,6 @@ fndr_native_func!(
     }
 );
 
-
 fndr_native_func!(
     /// Prints to stderr
     eprint_func,
@@ -128,7 +127,7 @@ fndr_native_func!(
     append_func,
     |_, data, file_name| {
         let file_name = type_match!(file_name {(String(s))=>s});
-        
+
         let mut file = match std::fs::OpenOptions::new()
             .write(true)
             .append(true)
