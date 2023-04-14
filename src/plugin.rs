@@ -18,7 +18,7 @@ pub trait Plugin: Debug {
 macro_rules! declare_plugin {
     ($plugin_type:ty, $constructor:path) => {
         #[no_mangle]
-        pub extern "Rust" fn __plugin_constructor() -> *mut dyn $crate::plugin::Plugin {
+        pub fn __plugin_constructor() -> *mut dyn $crate::plugin::Plugin {
             let constructor: fn() -> $plugin_type = $constructor;
 
             let object = constructor();

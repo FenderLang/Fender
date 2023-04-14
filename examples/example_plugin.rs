@@ -68,7 +68,8 @@ fndr_native_func!(
     }
 );
 
-
 fn main() {
-    println!("this example is not meant to be run, it is a look at what a fender plugin might look like")
+    println!(
+        "this example is not meant to be run, it is a look at what a fender plugin might look like"
+    )
 }
