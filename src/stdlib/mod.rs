@@ -139,6 +139,8 @@ deps_enum! {FenderResource, STDLIB_SIZE:
         removePass => FenderNativeFunction {func: val_operation::remove_pass_func, args: fixed(2), },
         concat => FenderNativeFunction {func: val_operation::concat_func, args: fixed(2)},
         insert => FenderNativeFunction {func: val_operation::insert_func, args: fixed(3)},
+        trim => FenderNativeFunction {func: val_operation::trim_func, args: range(1..=2)},
+        trimmed => FenderNativeFunction {func: val_operation::get_trimmed_func, args: range(1..=2)},
 
         Int => FenderNativeTypeValue{type_id: FenderTypeId::Int},
         Float => FenderNativeTypeValue{type_id: FenderTypeId::Float},
@@ -179,7 +181,7 @@ macro_rules! count {
 macro_rules! type_match {
     ($($arg:ident),* {
         $(
-            ($($ty:ident $( ( $($param:ident),* ) )?),*) => $branch:expr
+            ($($ty:ident $( ( $($param:pat),* ) )?),*) => $branch:expr
         ),*
     }) => {
         match ($($arg.unwrap_value()),*) {
@@ -193,7 +195,7 @@ macro_rules! type_match {
     };
 
     ($arg:ident {
-        $($ty:ident $( ( $($param:ident),* ) )? => $branch:expr),*
+        $($ty:ident $( ( $($param:pat),* ) )? => $branch:expr),*
     }) => {
         type_match!($arg {$(($ty $(($($param),*))? ) => $branch),* })
     };
