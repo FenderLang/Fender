@@ -29,7 +29,7 @@ pub(crate) fn parse_module(
         statements,
         engine,
         &mut scope,
-        super::RegisterVarType::AnonymousGlobal(None),
+        super::RegisterVarType::ScopedGlobal(None),
     )? {
         unwrap_rust!(engine.evaluate(&statement, &mut [], &[]))?;
     }
@@ -48,7 +48,7 @@ pub(crate) fn parse_module(
         fields,
         engine,
         &mut scope,
-        super::RegisterVarType::AnonymousGlobal(None),
+        super::RegisterVarType::ScopedGlobal(None),
         pos,
     )?;
     unwrap_rust!(engine.evaluate(&register_expr, &mut [], &[]))?;
@@ -272,7 +272,7 @@ pub(crate) fn parse_plugin(
             let global = engine.create_global();
             let expr = register_var(
                 name,
-                RegisterVarType::AnonymousGlobal(Some(global)),
+                RegisterVarType::ScopedGlobal(Some(global)),
                 engine,
                 scope,
                 |_, _| {
@@ -293,7 +293,7 @@ pub(crate) fn parse_plugin(
         for (name, value) in value_parts.into_iter() {
             let expr = register_var(
                 name,
-                RegisterVarType::AnonymousGlobal(None),
+                RegisterVarType::ScopedGlobal(None),
                 engine,
                 scope,
                 |_, _| Ok(Expression::RawValue(value.clone().into())),

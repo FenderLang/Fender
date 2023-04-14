@@ -6,12 +6,13 @@ use std::fmt::Debug;
 use std::{collections::HashMap, ffi::OsStr};
 
 pub type PluginConstructorType = unsafe fn() -> *mut dyn Plugin;
+pub type FenderPluginFunction = (NativeFunction<FenderTypeSystem>, ArgCount);
 
 pub trait Plugin: Debug {
     fn name(&self) -> &'static str;
     fn on_plugin_load(&self) {}
     fn get_values(&self) -> HashMap<&str, &FenderValue>;
-    fn get_functions(&self) -> HashMap<&str, &(NativeFunction<FenderTypeSystem>, ArgCount)>;
+    fn get_functions(&self) -> HashMap<&str, &FenderPluginFunction>;
 }
 
 #[macro_export]

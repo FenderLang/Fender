@@ -1,5 +1,8 @@
 use fender::{
-    declare_plugin, fender_value::FenderValue, fndr_native_func, plugin::Plugin,
+    declare_plugin,
+    fender_value::FenderValue,
+    fndr_native_func,
+    plugin::{FenderPluginFunction, Plugin},
     type_sys::type_system::FenderTypeSystem,
 };
 use freight_vm::{expression::NativeFunction, function::ArgCount};
@@ -7,8 +10,8 @@ use std::collections::HashMap;
 
 #[derive(Debug)]
 struct MyPlugin {
-    example_1: (NativeFunction<FenderTypeSystem>, ArgCount),
-    example_2: (NativeFunction<FenderTypeSystem>, ArgCount),
+    example_1: FenderPluginFunction,
+    example_2: FenderPluginFunction,
     name_list: FenderValue,
 }
 
