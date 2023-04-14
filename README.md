@@ -7,6 +7,7 @@ A functional scripting language, intended for string manipulation and general sc
 - [x] Imports
 - [x] Assign-operate
 - [x] REPL
+- [x] Plugins (Rust interop)
 - [ ] Higher-order functions (map, filter, reduce, each, fold, scan, enumerate, zip, memoize)
   - [ ] map
   - [ ] filter
