@@ -54,9 +54,9 @@ fndr_native_func!(
 fndr_native_func!(
     /// Cast to a list
     to_list_func,
-    |_, value| {
+    |ctx, value| {
         Ok(value
-            .cast_to(crate::type_sys::type_id::FenderTypeId::List)
+            .cast_to(crate::type_sys::type_id::FenderTypeId::List, ctx)?
             .into())
     }
 );

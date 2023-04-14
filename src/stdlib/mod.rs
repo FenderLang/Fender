@@ -18,6 +18,8 @@ use self::loader::StdlibResource;
 pub mod cast;
 /// conditional execution and branching
 pub mod control_flow;
+/// functions for manipulating data structures
+pub mod data;
 /// stdin, stdout, and file IO
 pub mod io;
 /// loads stdlib resources
@@ -113,6 +115,11 @@ deps_enum! {FenderResource, STDLIB_SIZE:
         shell => FenderNativeFunction {func: system::shell_func, args: range(1..=3)},
         pwd => FenderNativeFunction {func: system::pwd_func, args: fixed(0)},
         cd => FenderNativeFunction {func: system::cd_func, args: fixed(1)},
+
+        map => FenderNativeFunction {func: data::map_func, args: fixed(2)},
+        filter => FenderNativeFunction {func: data::filter_func, args: fixed(2)},
+        reduce => FenderNativeFunction {func: data::reduce_func, args: fixed(3)},
+        each => FenderNativeFunction {func: data::each_func, args: fixed(2)},
 }
 
 #[macro_export]

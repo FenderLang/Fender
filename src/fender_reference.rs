@@ -147,6 +147,7 @@ impl Value for FenderReference {
             FenderValue::Struct(_) => &FenderTypeId::Struct,
             FenderValue::Type(_) => &FenderTypeId::Type,
             FenderValue::HashMap(_) => &FenderTypeId::HashMap,
+            FenderValue::Iterator(_) => &FenderTypeId::Iterator,
         }
     }
 

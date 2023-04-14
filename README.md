@@ -8,15 +8,15 @@ A functional scripting language, intended for string manipulation and general sc
 - [x] Assign-operate
 - [x] REPL
 - [x] Plugins (Rust interop)
-- [ ] Higher-order functions (map, filter, reduce, each, fold, scan, enumerate, zip, memoize)
-  - [ ] map
-  - [ ] filter
-  - [ ] reduce
-  - [ ] fold
+- [x] Higher-order functions (map, filter, reduce, each, fold, scan, enumerate, zip, memoize)
+  - [x] map
+  - [x] filter
+  - [x] each
+  - [x] reduce
   - [ ] scan
   - [ ] enumerate
   - [ ] zip
   - [ ] memoize
-- [ ] Iterators
+- [x] Iterators
 - [ ] Ranges
 - [ ] Better error handling

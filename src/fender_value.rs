@@ -1,9 +1,12 @@
 use self::fender_structs::FenderStruct;
 use crate::{
     fender_reference::{FenderReference, InternalReference},
+    iterator::FenderIterator,
     type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
 };
-use freight_vm::{function::FunctionRef, value::Value};
+use freight_vm::{
+    error::FreightError, execution_engine::ExecutionEngine, function::FunctionRef, value::Value,
+};
 use rand::{seq::SliceRandom, thread_rng};
 use std::{collections::HashMap, hash::Hash, ops::Deref};
 pub mod fender_structs;
@@ -22,6 +25,7 @@ pub enum FenderValue {
     Struct(FenderStruct),
     Type(FenderTypeId),
     HashMap(InternalReference<HashMap<FenderValue, FenderReference>>),
+    Iterator(FenderIterator),
     #[default]
     Null,
 }
@@ -52,6 +56,7 @@ impl FenderValue {
             FenderValue::Struct(_) => FenderTypeId::Struct,
             FenderValue::Type(_) => FenderTypeId::Type,
             FenderValue::HashMap(_) => FenderTypeId::HashMap,
+            FenderValue::Iterator(_) => FenderTypeId::Iterator,
         }
     }
 
@@ -84,6 +89,7 @@ impl FenderValue {
                     .collect(),
             }),
             Type(t) => Type(t.clone()),
+            Iterator(i) => Iterator(i.clone()),
             HashMap(h) => FenderValue::HashMap(InternalReference::new(
                 h.iter()
                     .map(|(k, v)| (k.clone(), (v.deep_clone())))
@@ -272,10 +278,14 @@ impl FenderValue {
 
 /// Cast functions
 impl FenderValue {
-    pub fn cast_to(&self, typeid: FenderTypeId) -> FenderValue {
+    pub fn cast_to(
+        &self,
+        typeid: FenderTypeId,
+        engine: &mut ExecutionEngine<FenderTypeSystem>,
+    ) -> Result<FenderValue, FreightError> {
         use FenderValue::*;
-        match (self, typeid) {
-            (Ref(r), t) => r.deref().cast_to(t),
+        Ok(match (self, typeid) {
+            (Ref(r), t) => r.deref().cast_to(t, engine)?,
             (v, t) if v.get_type_id() == t => v.clone(),
             (Int(i), FenderTypeId::Float) => Float(*i as f64),
             (Int(i), FenderTypeId::Bool) => Bool(*i != 0),
@@ -294,6 +304,13 @@ impl FenderValue {
             (Char(c), FenderTypeId::String) => FenderValue::make_string(c.to_string()),
             (Char(c), FenderTypeId::Error) => FenderValue::make_error(c.to_string()),
             (Char(c), FenderTypeId::List) => FenderValue::make_list(vec![Char(*c).into()]),
+            (Iterator(i), FenderTypeId::List) => {
+                let mut list = Vec::new();
+                while *(i.has_next)(engine)? == Bool(true) {
+                    list.push((i.next)(engine)?);
+                }
+                FenderValue::make_list(list)
+            }
             (String(s), FenderTypeId::Int) => match s.parse() {
                 Ok(i) => Int(i),
                 _ => FenderValue::make_error(format!("Invalid int string: {}", s.deref())),
@@ -331,7 +348,7 @@ impl FenderValue {
                 v.get_type_id().to_string(),
                 t.to_string()
             )),
-        }
+        })
     }
 
     pub fn to_bool(&self) -> FenderValue {
@@ -350,6 +367,22 @@ impl FenderValue {
             Null => Bool(false),
             Type(_) => Bool(true),
             HashMap(h) => Bool(!h.is_empty()),
+            Iterator(_) => Bool(false),
+        }
+    }
+
+    pub fn iter(&self) -> Option<FenderIterator> {
+        use FenderValue::*;
+        match self.clone() {
+            List(l) => Some(FenderIterator::new(l.len(), move |i| l[i].clone())),
+            String(s) => {
+                let chars: Vec<_> = s.chars().collect();
+                Some(FenderIterator::new(chars.len(), move |i| {
+                    FenderValue::Char(chars[i]).into()
+                }))
+            }
+            Iterator(i) => Some(i),
+            _ => None,
         }
     }
 
@@ -386,6 +419,7 @@ impl ToString for FenderValue {
             FenderValue::Char(c) => c.to_string(),
             FenderValue::String(s) => s.deref().clone(),
             FenderValue::Bool(b) => b.to_string(),
+            FenderValue::Iterator(_) => "Iterator".to_string(),
             FenderValue::Error(e) => format!("Error({e:?})"),
             FenderValue::Function(_) => "Function".to_string(),
             FenderValue::Null => "null".to_string(),
@@ -442,6 +476,7 @@ impl PartialEq for FenderValue {
             Struct(a, b),
             Type(a, b),
             HashMap(a, b),
+            Iterator(a, b),
             Null
         )
     }
@@ -474,7 +509,9 @@ impl Hash for FenderValue {
                 k.hash(state);
                 v.hash(state)
             }),
-            FenderValue::Null => core::mem::discriminant(self).hash(state),
+            FenderValue::Null | FenderValue::Iterator(_) => {
+                core::mem::discriminant(self).hash(state)
+            }
         }
     }
 }
