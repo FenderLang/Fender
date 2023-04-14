@@ -111,6 +111,7 @@ deps_enum! {FenderResource, STDLIB_SIZE:
 
         raw => FenderNativeFunction {func: cast::get_raw_func, args: fixed(1)},
         int => FenderNativeFunction {func: cast::int_func, args: fixed(1)},
+        float => FenderNativeFunction {func: cast::float_func, args: fixed(1)},
         str => FenderNativeFunction {func: cast::str_func, args: fixed(1)},
         bool => FenderNativeFunction {func: cast::to_bool_func, args: fixed(1)},
         @ "ref" r#ref => FenderNativeFunction {func: cast::to_ref_func, args: fixed(1)},

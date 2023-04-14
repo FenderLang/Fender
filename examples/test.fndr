@@ -1,15 +1,4 @@
 #!/bin/fender
 
-$t = if({"hello"}, {}, {})
-
-t.onErr({println("hello")}).println("  (1")
-"not error".onErr({println("hello")}).println("  (2")
-
-t = null
-t.onNull({println("it is null default is 5"); 5}).println("  (3")
-2.onNull({println("it is null")}).println("  (4")
-
-$num = 17.0
-
-num.onType(Int, {75}).println()
-num.onType(Float, {$.int()}).println()
+1.dbg().println()
+1.float().dbg().println()
