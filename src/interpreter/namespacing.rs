@@ -132,8 +132,17 @@ pub(crate) fn parse_import(
     } else {
         let contents = unwrap_rust!(std::fs::read_to_string(&path))?;
         let lexer = crate::interpreter::LEXER.get();
-        let token = unwrap_rust!(lexer.as_ref().unwrap().tokenize(contents))?;
-        parse_module(&token.children, engine, var_name.to_string(), 0)?
+        let module =
+            unwrap_rust!(lexer
+                .as_ref()
+                .unwrap()
+                .tokenize(contents, |token| parse_module(
+                    &token.children,
+                    engine,
+                    var_name.to_string(),
+                    0
+                )))?;
+        module?
     };
     let targets = if token.children.len() == 1 {
         ImportTarget::Direct

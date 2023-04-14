@@ -211,17 +211,14 @@ pub fn create_engine_main(
 )> {
     let lex_read = LEXER.get();
     let lex = lex_read.as_ref().unwrap();
-    let root = match lex.tokenize(source) {
+    match lex.tokenize(source, |token| parse_main_function(token)) {
         Ok(v) => v,
-        Err(e) => {
-            return Err(Box::new(FenderError {
-                error_type: ParentErrorType::Flux(e),
-                rust_code_pos: CodePos::new_rel(Some(file!().into()), line!(), column!()),
-                fender_code_pos: None,
-            }))
-        }
-    };
-    parse_main_function(&root)
+        Err(e) => Err(Box::new(FenderError {
+            error_type: ParentErrorType::Flux(e),
+            rust_code_pos: CodePos::new_rel(Some(file!().into()), line!(), column!()),
+            fender_code_pos: None,
+        })),
+    }
 }
 
 fn parse_main_function(
