@@ -48,7 +48,7 @@ pub enum RegisterVarType {
     /// Register variables globally
     Global,
     /// Register variables globally, but only register their names within the local scope
-    AnonymousGlobal,
+    AnonymousGlobal(Option<usize>),
 }
 
 #[derive(Debug)]
@@ -328,8 +328,8 @@ pub(crate) fn register_var(
             let expr = expr(engine, scope)?;
             Expression::AssignGlobal(global, expr.into())
         }
-        RegisterVarType::AnonymousGlobal => {
-            let global = engine.create_global();
+        RegisterVarType::AnonymousGlobal(global_val) => {
+            let global = global_val.unwrap_or_else(|| engine.create_global());
             scope.create_stack_var(name.clone(), pos)?;
             scope
                 .variables

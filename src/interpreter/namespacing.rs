@@ -29,7 +29,7 @@ pub(crate) fn parse_module(
         statements,
         engine,
         &mut scope,
-        super::RegisterVarType::AnonymousGlobal,
+        super::RegisterVarType::AnonymousGlobal(None),
     )? {
         unwrap_rust!(engine.evaluate(&statement, &mut [], &[]))?;
     }
@@ -48,7 +48,7 @@ pub(crate) fn parse_module(
         fields,
         engine,
         &mut scope,
-        super::RegisterVarType::AnonymousGlobal,
+        super::RegisterVarType::AnonymousGlobal(None),
         pos,
     )?;
     unwrap_rust!(engine.evaluate(&register_expr, &mut [], &[]))?;
@@ -269,16 +269,16 @@ pub(crate) fn parse_plugin(
             .collect::<Vec<_>>();
 
         for (name, native_func, arg_count) in function_parts.into_iter() {
-            let func_id = engine.globals.len();
+            let global = engine.create_global();
             let expr = register_var(
                 name,
-                RegisterVarType::AnonymousGlobal,
+                RegisterVarType::AnonymousGlobal(Some(global)),
                 engine,
                 scope,
                 |_, _| {
                     Ok(Expression::RawValue(
                         FenderValue::Function(FunctionRef::new_native(
-                            func_id,
+                            global,
                             native_func.to_owned(),
                             arg_count,
                         ))
@@ -293,7 +293,7 @@ pub(crate) fn parse_plugin(
         for (name, value) in value_parts.into_iter() {
             let expr = register_var(
                 name,
-                RegisterVarType::AnonymousGlobal,
+                RegisterVarType::AnonymousGlobal(None),
                 engine,
                 scope,
                 |_, _| Ok(Expression::RawValue(value.clone().into())),
