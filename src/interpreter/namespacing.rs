@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use flux_bnf::tokens::Token;
 use freight_vm::expression::Expression;
+use freight_vm::function::FunctionRef;
 use freight_vm::value::Value;
 use freight_vm::{execution_engine::ExecutionEngine, function::ArgCount};
 
@@ -28,7 +29,7 @@ pub(crate) fn parse_module(
         statements,
         engine,
         &mut scope,
-        super::RegisterVarType::AnonymousGlobal,
+        super::RegisterVarType::ScopedGlobal(None),
     )? {
         unwrap_rust!(engine.evaluate(&statement, &mut [], &[]))?;
     }
@@ -47,7 +48,7 @@ pub(crate) fn parse_module(
         fields,
         engine,
         &mut scope,
-        super::RegisterVarType::AnonymousGlobal,
+        super::RegisterVarType::ScopedGlobal(None),
         pos,
     )?;
     unwrap_rust!(engine.evaluate(&register_expr, &mut [], &[]))?;
@@ -231,6 +232,76 @@ fn import_targets(
             }
         }
     }
+    for expr in exprs {
+        unwrap_rust!(engine.evaluate(&expr, &mut [], &[]))?;
+    }
+    Ok(())
+}
+
+pub(crate) fn parse_plugin(
+    token: &Token,
+    engine: &mut ExecutionEngine<FenderTypeSystem>,
+    scope: &mut LexicalScope,
+) -> FenderResult<()> {
+    let file_name = token.children[0].get_match();
+    let mut exprs = Vec::new();
+    unsafe {
+        engine
+            .context
+            .plugin_manager
+            .load_plugin(&file_name)
+            .unwrap();
+
+        let plugins = engine.context.plugin_manager.plugins();
+
+        let function_parts = plugins[plugins.len() - 1]
+            .get_functions()
+            .iter()
+            .map(|(name, (native_func, arg_count))| {
+                ((*name).to_owned(), (*native_func).clone(), *arg_count)
+            })
+            .collect::<Vec<_>>();
+
+        let value_parts = plugins[plugins.len() - 1]
+            .get_values()
+            .iter()
+            .map(|(name, value)| ((*name).to_owned(), (*value).clone()))
+            .collect::<Vec<_>>();
+
+        for (name, native_func, arg_count) in function_parts.into_iter() {
+            let global = engine.create_global();
+            let expr = register_var(
+                name,
+                RegisterVarType::ScopedGlobal(Some(global)),
+                engine,
+                scope,
+                |_, _| {
+                    Ok(Expression::RawValue(
+                        FenderValue::Function(FunctionRef::new_native(
+                            global,
+                            native_func.to_owned(),
+                            arg_count,
+                        ))
+                        .into(),
+                    ))
+                },
+                token.range.start,
+            )?;
+            exprs.push(expr);
+        }
+
+        for (name, value) in value_parts.into_iter() {
+            let expr = register_var(
+                name,
+                RegisterVarType::ScopedGlobal(None),
+                engine,
+                scope,
+                |_, _| Ok(Expression::RawValue(value.clone().into())),
+                token.range.start,
+            )?;
+            exprs.push(expr);
+        }
+    };
     for expr in exprs {
         unwrap_rust!(engine.evaluate(&expr, &mut [], &[]))?;
     }
