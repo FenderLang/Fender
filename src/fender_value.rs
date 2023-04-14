@@ -397,7 +397,7 @@ impl ToString for FenderValue {
                     .join(", ")
             ),
             FenderValue::Struct(s) => s.to_string(),
-            FenderValue::Type(t) => format!("Type({})", t.to_string()),
+            FenderValue::Type(t) => format!("{}", t.to_string()),
             FenderValue::HashMap(h) => format!(
                 "[{}]",
                 h.iter()

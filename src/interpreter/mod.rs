@@ -548,7 +548,7 @@ pub(crate) fn parse_struct_declaration(
                     let name = arg_token.children[0].get_match();
 
                     let type_check = if arg_token.children.len() > 1 {
-                        FenderTypeId::type_from_str(arg_token.children[1].children[0].get_match())
+                        FenderTypeId::type_from_str(&arg_token.children[1].children[0].get_match())
                     } else {
                         None
                     };

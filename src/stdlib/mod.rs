@@ -1,7 +1,9 @@
 #![deny(missing_docs)]
 use crate::{
-    dep_name, deps_enum, fender_reference::FenderReference, fender_value::FenderValue,
-    type_sys::type_system::FenderTypeSystem,
+    dep_name, deps_enum,
+    fender_reference::FenderReference,
+    fender_value::FenderValue,
+    type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
 };
 
 use freight_vm::{
@@ -24,6 +26,8 @@ pub mod io;
 pub mod loader;
 /// system interface
 pub mod system;
+/// functions for working with raw `FenderValue::Type`
+pub mod types;
 /// modify and query existing values
 pub mod val_operation;
 
@@ -74,6 +78,27 @@ impl StdlibResource for FenderNativeFunction {
     }
 }
 
+struct FenderNativeTypeValue {
+    pub type_id: FenderTypeId,
+}
+
+impl StdlibResource for FenderNativeTypeValue {
+    fn load_into<const N: usize>(&self, engine: &mut ExecutionEngine<FenderTypeSystem>) -> usize {
+        let global = engine.create_global();
+        engine
+            .evaluate(
+                &Expression::AssignGlobal(
+                    global,
+                    Box::new(FenderValue::Type(self.type_id.clone()).into()),
+                ),
+                &mut [],
+                &[],
+            )
+            .expect("Assigning value should never fail");
+        global
+    }
+}
+
 deps_enum! {FenderResource, STDLIB_SIZE:
         print => FenderNativeFunction {func: io::print_func, args: variadic(1..)},
         println => FenderNativeFunction {func: io::println_func, args: variadic(1..)},
@@ -110,9 +135,28 @@ deps_enum! {FenderResource, STDLIB_SIZE:
         concat => FenderNativeFunction {func: val_operation::concat_func, args: fixed(2)},
         insert => FenderNativeFunction {func: val_operation::insert_func, args: fixed(3)},
 
+        Int => FenderNativeTypeValue{type_id: FenderTypeId::Int},
+        Float => FenderNativeTypeValue{type_id: FenderTypeId::Float},
+        Bool => FenderNativeTypeValue{type_id: FenderTypeId::Bool},
+        String => FenderNativeTypeValue{type_id: FenderTypeId::String},
+        Error => FenderNativeTypeValue{type_id: FenderTypeId::Error},
+        Null => FenderNativeTypeValue{type_id: FenderTypeId::Null},
+        Reference => FenderNativeTypeValue{type_id: FenderTypeId::Reference},
+        Function => FenderNativeTypeValue{type_id: FenderTypeId::Function},
+        List => FenderNativeTypeValue{type_id: FenderTypeId::List},
+        Char => FenderNativeTypeValue{type_id: FenderTypeId::Char},
+        Struct => FenderNativeTypeValue{type_id: FenderTypeId::Struct},
+        Type => FenderNativeTypeValue{type_id: FenderTypeId::Type},
+        HashMap => FenderNativeTypeValue{type_id: FenderTypeId::HashMap},
+
+
         shell => FenderNativeFunction {func: system::shell_func, args: range(1..=3)},
         pwd => FenderNativeFunction {func: system::pwd_func, args: fixed(0)},
         cd => FenderNativeFunction {func: system::cd_func, args: fixed(1)},
+
+        @ "type" r#type => FenderNativeFunction{func: types::get_type_func, args: fixed(1)},
+        strToType => FenderNativeFunction{func: types::type_from_name_func, args: fixed(1)},
+        isRef => FenderNativeFunction{func: types::is_ref_func, args: fixed(1)},
 }
 
 #[macro_export]
