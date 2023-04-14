@@ -126,6 +126,25 @@ macro_rules! count {
 }
 
 #[macro_export]
+/// Create a type error for invalid arguments
+macro_rules! type_match {
+    ($($arg:ident),* {
+        $(
+            ($($ty:ident $( ( $($param:ident),* ) )?),*) => $branch:expr
+        ),*
+    }) => {
+        match ($($arg.unwrap_value()),*) {
+            $(( $($ty $( ( $($param),* ) )?),* ) => $branch),* ,
+            _ => return Ok($crate::fender_reference::FenderReference::FRaw(FenderValue::make_error(format!("Invalid argument types {}; expected {}",
+            format!("({})", [$($arg),*].into_iter().map(|a| a.get_real_type_id().to_string()).collect::<Vec<_>>().join(", ")),
+            [
+                    $( format!("({})", [$(stringify!($ty)),*].join(", ")) ),*
+                ].join(" OR "))))),
+        }
+    };
+}
+
+#[macro_export]
 /// Create fender function in rust
 macro_rules! fndr_native_func {
     (
