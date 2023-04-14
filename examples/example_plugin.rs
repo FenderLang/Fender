@@ -73,3 +73,21 @@ fn main() {
         "this example is not meant to be run, it is a look at what a fender plugin might look like"
     )
 }
+
+// example Cargo.toml
+// [package]
+// name = "example_plugin"
+// version = "0.1.0"
+// edition = "2021"
+
+// [lib]
+// crate-type = ["dylib"]
+
+// # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+// [dependencies]
+// fender = { git = "https://github.com/FenderLang/Fender", rev = "aa4a693d490180c1bd4d6c1d9828ed85611fc670", default-features = false }
+
+// freight_vm = { git = "https://github.com/FenderLang/Freight", rev = "2390fa079bf679a2f8de12b479b3976644d04ea3", features = [
+//    "variadic_functions",
+// ] }
