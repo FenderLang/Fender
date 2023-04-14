@@ -1,6 +1,6 @@
 use crate::{
     fender_value::FenderValue::{self, *},
-    fndr_native_func,
+    fndr_native_func, type_match,
 };
 
 fndr_native_func!(
@@ -131,5 +131,80 @@ fndr_native_func!(
             return Ok(FenderValue::make_error(format!("apply_pass_func must take a function: Expected type `Function` found type `{}`", func.get_type_id().to_string())).into()) //TODO@FuzzyNovaGoblin change name on this line
         };
         ctx.call(func, vec![incoming_val.get_pass_object()])
+    }
+);
+
+fndr_native_func!(
+    /// If `incoming_val` is of type `FenderValue::Error` run `func`
+    ///
+    /// otherwise return `incoming_val`
+    ///
+    /// if `func` is called `incoming_val` will be passed to it
+    on_err_func,
+    |ctx, incoming_val, func| {
+        match incoming_val.unwrap_value() {
+            Error(e) => (),
+            _ => return Ok(incoming_val),
+        };
+
+        type_match!(
+            func{
+                Function(f) => {
+                    let args = if f.arg_count().max().unwrap_or(1) >= 1{
+                        vec![incoming_val]
+                    }else{
+                        Vec::new()
+                    };
+
+                    ctx.call(&f, args)
+                }
+            }
+        )
+    }
+);
+
+fndr_native_func!(
+    /// If `incoming_val` is of type `FenderValue::Null` run `func`
+    ///
+    /// otherwise return `incoming_val`
+    on_null_func,
+    |ctx, incoming_val, func| {
+        match incoming_val.unwrap_value() {
+            Null => (),
+            _ => return Ok(incoming_val),
+        };
+
+        type_match!(
+            func {
+                Function(f) => ctx.call(&f, Vec::new())
+            }
+        )
+    }
+);
+
+fndr_native_func!(
+    /// If `incoming_val` is of type `type_id` run `func`
+    ///
+    /// otherwise return `incoming_val`
+    ///
+    /// if `func` is called `incoming_val` will be passed to it
+    on_type_func,
+    |ctx, incoming_val, type_id, func| {
+        type_match!(
+            type_id, func{
+                (Type(ty), Function(f)) => {
+                    if incoming_val.get_real_type_id() == ty {
+                        let args = if f.arg_count().max().unwrap_or(1) >= 1{
+                            vec![incoming_val]
+                        }else{
+                            Vec::new()
+                        };
+                        ctx.call(&f, args)
+                    }else{
+                        Ok(incoming_val)
+                    }
+                }
+            }
+        )
     }
 );

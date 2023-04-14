@@ -121,6 +121,9 @@ deps_enum! {FenderResource, STDLIB_SIZE:
         @ "while" r#while => FenderNativeFunction {func: control_flow::while_func, args: fixed(2)},
         also => FenderNativeFunction {func: control_flow::also_func, args: fixed(2)},
         apply => FenderNativeFunction {func: control_flow::apply_func, args: fixed(2)},
+        onErr => FenderNativeFunction {func: control_flow::on_err_func, args: fixed(2)},
+        onNull => FenderNativeFunction {func: control_flow::on_null_func, args: fixed(2)},
+        onType => FenderNativeFunction {func: control_flow::on_type_func, args: fixed(3)},
 
         len => FenderNativeFunction {func: val_operation::len_func, args: fixed(1)},
         swap => FenderNativeFunction {func: val_operation::swap_func, args: fixed(3)},
@@ -182,9 +185,15 @@ macro_rules! type_match {
             _ => return Ok($crate::fender_reference::FenderReference::FRaw(FenderValue::make_error(format!("Invalid argument types {}; expected {}",
             format!("({})", [$($arg),*].into_iter().map(|a| a.get_real_type_id().to_string()).collect::<Vec<_>>().join(", ")),
             [
-                    $( format!("({})", [$(stringify!($ty)),*].join(", ")) ),*
-                ].join(" OR "))))),
+                $( format!("({})", [$(stringify!($ty)),*].join(", ")) ),*
+            ].join(" OR "))))),
         }
+    };
+
+    ($arg:ident {
+        $($ty:ident $( ( $($param:ident),* ) )? => $branch:expr),*
+    }) => {
+        type_match!($arg {$(($ty $(($($param),*))? ) => $branch),* })
     };
 }
 
