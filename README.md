@@ -13,9 +13,11 @@ A functional scripting language, intended for string manipulation and general sc
   - [x] filter
   - [x] each
   - [x] reduce
-  - [ ] scan
-  - [ ] enumerate
-  - [ ] zip
+  - [x] scan
+  - [x] mapi (map indexed)
+  - [x] zip
+  - [x] drop
+  - [x] take
   - [ ] memoize
 - [x] Iterators
 - [ ] Ranges
