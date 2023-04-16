@@ -53,12 +53,12 @@ fndr_native_func!(
         expect_func!(pred => pred);
         let next: Rc<RefCell<Option<FenderReference>>> = Rc::new(RefCell::new(None));
         let next2 = next.clone();
-        let iter2 = iter.clone();
+        let iter2 = iter;
         let pred2 = pred.clone();
-        Ok((FenderIterator {
+        Ok(FenderIterator {
             next: Rc::new(move |e| {
                 if let Some(val) = std::mem::take(&mut *next.borrow_mut()) {
-                    Ok(val.clone())
+                    Ok(val)
                 } else {
                     Ok(Default::default())
                 }
@@ -79,7 +79,7 @@ fndr_native_func!(
                 }
             }),
         }
-        .into()))
+        .into())
     }
 );
 
@@ -91,7 +91,7 @@ fndr_native_func!(
         expect_func!(accum => accum);
         while *(iter.has_next)(ctx)? == FenderValue::Bool(true) {
             let elem = (iter.next)(ctx)?;
-            init = ctx.call(&accum, vec![init, elem])?;
+            init = ctx.call(accum, vec![init, elem])?;
         }
         Ok(init)
     }
@@ -126,7 +126,7 @@ fndr_native_func!(
         expect_func!(func => func);
         while *(iter.has_next)(ctx)? == FenderValue::Bool(true) {
             let elem = (iter.next)(ctx)?;
-            ctx.call(&func, vec![elem])?;
+            ctx.call(func, vec![elem])?;
         }
         Ok(Default::default())
     }

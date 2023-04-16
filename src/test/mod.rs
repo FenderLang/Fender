@@ -223,12 +223,11 @@ mod hash_maps {
 
     fn make_test_map() -> HashMap<FenderValue, FenderReference> {
         ('a'..='e')
-            .into_iter()
             .zip(1..=5)
             .map(|(k, v)| {
                 (
                     FenderValue::Char(k),
-                    FenderReference::from(FenderValue::Int(v)).into(),
+                    FenderReference::from(FenderValue::Int(v)),
                 )
             })
             .collect::<HashMap<_, _>>()

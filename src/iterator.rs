@@ -23,13 +23,13 @@ impl Debug for FenderIterator {
 
 impl PartialEq for FenderIterator {
     fn eq(&self, other: &Self) -> bool {
-        &*self.next as *const _ == &*other.next as *const _
+        std::ptr::eq(self, other)
     }
 }
 
-impl Into<FenderReference> for FenderIterator {
-    fn into(self) -> FenderReference {
-        FenderValue::Iterator(self).into()
+impl From<FenderIterator> for FenderReference {
+    fn from(val: FenderIterator) -> Self {
+        FenderValue::Iterator(val).into()
     }
 }
 
