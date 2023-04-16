@@ -1,10 +1,10 @@
 use std::{cell::RefCell, ops::Deref, rc::Rc};
 
-use freight_vm::value::Value;
+use freight_vm::{operators::BinaryOperator, value::Value};
 
 use crate::{
     fender_reference::FenderReference, fender_value::FenderValue, fndr_native_func,
-    iterator::FenderIterator, type_match,
+    iterator::FenderIterator, operators::FenderBinaryOperator, type_match,
 };
 
 macro_rules! expect_iterable {
@@ -307,5 +307,35 @@ fndr_native_func!(
         type_match!(str {
             (String(s)) => Ok(FenderValue::make_string(s.to_lowercase()).into())
         })
+    }
+);
+
+fndr_native_func!(
+    /// Calculates the sum of an iterable
+    sum_func,
+    |ctx, list| {
+        use FenderValue::*;
+        expect_iterable!(list => iter);
+        let mut sum = Int(0).into();
+        while *(iter.has_next)(ctx)? == Bool(true) {
+            let elem = (iter.next)(ctx)?;
+            sum = FenderBinaryOperator::Add.apply_2(&sum, &elem);
+        }
+        Ok(sum)
+    }
+);
+
+fndr_native_func!(
+    /// Calculates the sum of an iterable
+    product_func,
+    |ctx, list| {
+        use FenderValue::*;
+        expect_iterable!(list => iter);
+        let mut sum = Int(0).into();
+        while *(iter.has_next)(ctx)? == Bool(true) {
+            let elem = (iter.next)(ctx)?;
+            sum = FenderBinaryOperator::Mul.apply_2(&sum, &elem);
+        }
+        Ok(sum)
     }
 );
