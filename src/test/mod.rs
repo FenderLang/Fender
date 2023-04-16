@@ -442,7 +442,7 @@ mod stdlib {
             );
 
             assert_eq!(
-                *run(r#"$x = ["hello", " world!"]; x.joinStr()"#),
+                *run(r#"$x = ["hello", " world!"]; x.join()"#),
                 FV::make_string("hello world!".into())
             );
         }

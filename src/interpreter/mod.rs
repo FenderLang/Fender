@@ -384,9 +384,9 @@ pub(crate) fn parse_closure(
                 .and_then(|b| b.then_some(token))
                 .unwrap_or_else(|| &token.children[0]);
             let arg_count = if code_body_uses_lambda_parameter(code_body) {
-                ArgCount::Range { min: 0, max: 1 }
-            } else {
                 ArgCount::Fixed(1)
+            } else {
+                ArgCount::Range { min: 0, max: 1 }
             };
             let mut new_scope = scope.child_scope(arg_count, engine.create_return_target());
             parse_code_body(code_body, engine, &mut new_scope)
