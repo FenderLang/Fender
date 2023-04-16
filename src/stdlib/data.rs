@@ -331,7 +331,7 @@ fndr_native_func!(
     |ctx, list| {
         use FenderValue::*;
         expect_iterable!(list => iter);
-        let mut sum = Int(0).into();
+        let mut sum = Int(1).into();
         while *(iter.has_next)(ctx)? == Bool(true) {
             let elem = (iter.next)(ctx)?;
             sum = FenderBinaryOperator::Mul.apply_2(&sum, &elem);
