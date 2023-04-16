@@ -184,8 +184,11 @@ fn add(a: &FenderReference, b: &FenderReference) -> FenderReference {
     let a_val: &FenderValue = a.into();
     let b_val: &FenderValue = b.into();
     match (a_val, b_val) {
-        (FenderValue::String(s), other) | (other, FenderValue::String(s)) => {
+        (FenderValue::String(s), other) => {
             FenderValue::String(format!("{}{}", s.deref(), other.to_string()).into()).into()
+        }
+        (other, FenderValue::String(s)) => {
+            FenderValue::String(format!("{}{}", other.to_string(), s.deref()).into()).into()
         }
         _ => num_add(a, b),
     }
