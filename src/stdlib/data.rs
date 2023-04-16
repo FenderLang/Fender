@@ -207,10 +207,16 @@ fndr_native_func!(
         expect_iterable!(list => iter);
         let delim = type_match!(delim {
             (String(s)) => s.deref().clone(),
+            (Char(c)) => c.to_string(),
             (Null) => "".to_string()
         });
         let mut buf = std::string::String::new();
+        let mut first = true;
         while *(iter.has_next)(ctx)? == Bool(true) {
+            if !first {
+                buf.push_str(&delim);
+            }
+            first = false;
             let elem = (iter.next)(ctx)?;
             match &*elem {
                 String(s) => buf.push_str(s),
@@ -255,5 +261,51 @@ fndr_native_func!(
             has_next: iter.has_next.clone(),
         }
         .into())
+    }
+);
+
+fndr_native_func!(
+    /// Splits a string given a certain substring or character
+    split_func,
+    |ctx, str, delim| {
+        use FenderValue::*;
+        type_match!(str, delim {
+            (String(str), String(delim)) => {
+                let list = str
+                    .split(&**delim)
+                    .map(|v| FenderValue::make_string(v.to_string()).into())
+                    .collect();
+                Ok(FenderValue::make_list(list).into())
+            },
+            (String(str), Char(c)) => {
+                let list = str
+                    .split(c)
+                    .map(|v| FenderValue::make_string(v.to_string()).into())
+                    .collect();
+                Ok(FenderValue::make_list(list).into())
+            }
+        })
+    }
+);
+
+fndr_native_func!(
+    /// Converts a string to uppercase
+    upper_func,
+    |ctx, str| {
+        use FenderValue::*;
+        type_match!(str {
+            (String(s)) => Ok(FenderValue::make_string(s.to_uppercase()).into())
+        })
+    }
+);
+
+fndr_native_func!(
+    /// Converts a string to lowercase
+    lower_func,
+    |ctx, str| {
+        use FenderValue::*;
+        type_match!(str {
+            (String(s)) => Ok(FenderValue::make_string(s.to_lowercase()).into())
+        })
     }
 );

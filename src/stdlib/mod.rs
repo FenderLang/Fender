@@ -125,7 +125,11 @@ deps_enum! {FenderResource, STDLIB_SIZE:
     join => FenderNativeFunction {func: data::join_func, args: range(1..=2)},
     scan => FenderNativeFunction {func: data::scan_func, args: fixed(3)},
     count => FenderNativeFunction {func: data::count_func, args: fixed(1)},
-    mapi => FenderNativeFunction {func: data::map_indexed_func, args: fixed(2)}
+    mapi => FenderNativeFunction {func: data::map_indexed_func, args: fixed(2)},
+
+    split => FenderNativeFunction {func: data::split_func, args: fixed(2)},
+    upper => FenderNativeFunction {func: data::upper_func, args: fixed(2)},
+    lower => FenderNativeFunction {func: data::lower_func, args: fixed(2)},
 }
 
 #[macro_export]
@@ -145,6 +149,7 @@ macro_rules! type_match {
         $(
             ($($ty:ident $( ( $($param:ident),* ) )?),*) => $branch:expr
         ),*
+        $(,)?
     }) => {
         match ($($arg.unwrap_value()),*) {
             $(( $($ty $( ( $($param),* ) )?),* ) => $branch),* ,
