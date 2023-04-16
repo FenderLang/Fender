@@ -339,3 +339,42 @@ fndr_native_func!(
         Ok(sum)
     }
 );
+
+fndr_native_func!(
+    /// Remove elements according to a filtering function
+    take_while_func,
+    |_, list, pred| {
+        expect_iterable!(list => iter);
+        expect_func!(pred => pred);
+        let next: Rc<RefCell<Option<FenderReference>>> = Rc::new(RefCell::new(None));
+        let next2 = next.clone();
+        let iter2 = iter;
+        let pred2 = pred.clone();
+        Ok(FenderIterator {
+            next: Rc::new(move |e| {
+                if let Some(val) = std::mem::take(&mut *next.borrow_mut()) {
+                    Ok(val)
+                } else {
+                    Ok(Default::default())
+                }
+            }),
+            has_next: Rc::new(move |e| {
+                if next2.borrow().is_some() {
+                    Ok(FenderValue::Bool(true).into())
+                } else {
+                    if *(iter2.has_next)(e)? == FenderValue::Bool(true) {
+                        let elem = (iter2.next)(e)?;
+                        if e.call(&pred2, vec![elem.clone()])?.to_bool() == FenderValue::Bool(true)
+                        {
+                            next2.replace(Some(elem));
+                        } else {
+                            return Ok(FenderValue::Bool(false).into());
+                        }
+                    }
+                    Ok(FenderValue::Bool(next2.borrow().is_some()).into())
+                }
+            }),
+        }
+        .into())
+    }
+);
