@@ -128,8 +128,8 @@ deps_enum! {FenderResource, STDLIB_SIZE:
     mapi => FenderNativeFunction {func: data::map_indexed_func, args: fixed(2)},
 
     split => FenderNativeFunction {func: data::split_func, args: fixed(2)},
-    upper => FenderNativeFunction {func: data::upper_func, args: fixed(2)},
-    lower => FenderNativeFunction {func: data::lower_func, args: fixed(2)},
+    upper => FenderNativeFunction {func: data::upper_func, args: fixed(1)},
+    lower => FenderNativeFunction {func: data::lower_func, args: fixed(1)},
 }
 
 #[macro_export]
