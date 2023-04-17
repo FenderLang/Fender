@@ -9,7 +9,7 @@ use crate::{
 
 macro_rules! expect_iterable {
     ($var_name:ident => $iter_name:ident) => {
-        let Some($iter_name) = $var_name.iter() else {
+        let Some($iter_name) = $var_name.try_iter() else {
                     return Ok(FenderValue::make_error(
                         format!("Type `{}` is not iterable", $var_name.get_type_id().to_string()))
                         .into());

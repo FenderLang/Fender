@@ -371,13 +371,15 @@ impl FenderValue {
         }
     }
 
-    pub fn iter(&self) -> Option<FenderIterator> {
+    pub fn try_iter(&self) -> Option<FenderIterator> {
         use FenderValue::*;
         match self.clone() {
-            List(l) => Some(FenderIterator::new(l.len(), move |i| l[i].clone())),
+            List(l) => Some(FenderIterator::from_collection(l.len(), move |i| {
+                l[i].clone()
+            })),
             String(s) => {
                 let chars: Vec<_> = s.chars().collect();
-                Some(FenderIterator::new(chars.len(), move |i| {
+                Some(FenderIterator::from_collection(chars.len(), move |i| {
                     FenderValue::Char(chars[i]).into()
                 }))
             }

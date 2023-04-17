@@ -34,7 +34,10 @@ impl From<FenderIterator> for FenderReference {
 }
 
 impl FenderIterator {
-    pub fn new(len: usize, list: impl Fn(usize) -> FenderReference + 'static) -> FenderIterator {
+    pub fn from_collection(
+        len: usize,
+        list: impl Fn(usize) -> FenderReference + 'static,
+    ) -> FenderIterator {
         let i = Rc::new(RefCell::new(0));
         let i2 = i.clone();
         FenderIterator {
