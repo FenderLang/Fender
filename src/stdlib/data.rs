@@ -3,8 +3,8 @@ use std::{cell::RefCell, ops::Deref, rc::Rc};
 use freight_vm::{operators::BinaryOperator, value::Value};
 
 use crate::{
-    fender_reference::FenderReference, fender_value::FenderValue, fndr_native_func,
-    iterator::FenderIterator, operators::FenderBinaryOperator, type_match,
+    fender_reference::FenderReference, fender_value::iterator::FenderIterator,
+    fender_value::FenderValue, fndr_native_func, operators::FenderBinaryOperator, type_match,
 };
 
 macro_rules! expect_iterable {
@@ -294,7 +294,8 @@ fndr_native_func!(
     |ctx, str| {
         use FenderValue::*;
         type_match!(str {
-            (String(s)) => Ok(FenderValue::make_string(s.to_uppercase()).into())
+            (String(s)) => Ok(FenderValue::make_string(s.to_uppercase()).into()),
+            (Char(c)) => Ok(FenderValue::Char(c.to_ascii_uppercase()).into())
         })
     }
 );
@@ -305,7 +306,8 @@ fndr_native_func!(
     |ctx, str| {
         use FenderValue::*;
         type_match!(str {
-            (String(s)) => Ok(FenderValue::make_string(s.to_lowercase()).into())
+            (String(s)) => Ok(FenderValue::make_string(s.to_lowercase()).into()),
+            (Char(c)) => Ok(FenderValue::Char(c.to_ascii_lowercase()).into())
         })
     }
 );

@@ -1,7 +1,6 @@
-use self::fender_structs::FenderStruct;
+use self::{fender_structs::FenderStruct, iterator::FenderIterator};
 use crate::{
     fender_reference::{FenderReference, InternalReference},
-    iterator::FenderIterator,
     type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
 };
 use freight_vm::{
@@ -10,6 +9,7 @@ use freight_vm::{
 use rand::{seq::SliceRandom, thread_rng};
 use std::{collections::HashMap, hash::Hash, ops::Deref};
 pub mod fender_structs;
+pub mod iterator;
 
 #[derive(Clone, Debug, Default)]
 pub enum FenderValue {

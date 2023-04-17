@@ -36,6 +36,7 @@ impl FenderTypeId {
             Iterator => true,
         }
     }
+
     pub fn type_from_str(value: String) -> Option<FenderTypeId> {
         match value.as_str() {
             "Int" => Some(FenderTypeId::Int),
@@ -50,6 +51,7 @@ impl FenderTypeId {
             "Struct" => Some(FenderTypeId::Struct),
             "Null" => Some(FenderTypeId::Null),
             "HashMap" => Some(FenderTypeId::HashMap),
+            "Iterator" => Some(FenderTypeId::Iterator),
             _ => None,
         }
     }

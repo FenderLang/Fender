@@ -8,7 +8,6 @@ pub mod type_sys {
 }
 pub mod error;
 pub mod interpreter;
-pub mod iterator;
 pub mod lazy_cell;
 pub mod operators;
 pub mod plugin;
