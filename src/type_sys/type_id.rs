@@ -36,9 +36,8 @@ impl FenderTypeId {
             Iterator => true,
         }
     }
-
-    pub fn type_from_str(value: String) -> Option<FenderTypeId> {
-        match value.as_str() {
+    pub fn type_from_str(value: &str) -> Option<FenderTypeId> {
+        match value {
             "Int" => Some(FenderTypeId::Int),
             "Float" => Some(FenderTypeId::Float),
             "Bool" => Some(FenderTypeId::Bool),
