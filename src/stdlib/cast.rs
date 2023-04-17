@@ -40,10 +40,10 @@ fndr_native_func!(
                     Ok(f) => Float(f).into(),
                     _ => FenderValue::make_error(format!("Invalid float string: {}", s.deref())).into()
                 },
-                Float(val) =>   Float(val).into(),
+                Float(val) => Float(val).into(),
                 Int(val) => Float(val as f64).into(),
-                Bool(val) =>  Float(val as i8 as f64).into(),
-                Char(val) =>  Float(val as u64 as f64).into()
+                Bool(val) => Float(val as i8 as f64).into(),
+                Char(val) => Float(val as u64 as f64).into()
             }
         ))
     }
