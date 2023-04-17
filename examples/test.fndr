@@ -1,20 +1,4 @@
 #!/bin/fender
 
-$m = [1:"hello", "word":"world"]
-m[1].println()
-m["word"].println()
-m["word"] = "bird"
-m["word"].println()
-
-
-m["hello"].println()
-
-m.insert("hello", "first")
-
-m.println()
-
-println("value in m[\"hello\"] ", m["hello"].dbg())
-
-{println("value that was at \"hello\" {$.dbg()}")}(m.insert("hello", "second"))
-
-println("value in m[\"hello\"] ", m["hello"].dbg())
+1.dbg().println()
+1.float().dbg().println()

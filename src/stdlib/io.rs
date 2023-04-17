@@ -1,6 +1,6 @@
 use crate::{
     fender_value::FenderValue::{self, *},
-    fndr_native_func,
+    fndr_native_func, type_match,
 };
 use std::{io::Write, ops::Deref};
 
@@ -41,6 +41,41 @@ fndr_native_func!(
     }
 );
 
+fndr_native_func!(
+    /// Prints to stderr
+    eprint_func,
+    |_, item, argv| {
+        eprint!("{}", item.to_string());
+        let argv = match &*argv {
+            List(l) => l.deref(),
+            e => unreachable!("Last argument is always a vararg list, found: {:?}", e),
+        };
+        for item in argv {
+            eprint!("{}", item.to_string());
+        }
+        Ok(item)
+    }
+);
+
+fndr_native_func!(
+    /// Prints to stderr and adds a newline
+    eprintln_func,
+    |_, item, argv| {
+        eprint!("{}", item.to_string());
+        let argv = match &*argv {
+            List(l) => l.deref(),
+
+            e => unreachable!("Last argument is always a vararg list, found: {:?}", e),
+        };
+        for item in argv {
+            eprint!("{}", item.to_string());
+        }
+        eprintln!();
+
+        Ok(item)
+    }
+);
+
 // --- stdin ---
 
 fndr_native_func!(
@@ -61,9 +96,8 @@ fndr_native_func!(
     /// read in the contents of a file with given path
     read_func,
     |_, file_name| {
-        let String(file_name) = &*file_name else {
-        return Ok(FenderValue::make_error("file name must be of type `String`").into());
-    };
+        let file_name = type_match!(file_name {(String(s))=>s});
+
         Ok(match std::fs::read_to_string(file_name.deref()) {
             Ok(s) => String(s.into()).into(),
             Err(e) => {
@@ -77,9 +111,8 @@ fndr_native_func!(
     /// Overwrites file `file_name` with `data`
     write_func,
     |_, data, file_name| {
-        let String(file_name) = &*file_name else {
-        return Ok(FenderValue::make_error("file name must be of type `String`").into());
-    };
+        let file_name = type_match!(file_name {(String(s))=>s});
+
         Ok(match std::fs::write(file_name.deref(), data.to_string()) {
             Ok(s) => Bool(true).into(),
             Err(e) => {
@@ -93,9 +126,8 @@ fndr_native_func!(
     /// Appends to file `file_name` with `data`
     append_func,
     |_, data, file_name| {
-        let String(file_name) = &*file_name else {
-        return Ok(FenderValue::make_error("file name must be of type `String`").into());
-    };
+        let file_name = type_match!(file_name {(String(s))=>s});
+
         let mut file = match std::fs::OpenOptions::new()
             .write(true)
             .append(true)

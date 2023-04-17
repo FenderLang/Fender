@@ -1,6 +1,6 @@
 use crate::{
     fender_value::FenderValue::{self, *},
-    fndr_native_func,
+    fndr_native_func, type_match,
 };
 use std::{ops::Deref, process::Command};
 
@@ -21,16 +21,7 @@ fndr_native_func!(
     /// Change the current working directory environment variable (PWD)
     cd_func,
     |_, path| {
-        let path = match path.unwrap_value() {
-            String(s) => s.to_string(),
-            e => {
-                return Ok(FenderValue::make_error(format!(
-                    "invalid arg for `cd`: expected `String` found `{}`",
-                    e.get_type_id().to_string()
-                ))
-                .into())
-            }
-        };
+        let path = type_match!(path {String(s) => s.to_string()});
 
         Ok(match std::env::set_current_dir(path) {
             Ok(path) => Bool(true).into(),
