@@ -104,6 +104,8 @@ impl StdlibResource for FenderNativeTypeValue {
 deps_enum! {FenderResource, STDLIB_SIZE:
         print => FenderNativeFunction {func: io::print_func, args: variadic(1..)},
         println => FenderNativeFunction {func: io::println_func, args: variadic(1..)},
+        eprint => FenderNativeFunction {func: io::eprint_func, args: variadic(1..)},
+        eprintln => FenderNativeFunction {func: io::eprintln_func, args: variadic(1..)},
         readLine => FenderNativeFunction {func: io::read_line_func, args: fixed(0)},
         read => FenderNativeFunction {func: io::read_func, args: fixed(1)},
         write => FenderNativeFunction {func: io::write_func, args: fixed(2)},
@@ -111,6 +113,7 @@ deps_enum! {FenderResource, STDLIB_SIZE:
 
         raw => FenderNativeFunction {func: cast::get_raw_func, args: fixed(1)},
         int => FenderNativeFunction {func: cast::int_func, args: fixed(1)},
+        float => FenderNativeFunction {func: cast::float_func, args: fixed(1)},
         str => FenderNativeFunction {func: cast::str_func, args: fixed(1)},
         bool => FenderNativeFunction {func: cast::to_bool_func, args: fixed(1)},
         @ "ref" r#ref => FenderNativeFunction {func: cast::to_ref_func, args: fixed(1)},
