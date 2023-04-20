@@ -223,12 +223,11 @@ mod hash_maps {
 
     fn make_test_map() -> HashMap<FenderValue, FenderReference> {
         ('a'..='e')
-            .into_iter()
             .zip(1..=5)
             .map(|(k, v)| {
                 (
                     FenderValue::Char(k),
-                    FenderReference::from(FenderValue::Int(v)).into(),
+                    FenderReference::from(FenderValue::Int(v)),
                 )
             })
             .collect::<HashMap<_, _>>()
@@ -443,7 +442,7 @@ mod stdlib {
             );
 
             assert_eq!(
-                *run(r#"$x = ["hello", " world!"]; x.joinStr()"#),
+                *run(r#"$x = ["hello", " world!"]; x.join()"#),
                 FV::make_string("hello world!".into())
             );
         }

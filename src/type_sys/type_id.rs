@@ -13,6 +13,7 @@ pub enum FenderTypeId {
     Struct,
     Type,
     HashMap,
+    Iterator,
 }
 
 impl FenderTypeId {
@@ -32,6 +33,7 @@ impl FenderTypeId {
             Struct => false,
             Type => true,
             HashMap => false,
+            Iterator => true,
         }
     }
     pub fn type_from_str(value: &str) -> Option<FenderTypeId> {
@@ -48,6 +50,7 @@ impl FenderTypeId {
             "Struct" => Some(FenderTypeId::Struct),
             "Null" => Some(FenderTypeId::Null),
             "HashMap" => Some(FenderTypeId::HashMap),
+            "Iterator" => Some(FenderTypeId::Iterator),
             _ => None,
         }
     }
@@ -58,6 +61,7 @@ impl ToString for FenderTypeId {
         use FenderTypeId::*;
         match self {
             Int => "Int",
+            Iterator => "Iterator",
             Float => "Float",
             Bool => "Bool",
             Error => "Error",
