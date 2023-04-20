@@ -343,7 +343,7 @@ fndr_native_func!(
 );
 
 fndr_native_func!(
-    /// Remove elements according to a filtering function
+    /// Remove elements that return `false` when passed to `pred`
     take_while_func,
     |_, list, pred| {
         expect_iterable!(list => iter);
