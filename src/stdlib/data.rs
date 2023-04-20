@@ -187,7 +187,7 @@ fndr_native_func!(
 
 fndr_native_func!(
     /// Throw out the first n elements
-    drop_func,
+    skip_func,
     |ctx, list, n| {
         use FenderValue::*;
         expect_iterable!(list => iter);
