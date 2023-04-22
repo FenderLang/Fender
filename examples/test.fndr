@@ -1,4 +1,4 @@
-#!/bin/fender
+#!/usr/bin/env fender
 
 1.dbg().println()
 1.float().dbg().println()

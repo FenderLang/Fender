@@ -1,4 +1,4 @@
-#!/bin/fender
+#!/usr/bin/env fender
 $cardString = (card){
    (card == 1).then({return "A"})
    (card == 11).then({return "J"})

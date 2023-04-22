@@ -1,4 +1,4 @@
-#!/bin/fender
+#!/usr/bin/env fender
 
 $quickSort = (array, lower, upper){
    $i = lower
