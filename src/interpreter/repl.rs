@@ -84,7 +84,7 @@ impl<'a> FenderRepl<'a> {
         let exprs = crate::interpreter::LEXER.get().as_ref().unwrap().tokenize(
             statement.as_ref(),
             |token| {
-                crate::interpreter::parse_statements(
+                crate::interpreter::parsing::parse_statements(
                     &token.children,
                     &mut self.engine,
                     &mut self.scope,
