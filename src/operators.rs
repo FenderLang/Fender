@@ -1,8 +1,8 @@
 use crate::type_sys::{
     fender_reference::{internal_reference::InternalReference, FenderReference},
     fender_value::{fender_structs::FenderStruct, FenderValue},
-    type_id::FenderTypeId,
     freight_type_system::FenderTypeSystem,
+    type_id::FenderTypeId,
 };
 use freight_vm::{
     execution_engine::ExecutionEngine,

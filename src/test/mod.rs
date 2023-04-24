@@ -1,7 +1,7 @@
 use crate::{
     interpreter::create_engine_main,
     type_sys::{
-        fender_reference::{FenderReference, internal_reference::InternalReference},
+        fender_reference::{internal_reference::InternalReference, FenderReference},
         fender_value::FenderValue,
         type_id::FenderTypeId,
     },

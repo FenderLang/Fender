@@ -5,8 +5,8 @@ use crate::{
     operators::FenderInitializer,
     type_sys::{
         fender_value::{fender_structs::FenderStructType, FenderValue},
-        type_id::FenderTypeId,
         freight_type_system::FenderTypeSystem,
+        type_id::FenderTypeId,
     },
 };
 use flux_bnf::{
