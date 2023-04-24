@@ -6,7 +6,7 @@ use crate::{
     type_sys::{
         fender_value::{fender_structs::FenderStructType, FenderValue},
         type_id::FenderTypeId,
-        type_system::FenderTypeSystem,
+        freight_type_system::FenderTypeSystem,
     },
 };
 use flux_bnf::{

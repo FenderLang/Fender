@@ -1,6 +1,6 @@
 use super::LexicalScope;
 use crate::type_sys::{
-    fender_reference::FenderReference, fender_value::FenderValue, type_system::FenderTypeSystem,
+    fender_reference::FenderReference, fender_value::FenderValue, freight_type_system::FenderTypeSystem,
 };
 use freight_vm::{execution_engine::ExecutionEngine, function::ArgCount};
 use reedline::{DefaultValidator, Prompt, Reedline, Signal};

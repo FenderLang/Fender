@@ -2,8 +2,8 @@
 use crate::{
     dep_name, deps_enum,
     type_sys::{
-        fender_reference::FenderReference, fender_value::FenderValue, type_id::FenderTypeId,
-        type_system::FenderTypeSystem,
+        fender_reference::FenderReference, fender_value::FenderValue,
+        freight_type_system::FenderTypeSystem, type_id::FenderTypeId,
     },
 };
 
@@ -235,7 +235,7 @@ macro_rules! fndr_native_func {
         #[allow(unused)]
         pub fn $name(
             $ctx: &mut freight_vm::execution_engine::ExecutionEngine<
-                $crate::type_sys::type_system::FenderTypeSystem
+                $crate::type_sys::freight_type_system::FenderTypeSystem
             >,
             args: Vec<$crate::type_sys::fender_reference::FenderReference>,
         ) -> Result<$crate::type_sys::fender_reference::FenderReference, freight_vm::error::FreightError> {

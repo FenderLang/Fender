@@ -1,4 +1,4 @@
-use crate::type_sys::{fender_value::FenderValue, type_system::FenderTypeSystem};
+use crate::type_sys::{fender_value::FenderValue, freight_type_system::FenderTypeSystem};
 use freight_vm::{expression::NativeFunction, function::ArgCount};
 use libloading::{Library, Symbol};
 use std::error::Error;

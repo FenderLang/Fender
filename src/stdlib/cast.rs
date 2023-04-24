@@ -1,7 +1,7 @@
 use crate::{
     fndr_native_func, type_match,
     type_sys::{
-        fender_reference::InternalReference,
+        fender_reference::internal_reference::InternalReference,
         fender_value::FenderValue::{self, *},
     },
 };

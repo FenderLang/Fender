@@ -1,54 +1,14 @@
+use self::internal_reference::InternalReference;
 use crate::type_sys::{
-    fender_value::FenderValue, type_id::FenderTypeId, type_system::FenderTypeSystem,
+    fender_value::FenderValue, type_id::FenderTypeId, freight_type_system::FenderTypeSystem,
 };
-use freight_vm::{expression::Expression, function::FunctionRef, value::Value};
+use freight_vm::{function::FunctionRef, value::Value};
 use std::{
-    cell::UnsafeCell,
     fmt::Debug,
     ops::{Deref, DerefMut},
-    rc::Rc,
 };
 
-#[derive(Clone)]
-pub struct InternalReference<T>(Rc<UnsafeCell<T>>);
-
-impl<T: Debug> Debug for InternalReference<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "InternalReference({:?})", **self)
-    }
-}
-
-impl<T> InternalReference<T> {
-    pub fn new(value: T) -> Self {
-        Self(Rc::new(UnsafeCell::new(value)))
-    }
-}
-
-impl<T> Deref for InternalReference<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        unsafe { &*self.0.get() }
-    }
-}
-
-impl<T> DerefMut for InternalReference<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { self.0.get().as_mut().unwrap() }
-    }
-}
-
-impl<T: PartialEq> PartialEq for InternalReference<T> {
-    fn eq(&self, other: &Self) -> bool {
-        **self == **other
-    }
-}
-
-impl<T: PartialOrd> PartialOrd for InternalReference<T> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        (**self).partial_cmp(&**other)
-    }
-}
+pub mod internal_reference;
 
 #[derive(Debug)]
 pub enum FenderReference {
@@ -100,18 +60,6 @@ impl DerefMut for FenderReference {
 impl From<FenderValue> for FenderReference {
     fn from(value: FenderValue) -> Self {
         FenderReference::FRaw(value)
-    }
-}
-
-impl<T> From<T> for InternalReference<T> {
-    fn from(value: T) -> Self {
-        InternalReference::new(value)
-    }
-}
-
-impl From<FenderValue> for Expression<FenderTypeSystem> {
-    fn from(value: FenderValue) -> Self {
-        Expression::RawValue(value.into())
     }
 }
 

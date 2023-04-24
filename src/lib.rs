@@ -3,8 +3,8 @@ use freight_vm::TypeSystem;
 pub mod type_sys {
     pub mod fender_reference;
     pub mod fender_value;
+    pub mod freight_type_system;
     pub mod type_id;
-    pub mod type_system;
 }
 pub mod error;
 pub mod interpreter;

@@ -3,7 +3,7 @@ use crate::{
     operators::FenderBinaryOperator,
     operators::FenderInitializer,
     operators::FenderUnaryOperator,
-    type_sys::{fender_value::FenderValue, type_id::FenderTypeId, type_system::FenderTypeSystem},
+    type_sys::{fender_value::FenderValue, type_id::FenderTypeId, freight_type_system::FenderTypeSystem},
     unwrap_rust,
 };
 use flux_bnf::tokens::iterators::SelectTokens;

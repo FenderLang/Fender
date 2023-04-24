@@ -2,7 +2,7 @@ use crate::interpreter::CodePos;
 use crate::{
     error::{FenderError, FenderResult},
     type_sys::{
-        fender_reference::FenderReference, fender_value::FenderValue, type_system::FenderTypeSystem,
+        fender_reference::FenderReference, fender_value::FenderValue, freight_type_system::FenderTypeSystem,
     },
     unwrap_rust,
 };

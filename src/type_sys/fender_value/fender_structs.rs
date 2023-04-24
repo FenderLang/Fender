@@ -1,5 +1,5 @@
 use crate::type_sys::{
-    fender_reference::{FenderReference, InternalReference},
+    fender_reference::{internal_reference::InternalReference, FenderReference},
     type_id::FenderTypeId,
 };
 use std::{collections::HashMap, rc::Rc};

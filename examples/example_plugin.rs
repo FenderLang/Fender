@@ -3,7 +3,7 @@ use fender::{
     fender_value::FenderValue,
     fndr_native_func,
     plugin::{FenderPluginFunction, Plugin},
-    type_sys::type_system::FenderTypeSystem,
+    type_sys::freight_type_system::FenderTypeSystem,
 };
 use freight_vm::{expression::NativeFunction, function::ArgCount};
 use std::collections::HashMap;
