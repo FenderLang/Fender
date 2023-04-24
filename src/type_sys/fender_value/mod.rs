@@ -1,13 +1,15 @@
 use self::{fender_structs::FenderStruct, iterator::FenderIterator};
-use crate::{
+use crate::type_sys::{
     fender_reference::{FenderReference, InternalReference},
-    type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
+    type_id::FenderTypeId,
+    type_system::FenderTypeSystem,
 };
 use freight_vm::{
     error::FreightError, execution_engine::ExecutionEngine, function::FunctionRef, value::Value,
 };
 use rand::{seq::SliceRandom, thread_rng};
 use std::{collections::HashMap, hash::Hash, ops::Deref};
+
 pub mod fender_structs;
 pub mod iterator;
 

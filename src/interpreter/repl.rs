@@ -1,14 +1,10 @@
-use std::error::Error;
-
+use super::LexicalScope;
+use crate::type_sys::{
+    fender_reference::FenderReference, fender_value::FenderValue, type_system::FenderTypeSystem,
+};
 use freight_vm::{execution_engine::ExecutionEngine, function::ArgCount};
 use reedline::{DefaultValidator, Prompt, Reedline, Signal};
-
-use crate::{
-    fender_reference::FenderReference, fender_value::FenderValue,
-    type_sys::type_system::FenderTypeSystem,
-};
-
-use super::LexicalScope;
+use std::error::Error;
 
 pub struct FenderRepl<'a> {
     engine: ExecutionEngine<FenderTypeSystem>,

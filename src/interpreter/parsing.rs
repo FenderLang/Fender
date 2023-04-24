@@ -1,10 +1,9 @@
 use crate::{
     error::{code_pos::CodePos, FenderError, FenderResult},
-    fender_value::FenderValue,
     operators::FenderBinaryOperator,
     operators::FenderInitializer,
     operators::FenderUnaryOperator,
-    type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
+    type_sys::{fender_value::FenderValue, type_id::FenderTypeId, type_system::FenderTypeSystem},
     unwrap_rust,
 };
 use flux_bnf::tokens::iterators::SelectTokens;

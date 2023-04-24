@@ -1,8 +1,10 @@
 use crate::{
-    fender_reference::{FenderReference, InternalReference},
-    fender_value::FenderValue,
     interpreter::create_engine_main,
-    type_sys::type_id::FenderTypeId,
+    type_sys::{
+        fender_reference::{FenderReference, InternalReference},
+        fender_value::FenderValue,
+        type_id::FenderTypeId,
+    },
 };
 use freight_vm::error::FreightError;
 

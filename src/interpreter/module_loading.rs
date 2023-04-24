@@ -1,19 +1,17 @@
-use std::path::PathBuf;
-
+use crate::interpreter::CodePos;
+use crate::{
+    error::{FenderError, FenderResult},
+    type_sys::{
+        fender_reference::FenderReference, fender_value::FenderValue, type_system::FenderTypeSystem,
+    },
+    unwrap_rust,
+};
 use flux_bnf::tokens::Token;
 use freight_vm::expression::Expression;
 use freight_vm::function::FunctionRef;
 use freight_vm::value::Value;
 use freight_vm::{execution_engine::ExecutionEngine, function::ArgCount};
-
-use crate::fender_reference::FenderReference;
-use crate::fender_value::FenderValue;
-use crate::interpreter::CodePos;
-use crate::{
-    error::{FenderError, FenderResult},
-    type_sys::type_system::FenderTypeSystem,
-    unwrap_rust,
-};
+use std::path::PathBuf;
 
 use super::error::InterpreterError;
 use super::parsing::parse_statements;

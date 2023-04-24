@@ -1,6 +1,6 @@
 use crate::{
-    fender_value::FenderValue::{self, *},
     fndr_native_func, type_match,
+    type_sys::fender_value::FenderValue::{self, *},
 };
 
 fndr_native_func!(

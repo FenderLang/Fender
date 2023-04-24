@@ -1,9 +1,8 @@
-use std::{collections::HashMap, path::PathBuf, rc::Rc};
-
-use super::type_id::FenderTypeId;
+use super::{
+    fender_reference::FenderReference, fender_value::fender_structs::FenderStructType,
+    type_id::FenderTypeId,
+};
 use crate::{
-    fender_reference::FenderReference,
-    fender_value::fender_structs::FenderStructType,
     operators::FenderBinaryOperator,
     operators::FenderInitializer,
     operators::FenderUnaryOperator,
@@ -11,6 +10,7 @@ use crate::{
     stdlib::{loader::DependencyList, FenderResource, STDLIB_SIZE},
 };
 use freight_vm::TypeSystem;
+use std::{collections::HashMap, path::PathBuf, rc::Rc};
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct FenderTypeSystem;

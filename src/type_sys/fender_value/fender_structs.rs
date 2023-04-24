@@ -1,6 +1,6 @@
-use crate::{
+use crate::type_sys::{
     fender_reference::{FenderReference, InternalReference},
-    type_sys::type_id::FenderTypeId,
+    type_id::FenderTypeId,
 };
 use std::{collections::HashMap, rc::Rc};
 

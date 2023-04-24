@@ -1,9 +1,10 @@
 #![deny(missing_docs)]
 use crate::{
     dep_name, deps_enum,
-    fender_reference::FenderReference,
-    fender_value::FenderValue,
-    type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
+    type_sys::{
+        fender_reference::FenderReference, fender_value::FenderValue, type_id::FenderTypeId,
+        type_system::FenderTypeSystem,
+    },
 };
 
 use freight_vm::{
@@ -208,7 +209,7 @@ macro_rules! type_match {
     }) => {
         match ($($arg.unwrap_value()),*) {
             $(( $($ty $( ( $($param),* ) )?),* ) => $branch),* ,
-            _ => return Ok($crate::fender_reference::FenderReference::FRaw(FenderValue::make_error(format!("Invalid argument types {}; expected {}",
+            _ => return Ok($crate::type_sys::fender_reference::FenderReference::FRaw(FenderValue::make_error(format!("Invalid argument types {}; expected {}",
             format!("({})", [$($arg),*].into_iter().map(|a| a.get_real_type_id().to_string()).collect::<Vec<_>>().join(", ")),
             [
                 $( format!("({})", [$(stringify!($ty)),*].join(", ")) ),*
@@ -236,11 +237,11 @@ macro_rules! fndr_native_func {
             $ctx: &mut freight_vm::execution_engine::ExecutionEngine<
                 $crate::type_sys::type_system::FenderTypeSystem
             >,
-            args: Vec<$crate::fender_reference::FenderReference>,
-        ) -> Result<$crate::fender_reference::FenderReference, freight_vm::error::FreightError> {
+            args: Vec<$crate::type_sys::fender_reference::FenderReference>,
+        ) -> Result<$crate::type_sys::fender_reference::FenderReference, freight_vm::error::FreightError> {
             const _ARG_COUNT: usize = $crate::count!($($($arg),*)?);
             $(
-                    let [$($arg),*]: [$crate::fender_reference::FenderReference; _ARG_COUNT]  = args.try_into().unwrap();
+                    let [$($arg),*]: [$crate::type_sys::fender_reference::FenderReference; _ARG_COUNT]  = args.try_into().unwrap();
                     )?
             $body
         }

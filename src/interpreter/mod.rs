@@ -1,10 +1,13 @@
 use self::{error::InterpreterError, lexical_scope::LexicalScope, parsing::parse_main_function};
 use crate::{
     error::{code_pos::CodePos, parent_type::ParentErrorType, FenderError, FenderResult},
-    fender_value::{fender_structs::FenderStructType, FenderValue},
     lazy_cell::LazyCell,
     operators::FenderInitializer,
-    type_sys::{type_id::FenderTypeId, type_system::FenderTypeSystem},
+    type_sys::{
+        fender_value::{fender_structs::FenderStructType, FenderValue},
+        type_id::FenderTypeId,
+        type_system::FenderTypeSystem,
+    },
 };
 use flux_bnf::{
     lexer::{CullStrategy, Lexer},
