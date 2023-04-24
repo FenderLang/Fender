@@ -16,7 +16,8 @@ use crate::{
 };
 
 use super::error::InterpreterError;
-use super::{parse_statements, register_struct, register_var, LexicalScope, RegisterVarType};
+use super::parsing::parse_statements;
+use super::{register_struct, register_var, LexicalScope, RegisterVarType};
 
 pub(crate) fn parse_module(
     statements: &[Token],
