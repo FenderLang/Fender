@@ -1,16 +1,17 @@
-use std::{collections::HashMap, path::PathBuf, rc::Rc};
-
-use super::type_id::FenderTypeId;
+use super::{
+    fender_reference::FenderReference, fender_value::fender_structs::FenderStructType,
+    type_id::FenderTypeId,
+};
 use crate::{
-    fender_reference::FenderReference,
-    fender_value::fender_structs::FenderStructType,
+    fender_value::FenderValue,
     operators::FenderBinaryOperator,
     operators::FenderInitializer,
     operators::FenderUnaryOperator,
     plugin::PluginManager,
     stdlib::{loader::DependencyList, FenderResource, STDLIB_SIZE},
 };
-use freight_vm::TypeSystem;
+use freight_vm::{expression::Expression, TypeSystem};
+use std::{collections::HashMap, path::PathBuf, rc::Rc};
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct FenderTypeSystem;
@@ -22,6 +23,12 @@ impl TypeSystem for FenderTypeSystem {
     type TypeId = FenderTypeId;
     type Init = FenderInitializer;
     type GlobalContext = FenderGlobalContext;
+}
+
+impl From<FenderValue> for Expression<FenderTypeSystem> {
+    fn from(value: FenderValue) -> Self {
+        Expression::RawValue(value.into())
+    }
 }
 
 #[derive(Default, Debug)]

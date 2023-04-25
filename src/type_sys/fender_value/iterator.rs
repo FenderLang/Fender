@@ -3,8 +3,10 @@ use std::cell::RefCell;
 use std::fmt::Debug;
 use std::rc::Rc;
 
-use crate::fender_value::FenderValue;
-use crate::{fender_reference::FenderReference, type_sys::type_system::FenderTypeSystem};
+use crate::type_sys::{
+    fender_reference::FenderReference, fender_value::FenderValue,
+    freight_type_system::FenderTypeSystem,
+};
 
 pub type NativeClosure =
     Rc<dyn Fn(&mut ExecutionEngine<FenderTypeSystem>) -> Result<FenderReference, FreightError>>;

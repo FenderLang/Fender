@@ -1,4 +1,4 @@
-use crate::type_sys::type_system::FenderTypeSystem;
+use crate::type_sys::freight_type_system::FenderTypeSystem;
 use freight_vm::execution_engine::ExecutionEngine;
 
 #[macro_export]

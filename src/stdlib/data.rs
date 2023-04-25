@@ -1,11 +1,14 @@
-use std::{cell::RefCell, ops::Deref, rc::Rc};
-
-use freight_vm::{operators::BinaryOperator, value::Value};
-
 use crate::{
-    fender_reference::FenderReference, fender_value::iterator::FenderIterator,
-    fender_value::FenderValue, fndr_native_func, operators::FenderBinaryOperator, type_match,
+    fndr_native_func,
+    operators::FenderBinaryOperator,
+    type_match,
+    type_sys::{
+        fender_reference::FenderReference,
+        fender_value::{iterator::FenderIterator, FenderValue},
+    },
 };
+use freight_vm::{operators::BinaryOperator, value::Value};
+use std::{cell::RefCell, ops::Deref, rc::Rc};
 
 macro_rules! expect_iterable {
     ($var_name:ident => $iter_name:ident) => {
