@@ -95,11 +95,7 @@ impl<'a> FenderRepl<'a> {
         let exprs = exprs?;
         exprs
             .into_iter()
-            .map(|expr| {
-                self.engine
-                    .evaluate(&expr, &mut [], &[])
-                    .map_err(Into::into)
-            })
+            .map(|expr| self.engine.evaluate(&expr).map_err(Into::into))
             .collect()
     }
 

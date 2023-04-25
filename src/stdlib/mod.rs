@@ -8,7 +8,7 @@ use crate::{
 
 use freight_vm::{
     error::FreightError,
-    execution_engine::ExecutionEngine,
+    execution_engine::{ExecutionEngine, Stack},
     expression::{Expression, NativeFunction},
     function::{ArgCount, FunctionRef},
 };
@@ -60,7 +60,7 @@ fn range<RB: RangeBounds<usize>>(args: RB) -> ArgCount {
 struct FenderNativeFunction {
     func: fn(
         &mut ExecutionEngine<FenderTypeSystem>,
-        Vec<FenderReference>,
+        Stack<FenderReference>,
     ) -> Result<FenderReference, FreightError>,
     args: ArgCount,
 }
@@ -70,11 +70,10 @@ impl StdlibResource for FenderNativeFunction {
         let global = engine.create_global();
         let func = FunctionRef::new_native(global, NativeFunction::new(self.func), self.args);
         engine
-            .evaluate(
-                &Expression::AssignGlobal(global, Box::new(FenderValue::Function(func).into())),
-                &mut [],
-                &[],
-            )
+            .evaluate(&Expression::AssignGlobal(
+                global,
+                Box::new(FenderValue::Function(func).into()),
+            ))
             .expect("Assigning value should never fail");
         global
     }
@@ -88,14 +87,10 @@ impl StdlibResource for FenderNativeTypeValue {
     fn load_into<const N: usize>(&self, engine: &mut ExecutionEngine<FenderTypeSystem>) -> usize {
         let global = engine.create_global();
         engine
-            .evaluate(
-                &Expression::AssignGlobal(
-                    global,
-                    Box::new(FenderValue::Type(self.type_id.clone()).into()),
-                ),
-                &mut [],
-                &[],
-            )
+            .evaluate(&Expression::AssignGlobal(
+                global,
+                Box::new(FenderValue::Type(self.type_id.clone()).into()),
+            ))
             .expect("Assigning value should never fail");
         global
     }
@@ -236,11 +231,11 @@ macro_rules! fndr_native_func {
             $ctx: &mut freight_vm::execution_engine::ExecutionEngine<
                 $crate::type_sys::type_system::FenderTypeSystem
             >,
-            args: Vec<$crate::fender_reference::FenderReference>,
+            args: freight_vm::execution_engine::Stack<$crate::fender_reference::FenderReference>,
         ) -> Result<$crate::fender_reference::FenderReference, freight_vm::error::FreightError> {
             const _ARG_COUNT: usize = $crate::count!($($($arg),*)?);
             $(
-                    let [$($arg),*]: [$crate::fender_reference::FenderReference; _ARG_COUNT]  = args.try_into().unwrap();
+                    let [$($arg),*]: [$crate::fender_reference::FenderReference; _ARG_COUNT] = args.try_into().unwrap();
                     )?
             $body
         }
