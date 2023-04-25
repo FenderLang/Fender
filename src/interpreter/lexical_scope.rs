@@ -8,7 +8,7 @@ use freight_vm::{
 
 use crate::{
     stdlib::{self, STDLIB_SIZE},
-    type_sys::type_system::FenderTypeSystem,
+    type_sys::freight_type_system::FenderTypeSystem,
 };
 
 use super::{error::InterpreterError, Exports};

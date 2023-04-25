@@ -1,7 +1,9 @@
 #[cfg(feature = "repl")]
 use fender::interpreter::repl::FenderRepl;
-use fender::{fender_reference::FenderReference, fender_value::FenderValue, interpreter};
-
+use fender::{
+    interpreter,
+    type_sys::{fender_reference::FenderReference, fender_value::FenderValue},
+};
 use std::{fs, path::Path, process::exit};
 
 fn main() {

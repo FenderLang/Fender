@@ -1,7 +1,9 @@
 use crate::{
-    fender_reference::InternalReference,
-    fender_value::FenderValue::{self, *},
     fndr_native_func, type_match,
+    type_sys::{
+        fender_reference::internal_reference::InternalReference,
+        fender_value::FenderValue::{self, *},
+    },
 };
 use std::ops::Deref;
 
