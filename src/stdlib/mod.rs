@@ -232,7 +232,7 @@ macro_rules! fndr_native_func {
             $ctx: &mut freight_vm::execution_engine::ExecutionEngine<
                 $crate::type_sys::freight_type_system::FenderTypeSystem
             >,
-            args: Stack<$crate::type_sys::fender_reference::FenderReference>,
+            args: freight_vm::execution_engine::Stack<$crate::type_sys::fender_reference::FenderReference>,
         ) -> Result<$crate::type_sys::fender_reference::FenderReference, freight_vm::error::FreightError> {
             const _ARG_COUNT: usize = $crate::count!($($($arg),*)?);
             $(
