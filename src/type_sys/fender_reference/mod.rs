@@ -78,7 +78,7 @@ impl Clone for FenderReference {
 impl Value for FenderReference {
     type TS = FenderTypeSystem;
 
-    fn get_type(&self) -> &<Self::TS as crate::TypeSystem>::TypeId {
+    fn get_type(&self) -> &<Self::TS as freight_vm::TypeSystem>::TypeId {
         let val = self.deref();
         match val {
             FenderValue::Int(_) => &FenderTypeId::Int,

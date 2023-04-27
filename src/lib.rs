@@ -1,4 +1,4 @@
-use freight_vm::TypeSystem;
+pub use freight_vm;
 
 pub mod type_sys {
     pub mod fender_reference;
