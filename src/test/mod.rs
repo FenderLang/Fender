@@ -662,6 +662,11 @@ mod plugin {
         let res = run(r#"@plugin src/test/libexample_plugin.so
         example2()
         "#);
-        assert_eq!(*res, FenderValue::make_string("this is function example 2 function, or in rust `other_name_for_func`".into()))
+        assert_eq!(
+            *res,
+            FenderValue::make_string(
+                "this is function example 2 function, or in rust `other_name_for_func`".into()
+            )
+        )
     }
 }
