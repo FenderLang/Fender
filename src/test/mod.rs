@@ -640,28 +640,28 @@ mod stdlib {
 }
 
 mod plugin {
-    // use super::*;
+    use super::*;
 
-    // #[test]
-    // fn list_value() {
-    //     let res = run(r#"@plugin src/test/libexample_plugin.so
-    //     name_list
-    //     "#);
-    //     assert_eq!(
-    //         *res,
-    //         FenderValue::make_list(vec![
-    //             FenderValue::make_string("FuzzyNovaGoblin".into()).into(),
-    //             FenderValue::make_string("Redempt".into()).into(),
-    //             FenderValue::make_string("GigaRyno".into()).into(),
-    //         ])
-    //     )
-    // }
+    #[test]
+    fn list_value() {
+        let res = run(r#"@plugin src/test/libexample_plugin.so
+        nameList
+        "#);
+        assert_eq!(
+            *res,
+            FenderValue::make_list(vec![
+                FenderValue::make_string("FuzzyNovaGoblin".into()).into(),
+                FenderValue::make_string("Redempt".into()).into(),
+                FenderValue::make_string("GigaRyno".into()).into(),
+            ])
+        )
+    }
 
-    // #[test]
-    // fn example_func() {
-    //     let res = run(r#"@plugin src/test/libexample_plugin.so
-    //     example2()
-    //     "#);
-    //     assert_eq!(*res, FenderValue::make_string("this is func 2".into()))
-    // }
+    #[test]
+    fn example_func() {
+        let res = run(r#"@plugin src/test/libexample_plugin.so
+        example2()
+        "#);
+        assert_eq!(*res, FenderValue::make_string("this is function example 2 function, or in rust `other_name_for_func`".into()))
+    }
 }
