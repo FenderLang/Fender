@@ -31,7 +31,7 @@ pub(crate) fn parse_module(
         &mut scope,
         super::RegisterVarType::ScopedGlobal(None),
     )? {
-        unwrap_rust!(engine.evaluate(&statement, &mut [], &[]))?;
+        unwrap_rust!(engine.evaluate(&statement))?;
     }
     let fields = match &mut scope.exports {
         super::Exports::None => vec![],
@@ -51,13 +51,12 @@ pub(crate) fn parse_module(
         super::RegisterVarType::ScopedGlobal(None),
         pos,
     )?;
-    unwrap_rust!(engine.evaluate(&register_expr, &mut [], &[]))?;
+    unwrap_rust!(engine.evaluate(&register_expr))?;
     let struct_pos = scope.variables.borrow()[&mod_name].clone();
-    unwrap_rust!(engine.evaluate(
-        &Expression::DynamicFunctionCall(Expression::Variable(struct_pos).into(), field_locs),
-        &mut [],
-        &[],
-    ))
+    unwrap_rust!(engine.evaluate(&Expression::DynamicFunctionCall(
+        Expression::Variable(struct_pos).into(),
+        field_locs
+    ),))
 }
 
 enum ImportTarget {
@@ -129,7 +128,7 @@ pub(crate) fn parse_import(
         .canonicalize()
         .unwrap_or_else(|_| panic!("Invalid file path {:?}", path));
     let module = if let Some(loc) = engine.context.imports.get(&path) {
-        unwrap_rust!(engine.evaluate(&Expression::global(*loc), &mut [], &[]))?
+        unwrap_rust!(engine.evaluate(&Expression::global(*loc)))?
     } else {
         let contents = unwrap_rust!(std::fs::read_to_string(&path))?;
         let lexer = crate::interpreter::LEXER.get();
@@ -242,7 +241,7 @@ fn import_targets(
         }
     }
     for expr in exprs {
-        unwrap_rust!(engine.evaluate(&expr, &mut [], &[]))?;
+        unwrap_rust!(engine.evaluate(&expr))?;
     }
     Ok(())
 }
@@ -312,7 +311,7 @@ pub(crate) fn parse_plugin(
         }
     };
     for expr in exprs {
-        unwrap_rust!(engine.evaluate(&expr, &mut [], &[]))?;
+        unwrap_rust!(engine.evaluate(&expr))?;
     }
     Ok(())
 }

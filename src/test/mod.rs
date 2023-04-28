@@ -645,7 +645,7 @@ mod plugin {
     #[test]
     fn list_value() {
         let res = run(r#"@plugin src/test/libexample_plugin.so
-        name_list
+        nameList
         "#);
         assert_eq!(
             *res,
@@ -662,6 +662,11 @@ mod plugin {
         let res = run(r#"@plugin src/test/libexample_plugin.so
         example2()
         "#);
-        assert_eq!(*res, FenderValue::make_string("this is func 2".into()))
+        assert_eq!(
+            *res,
+            FenderValue::make_string(
+                "this is function example 2 function, or in rust `other_name_for_func`".into()
+            )
+        )
     }
 }

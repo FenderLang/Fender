@@ -103,7 +103,7 @@ pub(crate) fn parse_closure(
             let arg_count = match (optional_args.len(), &varg_name) {
                 (op_arg_count, Some(_)) => ArgCount::Variadic {
                     min: args.len(),
-                    max: op_arg_count + op_arg_count,
+                    max: args.len() + op_arg_count,
                 },
                 (op_arg_count, None) if op_arg_count > 0 => ArgCount::Range {
                     min: args.len(),
