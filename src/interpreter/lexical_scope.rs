@@ -68,7 +68,7 @@ impl<'a> LexicalScope<'a> {
         ) {
             return Err(InterpreterError::DuplicateName(name.to_string(), pos));
         }
-        variables.insert(name, VariableType::Stack(self.num_stack_vars).into());
+        variables.insert(name, VariableType::Stack(self.num_stack_vars));
         self.num_stack_vars += 1;
         Ok(self.num_stack_vars - 1)
     }
@@ -126,9 +126,8 @@ impl<'a> LexicalScope<'a> {
         let mut cur = self;
         let var = loop {
             let variables = cur.variables.borrow();
-            match variables.get(name) {
-                Some(VariableType::Stack(v)) => break *v,
-                _ => {}
+            if let Some(VariableType::Stack(v)) = variables.get(name) {
+                break *v;
             };
             match &cur.parent {
                 Some(parent) => cur = parent,

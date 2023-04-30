@@ -122,7 +122,7 @@ pub(crate) fn parse_closure(
                 new_scope
                     .variables
                     .borrow_mut()
-                    .insert(arg, VariableType::Stack(index).into());
+                    .insert(arg, VariableType::Stack(index));
             }
             parse_code_body(code_body, engine, &mut new_scope)
         }
