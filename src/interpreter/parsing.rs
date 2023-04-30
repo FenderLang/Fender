@@ -291,15 +291,21 @@ pub(crate) fn parse_assignment(
         .next()
         .map(|t| parse_binary_operator(&t.get_match()));
     let target_expr = parse_expr(target, engine, scope)?;
-    if let Expression::Variable(_) = target_expr {
-        scope.mark_mutable(
-            &target
-                .rec_iter()
-                .select_token("name")
-                .next()
-                .expect("Left-hand assignment expression did not have a name to mark as mutable")
-                .get_match(),
-        );
+    if let Expression::Variable(v) = &target_expr {
+        if let VariableType::Stack(s) = v {
+            scope.stack_layout.borrow_mut().set_alloc(*s);
+        } else {
+            scope.mark_mutable(
+                &target
+                    .rec_iter()
+                    .select_token("name")
+                    .next()
+                    .expect(
+                        "Left-hand assignment expression did not have a name to mark as mutable",
+                    )
+                    .get_match(),
+            );
+        }
     }
     let value = parse_expr(value, engine, scope)?;
     Ok(if let Some(op) = op {
