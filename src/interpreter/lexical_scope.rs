@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use freight_vm::{
     execution_engine::ExecutionEngine,
     expression::VariableType,
-    function::{ArgCount, FunctionWriter},
+    function::{ArgCount, FunctionWriter, StackLayout},
 };
 
 use crate::{
@@ -19,6 +19,7 @@ pub struct LexicalScope<'a> {
     pub(crate) args: ArgCount,
     pub(crate) captures: RefCell<Vec<VariableType>>,
     pub(crate) variables: RefCell<HashMap<String, VariableType>>,
+    pub(crate) stack_layout: RefCell<StackLayout>,
     pub(crate) parent: Option<&'a LexicalScope<'a>>,
     pub(crate) return_target: usize,
     pub(crate) num_stack_vars: usize,
@@ -36,6 +37,7 @@ impl<'a> LexicalScope<'a> {
             num_stack_vars: args.stack_size(),
             args,
             exports: Exports::None,
+            stack_layout: StackLayout::no_alloc().into(),
         }
     }
 
@@ -49,6 +51,7 @@ impl<'a> LexicalScope<'a> {
             return_target,
             num_stack_vars: args.stack_size(),
             exports: Exports::None,
+            stack_layout: StackLayout::no_alloc().into(),
         }
     }
 
@@ -65,7 +68,7 @@ impl<'a> LexicalScope<'a> {
         ) {
             return Err(InterpreterError::DuplicateName(name.to_string(), pos));
         }
-        variables.insert(name, VariableType::Stack(self.num_stack_vars));
+        variables.insert(name, VariableType::Stack(self.num_stack_vars).into());
         self.num_stack_vars += 1;
         Ok(self.num_stack_vars - 1)
     }
@@ -117,6 +120,22 @@ impl<'a> LexicalScope<'a> {
             scope.capture(name, src_pos)?;
         }
         Ok(self.variables.borrow()[name].clone())
+    }
+
+    pub fn mark_mutable(&self, name: &str) {
+        let mut cur = self;
+        let var = loop {
+            let variables = cur.variables.borrow();
+            match variables.get(name) {
+                Some(VariableType::Stack(v)) => break *v,
+                _ => {}
+            };
+            match &cur.parent {
+                Some(parent) => cur = parent,
+                None => return,
+            }
+        };
+        cur.stack_layout.borrow_mut().set_alloc(var);
     }
 
     pub fn top_level_return(&self) -> usize {

@@ -147,7 +147,7 @@ pub(crate) fn register_var(
             scope
                 .variables
                 .borrow_mut()
-                .insert(name, VariableType::Global(global));
+                .insert(name, VariableType::Global(global).into());
             let expr = expr(engine, scope)?;
             Expression::AssignGlobal(global, expr.into())
         }

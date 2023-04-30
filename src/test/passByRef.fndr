@@ -20,8 +20,11 @@ $each = (list, func) {
 
 $map = (list, func) {
     $i = 0
+    list.println()
     while({i < list.len()}, {
-        list[i] = func(list[i])
+        list[i].func().type().println()
+        list[i] = list[i].func()
+        list.println()
         i = i + 1
     })
     list

@@ -110,7 +110,7 @@ impl Value for FenderReference {
     fn dupe_ref(&self) -> FenderReference {
         match self {
             FenderReference::FRef(internal_ref) => FenderReference::FRef(internal_ref.clone()),
-            FenderReference::FRaw(_) => self.deep_clone(),
+            FenderReference::FRaw(_) => self.clone(),
         }
     }
 
