@@ -134,7 +134,7 @@ impl Value for FenderReference {
 
     fn into_ref(self) -> Self {
         match self {
-            FenderReference::FRef(_) => self,
+            FenderReference::FRef(_) => FenderReference::FRef(self.deref().clone().into()),
             FenderReference::FRaw(v) => FenderReference::FRef(InternalReference::new(v)),
         }
     }
