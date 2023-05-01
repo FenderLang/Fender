@@ -208,7 +208,7 @@ dependencies = [
 [[package]]
 name = "freight_vm"
 version = "0.1.0"
-source = "git+https://github.com/FenderLang/Freight?rev=a173b44720d215ddd017b854ee5554e9e2c9beae#a173b44720d215ddd017b854ee5554e9e2c9beae"
+source = "git+https://github.com/FenderLang/Freight?rev=21159481ec8df27b643499ace41c5e4a1dbafe65#21159481ec8df27b643499ace41c5e4a1dbafe65"
 
 [[package]]
 name = "getrandom"
