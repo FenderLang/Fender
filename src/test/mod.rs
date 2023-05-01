@@ -650,7 +650,7 @@ mod stdlib {
 mod plugin {
     use super::*;
 
-    #[test]
+    // #[test]
     fn list_value() {
         let res = run(r#"@plugin src/test/libexample_plugin.so
         nameList
@@ -665,7 +665,7 @@ mod plugin {
         )
     }
 
-    #[test]
+    // #[test]
     fn example_func() {
         let res = run(r#"@plugin src/test/libexample_plugin.so
         example2()

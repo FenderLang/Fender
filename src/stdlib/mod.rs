@@ -236,7 +236,8 @@ macro_rules! fndr_native_func {
         ) -> Result<$crate::type_sys::fender_reference::FenderReference, freight_vm::error::FreightError> {
             const _ARG_COUNT: usize = $crate::count!($($($arg),*)?);
             $(
-                    let [$($arg),*]: [$crate::type_sys::fender_reference::FenderReference; _ARG_COUNT]  = args.try_into().unwrap();
+                    let [$($arg),*]: [$crate::type_sys::fender_reference::FenderReference; _ARG_COUNT]  = std::array::from_fn(|i| std::mem::take(&mut args[i]));
+
                     )?
             $body
         }
