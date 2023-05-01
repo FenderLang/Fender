@@ -16,7 +16,7 @@ fndr_native_func!(
             }
         );
 
-        Ok(match FenderTypeId::type_from_str(&value_str) {
+        Ok(match FenderTypeId::type_from_str(&value_str.to_string()) {
             Some(t) => Type(t),
             None => {
                 FenderValue::make_error(format!("No type found matching name `{}`", *value_str))

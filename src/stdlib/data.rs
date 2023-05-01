@@ -1,4 +1,5 @@
 use crate::{
+    fender_value::fender_strings::FenderString,
     fndr_native_func,
     operators::FenderBinaryOperator,
     type_match,
@@ -8,7 +9,7 @@ use crate::{
     },
 };
 use freight_vm::{operators::BinaryOperator, value::Value};
-use std::{cell::RefCell, ops::Deref, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 macro_rules! expect_iterable {
     ($var_name:ident => $iter_name:ident) => {
@@ -209,11 +210,11 @@ fndr_native_func!(
         use FenderValue::*;
         expect_iterable!(list => iter);
         let delim = type_match!(delim {
-            (String(s)) => s.deref().clone(),
+            (String(s)) => s.to_string(),
             (Char(c)) => c.to_string(),
             (Null) => "".to_string()
         });
-        let mut buf = std::string::String::new();
+        let mut buf = FenderString::new(Vec::new());
         let mut first = true;
         while *(iter.has_next)(ctx)? == Bool(true) {
             if !first {
@@ -222,8 +223,8 @@ fndr_native_func!(
             first = false;
             let elem = (iter.next)(ctx)?;
             match &*elem {
-                String(s) => buf.push_str(s),
-                Char(c) => buf.push(*c),
+                String(s) => buf.push_fndr_str(s),
+                Char(c) => buf.push_char(*c),
                 _ => buf.push_str(&elem.to_string()),
             }
         }
@@ -274,14 +275,14 @@ fndr_native_func!(
         use FenderValue::*;
         type_match!(str, delim {
             (String(str), String(delim)) => {
-                let list = str
-                    .split(&**delim)
+                let list = str.to_string()
+                    .split(&delim.to_string())
                     .map(|v| FenderValue::make_string(v.to_string()).into())
                     .collect();
                 Ok(FenderValue::make_list(list).into())
             },
             (String(str), Char(c)) => {
-                let list = str
+                let list = str.to_string()
                     .split(c)
                     .map(|v| FenderValue::make_string(v.to_string()).into())
                     .collect();

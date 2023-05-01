@@ -1,6 +1,9 @@
 use crate::{
     fndr_native_func, type_match,
-    type_sys::fender_value::FenderValue::{self, *},
+    type_sys::{
+        fender_value::FenderValue::{self, *},
+        type_id::FenderTypeId,
+    },
 };
 use std::{ops::Deref, process::Command};
 
@@ -11,7 +14,7 @@ fndr_native_func!(
     pwd_func,
     |_| {
         Ok(match std::env::current_dir() {
-            Ok(path) => FenderValue::make_string(path.to_string_lossy().into()).into(),
+            Ok(path) => FenderValue::make_string(path.to_string_lossy()).into(),
             Err(e) => FenderValue::make_error(format!("failed to get current path: {}", e)).into(),
         })
     }
@@ -64,18 +67,25 @@ fndr_native_func!(
         #[cfg(not(target_os = "windows"))]
         const DEFAULT_SHELL: &str = "sh -c";
 
-        let (mut shell, cmd) = match (&*cmd_name, &*shell_path) {
-            (String(name), String(shell)) => (
+        let shell_path = type_match!(
+            shell_path {
+                String(v) => Some(v.to_string()),
+                Null => None
+            }
+        );
+
+        let (mut shell, cmd) = match (&*cmd_name, &shell_path) {
+            (String(name), Some(shell)) => (
                 shell.split(' '),
                 format!("{} {}", name.deref(), cmd.to_string()),
             ),
-            (String(name), Null) => (
+            (String(name), None) => (
                 DEFAULT_SHELL.split(' '),
                 format!("{} {}", name.deref(), cmd.to_string()),
             ),
-            (Null, Null) => (DEFAULT_SHELL.split(' '), cmd.to_string()),
+            (Null, None) => (DEFAULT_SHELL.split(' '), cmd.to_string()),
             _ => {
-                return Ok(FenderValue::make_error(format!("unexpected arg types for shell command, expected `(Any, String?, String?)` found `({:?}, {:?}, {:?})", cmd.get_type_id(), cmd_name.get_type_id(), shell_path.get_type_id())).into());
+                return Ok(FenderValue::make_error(format!("unexpected arg types for shell command, expected `(Any, String?, String?)` found `({:?}, {:?}, {:?})", cmd.get_type_id(), cmd_name.get_type_id(), FenderTypeId::String)).into());
             }
         };
 
@@ -108,7 +118,7 @@ fndr_native_func!(
         };
 
         Ok(if result.status.success() {
-            String(output.into())
+            FenderValue::make_string(output)
         } else {
             Error(output)
         }

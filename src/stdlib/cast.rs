@@ -19,7 +19,7 @@ fndr_native_func!(
     |_, item| {
         Ok(type_match! (
             item {
-                String(s) => match s.parse() {
+                String(s) => match s.to_string().parse() {
                     Ok(i) => Int(i).into(),
                     _ => FenderValue::make_error(format!("Invalid int string: {}", s.deref())).into(),
                 },
@@ -38,7 +38,7 @@ fndr_native_func!(
     |_, item| {
         Ok(type_match!(
             item {
-                String(s) => match s.parse(){
+                String(s) => match s.to_string().parse(){
                     Ok(f) => Float(f).into(),
                     _ => FenderValue::make_error(format!("Invalid float string: {}", s.deref())).into()
                 },
@@ -54,7 +54,7 @@ fndr_native_func!(
 fndr_native_func!(
     /// Cast `FenderValue` to `FenderValue::String`
     str_func,
-    |_, item| { Ok(String(item.to_string().into()).into()) }
+    |_, item| { Ok(FenderValue::make_string(item.to_string()).into()) }
 );
 
 fndr_native_func!(

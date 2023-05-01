@@ -25,9 +25,9 @@ fn constructor() -> MyPlugin {
         ),
         example_2: (NativeFunction::new(other_name_for_func), ArgCount::Fixed(0)),
         name_list: FenderValue::make_list(vec![
-            FenderValue::make_string("FuzzyNovaGoblin".into()).into(),
-            FenderValue::make_string("Redempt".into()).into(),
-            FenderValue::make_string("GigaRyno".into()).into(),
+            FenderValue::make_string("FuzzyNovaGoblin").into(),
+            FenderValue::make_string("Redempt").into(),
+            FenderValue::make_string("GigaRyno").into(),
         ]),
     }
 }
@@ -67,7 +67,7 @@ fndr_native_func!(
     other_name_for_func,
     |_| {
         use fender::fender_value::FenderValue::*;
-        Ok(FenderValue::make_string("this is func 2".into()).into())
+        Ok(FenderValue::make_string("this is func 2").into())
     }
 );
 

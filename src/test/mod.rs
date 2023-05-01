@@ -24,7 +24,7 @@ fn simple_values() {
     assert_eq!(*run("1.0"), FenderValue::Float(1.0));
     assert_eq!(
         *run("\"Hello, world!\""),
-        FenderValue::String("Hello, world!".to_string().into())
+        FenderValue::make_string("Hello, world!".to_string())
     );
     assert_eq!(*run("true"), FenderValue::Bool(true));
     assert_eq!(*run("false"), FenderValue::Bool(false));
@@ -159,15 +159,15 @@ fn run_pass_by_reference_file() {
 fn format_strings() {
     assert_eq!(
         *run("$x = 4; \"x is equal to {x}\""),
-        FenderValue::String("x is equal to 4".to_string().into())
+        FenderValue::make_string("x is equal to 4".to_string())
     );
     assert_eq!(
         *run("$x = 4; \"one more than x is {x + 1}\""),
-        FenderValue::String("one more than x is 5".to_string().into())
+        FenderValue::make_string("one more than x is 5".to_string())
     );
     assert_eq!(
         *run("\"\\n\\r\""),
-        FenderValue::String("\n\r".to_string().into())
+        FenderValue::make_string("\n\r".to_string())
     );
 }
 
@@ -385,25 +385,19 @@ mod stdlib {
 
         #[test]
         fn int() {
-            assert_eq!(*run(r#"$x = "1"; x"#), FenderValue::make_string("1".into()));
+            assert_eq!(*run(r#"$x = "1"; x"#), FenderValue::make_string("1"));
             assert_eq!(*run(r#"$x = "1"; x.int()"#), FenderValue::Int(1));
         }
 
         #[test]
         fn str() {
             assert_eq!(*run("$x = 1; x"), FenderValue::Int(1));
-            assert_eq!(
-                *run("$x = 1; x.str()"),
-                FenderValue::make_string("1".into())
-            );
+            assert_eq!(*run("$x = 1; x.str()"), FenderValue::make_string("1"));
         }
 
         #[test]
         fn bool() {
-            assert_eq!(
-                *run(r#"$x = "true"; x"#),
-                FenderValue::make_string("true".into())
-            );
+            assert_eq!(*run(r#"$x = "true"; x"#), FenderValue::make_string("true"));
             assert_eq!(*run(r#"$x = "true"; x.bool()"#), FenderValue::Bool(true));
         }
 
@@ -411,7 +405,7 @@ mod stdlib {
         fn list() {
             assert_eq!(
                 *run(r#"$x = "hello, world!"; x"#),
-                FenderValue::make_string("hello, world!".into())
+                FenderValue::make_string("hello, world!")
             );
             assert_eq!(
                 *run(r#"$x = "hello, world!"; x.list()"#),
@@ -426,26 +420,25 @@ mod stdlib {
 
         #[test]
         fn join_str() {
-            use FenderValue as FV;
             assert_eq!(
                 *run(r#"$x = ["hello", " world!"]; x"#),
-                FV::make_list(vec![
-                    FenderReference::FRef(FV::make_string("hello".into()).into()),
-                    FenderReference::FRef(FV::make_string(" world!".into()).into())
+                FenderValue::make_list(vec![
+                    FenderReference::FRef(FenderValue::make_string("hello").into()),
+                    FenderReference::FRef(FenderValue::make_string(" world!").into())
                 ])
             );
 
             assert_eq!(
                 *run(r#"$x = ["hello", " world!"]; x"#),
-                FV::make_list(vec![
-                    FV::make_string("hello".into()).into(),
-                    FV::make_string(" world!".into()).into()
+                FenderValue::make_list(vec![
+                    FenderValue::make_string("hello").into(),
+                    FenderValue::make_string(" world!").into()
                 ])
             );
 
             assert_eq!(
                 *run(r#"$x = ["hello", " world!"]; x.join()"#),
-                FV::make_string("hello world!".into())
+                FenderValue::make_string("hello world!")
             );
         }
     }
@@ -457,7 +450,7 @@ mod stdlib {
         fn pwd() {
             assert_eq!(
                 *run("pwd()"),
-                FenderValue::make_string(std::env::current_dir().unwrap().to_string_lossy().into())
+                FenderValue::make_string(std::env::current_dir().unwrap().to_string_lossy())
             );
         }
 
@@ -466,7 +459,7 @@ mod stdlib {
             let pwd = std::env::current_dir().unwrap();
             assert_eq!(
                 *run(r#"pwd().println();cd(".."); pwd().println()"#),
-                FenderValue::make_string(pwd.parent().unwrap().to_string_lossy().into())
+                FenderValue::make_string(pwd.parent().unwrap().to_string_lossy())
             );
             std::env::set_current_dir(pwd).unwrap();
         }
@@ -475,17 +468,17 @@ mod stdlib {
         fn shell() {
             assert_eq!(
                 *run(r#"shell("echo hi")"#),
-                FenderValue::make_string("hi\n".into())
+                FenderValue::make_string("hi\n")
             );
 
             assert_eq!(
                 *run(r#" "hi".shell("echo")"#),
-                FenderValue::make_string("hi\n".into())
+                FenderValue::make_string("hi\n")
             );
 
             assert_eq!(
                 *run(r#" "hi".shell("echo", "bash -c")"#),
-                FenderValue::make_string("hi\n".into())
+                FenderValue::make_string("hi\n")
             );
         }
     }
@@ -603,10 +596,7 @@ mod stdlib {
         #[test]
         fn dbg() {
             assert_eq!(*run(r#"1"#), FenderValue::Int(1));
-            assert_eq!(
-                *run(r#"1.dbg()"#),
-                FenderValue::make_string("Int(1)".into())
-            );
+            assert_eq!(*run(r#"1.dbg()"#), FenderValue::make_string("Int(1)"));
         }
 
         #[test]
@@ -650,9 +640,9 @@ mod plugin {
         assert_eq!(
             *res,
             FenderValue::make_list(vec![
-                FenderValue::make_string("FuzzyNovaGoblin".into()).into(),
-                FenderValue::make_string("Redempt".into()).into(),
-                FenderValue::make_string("GigaRyno".into()).into(),
+                FenderValue::make_string("FuzzyNovaGoblin").into(),
+                FenderValue::make_string("Redempt").into(),
+                FenderValue::make_string("GigaRyno").into(),
             ])
         )
     }
@@ -665,7 +655,7 @@ mod plugin {
         assert_eq!(
             *res,
             FenderValue::make_string(
-                "this is function example 2 function, or in rust `other_name_for_func`".into()
+                "this is function example 2 function, or in rust `other_name_for_func`"
             )
         )
     }

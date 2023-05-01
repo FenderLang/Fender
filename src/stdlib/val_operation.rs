@@ -185,11 +185,11 @@ fndr_native_func!(
             (String(mut s), List(mut l)) => {
 
                 let char_list = l.iter().filter_map(|v| v.to_string().chars().next()).collect::<Vec<_>>();
-                *s = s.trim_matches(&char_list[..]).to_owned();
+                *s = s.to_string().trim_matches(&char_list[..]).into();
             },
-            (String(mut s), Char(c)) => *s = s.trim_matches(c).to_owned(),
-            (String(mut s), String(ignore_s)) => *s = s.trim_matches(&ignore_s.chars().collect::<Vec<_>>()[..]).to_owned(),
-            (String(mut s), Null) => *s = s.trim_matches(DEFAULT_TRIM_SET).to_owned()
+            (String(mut s), Char(c)) => *s = s.to_string().trim_matches(c).into(),
+            (String(mut s), String(ignore_s)) => *s = s.to_string().trim_matches(&ignore_s.chars()[..]).into(),
+            (String(mut s), Null) => *s = s.to_string().trim_matches(DEFAULT_TRIM_SET).into()
 
         });
 
@@ -207,11 +207,11 @@ fndr_native_func!(
             (String(s), List(mut l)) => {
 
                 let char_list = l.iter().filter_map(|v| v.to_string().chars().next()).collect::<Vec<_>>();
-                s.trim_matches(&char_list[..]).to_owned()
+                s.to_string().trim_matches(&char_list[..]).to_owned()
             },
-            (String(s), Char(c)) => s.trim_matches(c).to_owned(),
-            (String(s), String(ignore_s)) => s.trim_matches(&ignore_s.chars().collect::<Vec<_>>()[..]).to_owned(),
-            (String(s), Null) => s.trim_matches(DEFAULT_TRIM_SET).to_owned()
+            (String(s), Char(c)) => s.to_string().trim_matches(c).into(),
+            (String(s), String(ignore_s)) => s.to_string().trim_matches(&ignore_s.chars()[..]).to_owned(),
+            (String(s), Null) => s.to_string().trim_matches(DEFAULT_TRIM_SET).to_owned()
 
         });
 

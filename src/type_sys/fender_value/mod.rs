@@ -1,4 +1,4 @@
-use self::{fender_structs::FenderStruct, iterator::FenderIterator};
+use self::{fender_strings::FenderString, fender_structs::FenderStruct, iterator::FenderIterator};
 use crate::type_sys::{
     fender_reference::{internal_reference::InternalReference, FenderReference},
     freight_type_system::FenderTypeSystem,
@@ -10,6 +10,7 @@ use freight_vm::{
 use rand::{seq::SliceRandom, thread_rng};
 use std::{collections::HashMap, hash::Hash, ops::Deref};
 
+pub mod fender_strings;
 pub mod fender_structs;
 pub mod iterator;
 
@@ -19,7 +20,7 @@ pub enum FenderValue {
     Int(i64),
     Float(f64),
     Char(char),
-    String(InternalReference<String>),
+    String(InternalReference<FenderString>),
     Bool(bool),
     Error(String),
     Function(FunctionRef<FenderTypeSystem>),
@@ -39,8 +40,8 @@ impl FenderValue {
     pub fn make_list(list: Vec<FenderReference>) -> FenderValue {
         FenderValue::List(InternalReference::new(list))
     }
-    pub fn make_string(s_body: String) -> FenderValue {
-        FenderValue::String(InternalReference::new(s_body))
+    pub fn make_string<S: ToString>(s_body: S) -> FenderValue {
+        FenderValue::String(InternalReference::new(s_body.to_string().as_str().into()))
     }
 
     pub fn get_type_id(&self) -> FenderTypeId {
@@ -156,9 +157,9 @@ impl FenderValue {
             }
             FenderValue::String(s) => {
                 match &*value {
-                    FenderValue::String(s_b) => s.push_str(s_b),
-                    FenderValue::Char(c) => s.push(*c),
-                    value => s.push_str(value.to_string().as_str()),
+                    FenderValue::String(s_b) => s.push_fndr_str(s_b),
+                    FenderValue::Char(c) => s.push_char(*c),
+                    value => s.push_str(&value.to_string()),
                 };
                 Ok(())
             }
@@ -175,7 +176,7 @@ impl FenderValue {
             FenderValue::List(list) => Ok(list.pop().unwrap_or_default()),
             FenderValue::String(s) => {
                 let len = s.len();
-                Ok(FenderValue::Char(s.remove(len - 1)).into())
+                Ok(FenderValue::Char(s.remove(len - 1).unwrap_or_default()).into())
             }
             e => Err(format!(
                 "Can only call pop on list: Expected type `List` found `{:?}`",
@@ -291,7 +292,7 @@ impl FenderValue {
             (v, t) if v.get_type_id() == t => v.clone(),
             (Int(i), FenderTypeId::Float) => Float(*i as f64),
             (Int(i), FenderTypeId::Bool) => Bool(*i != 0),
-            (Int(i), FenderTypeId::String) => String(i.to_string().into()),
+            (Int(i), FenderTypeId::String) => FenderValue::make_string(i),
             (Int(_i), FenderTypeId::Error) => todo!(),
             (Int(i), FenderTypeId::List) => List(vec![Int(*i).into()].into()),
             (Int(i), FenderTypeId::Char) => Char(*i as u8 as char),
@@ -313,22 +314,27 @@ impl FenderValue {
                 }
                 FenderValue::make_list(list)
             }
-            (String(s), FenderTypeId::Int) => match s.parse() {
+            (String(s), FenderTypeId::Int) => match s.to_string().parse() {
                 Ok(i) => Int(i),
-                _ => FenderValue::make_error(format!("Invalid int string: {}", s.deref())),
+                _ => FenderValue::make_error(format!("Invalid int string: {}", **s)),
             },
-            (String(s), FenderTypeId::Float) => match s.parse() {
+            (String(s), FenderTypeId::Float) => match s.to_string().parse() {
                 Ok(i) => Float(i),
-                _ => FenderValue::make_error(format!("Invalid int string: {}", s.deref())),
+                _ => FenderValue::make_error(format!("Invalid int string: {}", **s)),
             },
-            (String(s), FenderTypeId::Bool) => Bool(s.to_lowercase() == "true"),
-            (String(s), FenderTypeId::Error) => Error(s.deref().into()),
+            (String(s), FenderTypeId::Bool) => Bool(
+                s.len() == 4
+                    && s.iter().zip("true".chars()).fold(true, |carry, (a, b)| {
+                        carry && (*a as u32 | 32) == (b as u32 | 32)
+                    }),
+            ),
+            (String(s), FenderTypeId::Error) => Error(s.to_string()),
             (String(s), FenderTypeId::List) => {
-                FenderValue::make_list(s.chars().map(|c| Char(c).into()).collect::<Vec<_>>())
+                FenderValue::make_list(s.iter().map(|c| Char(*c).into()).collect::<Vec<_>>())
             }
             (String(s), FenderTypeId::Char) => {
                 if s.len() > 1 {
-                    Char(s.chars().next().unwrap())
+                    Char(s[0])
                 } else {
                     Char('\0')
                 }
@@ -337,11 +343,11 @@ impl FenderValue {
             (Bool(b), FenderTypeId::Float) => Float(if *b { 1.0 } else { 0.0 }),
             (Bool(b), FenderTypeId::String) => FenderValue::make_string(b.to_string()),
             (Bool(b), FenderTypeId::Char) => Char(if *b { 't' } else { 'f' }),
-            (Error(e), FenderTypeId::String) => FenderValue::make_string(e.into()),
+            (Error(e), FenderTypeId::String) => FenderValue::make_string(e),
             (Null, FenderTypeId::Int) => Int(Default::default()),
             (Null, FenderTypeId::Float) => Float(Default::default()),
             (Null, FenderTypeId::Bool) => Bool(Default::default()),
-            (Null, FenderTypeId::String) => FenderValue::make_string("NULL".into()),
+            (Null, FenderTypeId::String) => FenderValue::make_string("NULL"),
             (Null, FenderTypeId::Error) => Error("is NULL".into()),
             (Null, FenderTypeId::List) => FenderValue::make_list(Vec::new()),
             (Null, FenderTypeId::Char) => Char('\0'),
@@ -360,7 +366,12 @@ impl FenderValue {
             Int(i) => Bool(*i != 0),
             Float(f) => Bool(*f != 0.0),
             Char(c) => Bool(*c == 't'),
-            String(s) => Bool(s.eq_ignore_ascii_case("true")),
+            String(s) => Bool(
+                s.len() == 4
+                    && s.iter().zip("true".chars()).fold(true, |carry, (a, b)| {
+                        carry && (*a as u32 | 32) == (b as u32 | 32)
+                    }),
+            ),
             Bool(b) => Bool(*b),
             Error(_) => Bool(false),
             Function(_) => Bool(true),
@@ -379,12 +390,9 @@ impl FenderValue {
             List(l) => Some(FenderIterator::from_collection(l.len(), move |i| {
                 l[i].clone()
             })),
-            String(s) => {
-                let chars: Vec<_> = s.chars().collect();
-                Some(FenderIterator::from_collection(chars.len(), move |i| {
-                    FenderValue::Char(chars[i]).into()
-                }))
-            }
+            String(s) => Some(FenderIterator::from_collection(s.len(), move |i| {
+                FenderValue::Char(s[i]).into()
+            })),
             Iterator(i) => Some(i),
             _ => None,
         }
@@ -421,7 +429,7 @@ impl ToString for FenderValue {
             FenderValue::Int(i) => i.to_string(),
             FenderValue::Float(f) => f.to_string(),
             FenderValue::Char(c) => c.to_string(),
-            FenderValue::String(s) => s.deref().clone(),
+            FenderValue::String(s) => s.iter().collect(),
             FenderValue::Bool(b) => b.to_string(),
             FenderValue::Iterator(_) => "Iterator".to_string(),
             FenderValue::Error(e) => format!("Error({e:?})"),

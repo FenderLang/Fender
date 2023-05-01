@@ -83,7 +83,7 @@ fndr_native_func!(
     read_line_func,
     |_| {
         match std::io::stdin().lines().next() {
-            Some(Ok(s)) => Ok(String(s.into()).into()),
+            Some(Ok(s)) => Ok(FenderValue::make_string(s).into()),
             Some(Err(e)) => Ok(FenderValue::make_error(e.to_string()).into()),
             None => Ok(FenderValue::make_error("End of file".to_string()).into()),
         }
@@ -98,8 +98,8 @@ fndr_native_func!(
     |_, file_name| {
         let file_name = type_match!(file_name {(String(s))=>s});
 
-        Ok(match std::fs::read_to_string(file_name.deref()) {
-            Ok(s) => String(s.into()).into(),
+        Ok(match std::fs::read_to_string(file_name.to_string()) {
+            Ok(s) => FenderValue::make_string(s).into(),
             Err(e) => {
                 FenderValue::make_error(format!("failed to read file due to error: {e}")).into()
             }
@@ -113,12 +113,15 @@ fndr_native_func!(
     |_, data, file_name| {
         let file_name = type_match!(file_name {(String(s))=>s});
 
-        Ok(match std::fs::write(file_name.deref(), data.to_string()) {
-            Ok(s) => Bool(true).into(),
-            Err(e) => {
-                FenderValue::make_error(format!("failed to write file due to error: {e}")).into()
-            }
-        })
+        Ok(
+            match std::fs::write(file_name.to_string(), data.to_string()) {
+                Ok(s) => Bool(true).into(),
+                Err(e) => {
+                    FenderValue::make_error(format!("failed to write file due to error: {e}"))
+                        .into()
+                }
+            },
+        )
     }
 );
 
@@ -132,7 +135,7 @@ fndr_native_func!(
             .write(true)
             .append(true)
             .create(true)
-            .open(file_name.deref())
+            .open(file_name.to_string())
         {
             Ok(f) => f,
             Err(e) => {

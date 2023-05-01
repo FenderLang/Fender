@@ -1,8 +1,11 @@
-use crate::type_sys::{
-    fender_reference::{internal_reference::InternalReference, FenderReference},
-    fender_value::{fender_structs::FenderStruct, FenderValue},
-    freight_type_system::FenderTypeSystem,
-    type_id::FenderTypeId,
+use crate::{
+    fender_value::fender_strings::FenderString,
+    type_sys::{
+        fender_reference::{internal_reference::InternalReference, FenderReference},
+        fender_value::{fender_structs::FenderStruct, FenderValue},
+        freight_type_system::FenderTypeSystem,
+        type_id::FenderTypeId,
+    },
 };
 use freight_vm::{
     execution_engine::ExecutionEngine,
@@ -130,7 +133,7 @@ fn eq(a: &FenderReference, b: &FenderReference) -> FenderReference {
         (FenderValue::Char(a), FenderValue::Char(b)) => FenderValue::Bool(a == b).into(),
         (FenderValue::Char(c), FenderValue::String(s))
         | (FenderValue::String(s), FenderValue::Char(c)) => {
-            FenderValue::Bool(s.len() == 1 && s.deref().chars().next().unwrap() == *c).into()
+            FenderValue::Bool(s.len() == 1 && s[0] == *c).into()
         }
         (FenderValue::Int(_), FenderValue::Int(_))
         | (FenderValue::Float(_), FenderValue::Float(_))
@@ -161,7 +164,7 @@ fn ne(a: &FenderReference, b: &FenderReference) -> FenderReference {
         (FenderValue::Char(a), FenderValue::Char(b)) => FenderValue::Bool(a != b).into(),
         (FenderValue::Char(c), FenderValue::String(s))
         | (FenderValue::String(s), FenderValue::Char(c)) => {
-            FenderValue::Bool(s.len() != 1 || s.deref().chars().next().unwrap() != *c).into()
+            FenderValue::Bool(s.len() != 1 || s[0] != *c).into()
         }
 
         (FenderValue::Int(_), FenderValue::Int(_))
@@ -186,11 +189,12 @@ fn add(a: &FenderReference, b: &FenderReference) -> FenderReference {
     let b_val: &FenderValue = b.into();
     match (a_val, b_val) {
         (FenderValue::String(s), other) => {
-            FenderValue::String(format!("{}{}", s.deref(), other.to_string()).into()).into()
+            FenderValue::make_string(format!("{}{}", **s, other.to_string())).into()
         }
         (other, FenderValue::String(s)) => {
-            FenderValue::String(format!("{}{}", other.to_string(), s.deref()).into()).into()
+            FenderValue::make_string(format!("{}{}", other.to_string(), **s)).into()
         }
+
         _ => num_add(a, b),
     }
 }
@@ -241,7 +245,7 @@ fn index_op(a: &FenderReference, b: &FenderReference) -> FenderReference {
     }
 
     match a.deref() {
-        FenderValue::String(s) => FenderValue::Char(s.chars().nth(pos).unwrap()).into(),
+        FenderValue::String(s) => FenderValue::Char(s[pos]).into(),
         FenderValue::List(l) => l[pos].dupe_ref(),
         _ => unreachable!(),
     }
@@ -323,10 +327,10 @@ impl Initializer<FenderTypeSystem> for FenderInitializer {
             )
             .into(),
             FenderInitializer::String => {
-                let mut collected = String::new();
+                let mut collected = FenderString::new(Vec::new());
                 for v in values {
                     if let FenderValue::String(s) = &*v {
-                        collected.push_str(s);
+                        collected.push_fndr_str(s);
                     } else {
                         collected.push_str(&v.to_string());
                     }
