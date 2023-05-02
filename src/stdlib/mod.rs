@@ -135,7 +135,6 @@ deps_enum! {FenderResource, STDLIB_SIZE:
     pop => FenderNativeFunction {func: val_operation::pop_func, args: fixed(1)},
     dbg => FenderNativeFunction {func: val_operation::dbg_func, args: fixed(1)},
     remove => FenderNativeFunction {func: val_operation::remove_func, args: fixed(2)},
-    removePass => FenderNativeFunction {func: val_operation::remove_pass_func, args: fixed(2), },
     concat => FenderNativeFunction {func: val_operation::concat_func, args: fixed(2)},
     insert => FenderNativeFunction {func: val_operation::insert_func, args: fixed(3)},
     trim => FenderNativeFunction {func: val_operation::trim_func, args: range(1..=2)},

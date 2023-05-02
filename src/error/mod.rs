@@ -53,6 +53,16 @@ impl FenderError {
 }
 
 #[macro_export]
+macro_rules! index_oob {
+    ($index:expr, $len:expr) => {
+        format!(
+            "Index out of bounds, index was `{}` but length was `{}`",
+            $index, $len
+        )
+    };
+}
+
+#[macro_export]
 macro_rules! unwrap_rust {
     ($rust_result:expr) => {
         FenderError::unwrap_rust(

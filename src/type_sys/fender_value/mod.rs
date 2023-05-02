@@ -1,8 +1,11 @@
 use self::{fender_strings::FenderString, fender_structs::FenderStruct, iterator::FenderIterator};
-use crate::type_sys::{
-    fender_reference::{internal_reference::InternalReference, FenderReference},
-    freight_type_system::FenderTypeSystem,
-    type_id::FenderTypeId,
+use crate::{
+    index_oob,
+    type_sys::{
+        fender_reference::{internal_reference::InternalReference, FenderReference},
+        freight_type_system::FenderTypeSystem,
+        type_id::FenderTypeId,
+    },
 };
 use freight_vm::{
     error::FreightError, execution_engine::ExecutionEngine, function::FunctionRef, value::Value,
@@ -251,11 +254,27 @@ impl FenderValue {
 
         match (self, key) {
             (List(list), Int(index)) => {
-                list.insert(index as usize, val);
-                Ok(match list.get(index as usize + 1) {
-                    Some(v) => v.dupe_ref(),
-                    None => Null.into(),
-                })
+                if index > list.len() as i64 {
+                    Err(index_oob!(index, list.len()))
+                } else {
+                    list.insert(index as usize, val);
+                    Ok(match list.get(index as usize + 1) {
+                        Some(v) => v.dupe_ref(),
+                        None => Null.into(),
+                    })
+                }
+            }
+            (String(s), Int(index)) => {
+                if index > s.len() as i64 {
+                    Err(index_oob!(index, s.len()))
+                } else {
+                    match &*val {
+                        Null => s.insert_char(index as usize, '\0'),
+                        Char(c) => s.insert_char(index as usize, *c),
+                        other => s.insert_str(index as usize, &other.to_string()),
+                    };
+                    Ok(FenderValue::Char(s[index as usize + 1]).into())
+                }
             }
             (HashMap(hash_map), key) => Ok(match hash_map.insert(key, val) {
                 Some(v) => v.dupe_ref(),
@@ -417,7 +436,7 @@ impl FenderValue {
         match self {
             FenderValue::Ref(v) => format!("Ref({})", v.to_literal_display_string()),
             FenderValue::Char(c) => format!("'{c}'"),
-            FenderValue::String(s) => format!("{:?}", s.deref()),
+            FenderValue::String(s) => format!("{}", s.escaped_string()),
             v => v.to_string(),
         }
     }

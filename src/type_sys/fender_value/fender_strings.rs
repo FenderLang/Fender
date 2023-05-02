@@ -5,6 +5,8 @@ use std::{
     ops::Index,
 };
 
+use crate::index_oob;
+
 #[derive(Debug, Clone)]
 pub struct FenderString {
     chars: Vec<char>,
@@ -80,11 +82,7 @@ impl FenderString {
         };
 
         if pos >= self.len() {
-            Err(format!(
-                "Index out of bounds, index was `{}` but length was `{}`",
-                pos,
-                self.len()
-            ))
+            Err(index_oob!(pos, self.len()))
         } else {
             self.has_changed.set(true);
             Ok(self.chars.remove(pos))
@@ -123,6 +121,32 @@ impl FenderString {
         self.has_changed.set(true);
         self.chars.swap(pos_a, pos_b);
         true
+    }
+
+    pub fn insert_char(&mut self, index: usize, value: char) -> bool {
+        if index > self.len() {
+            false
+        } else {
+            self.has_changed.set(true);
+            self.chars.insert(index, value);
+            true
+        }
+    }
+
+    pub fn insert_str(&mut self, index: usize, value: &str) -> bool {
+        if index > self.len() {
+            false
+        } else {
+            self.has_changed.set(true);
+            let mut tmp = self.chars.split_off(index);
+            self.chars.extend(value.chars());
+            self.chars.append(&mut tmp);
+            true
+        }
+    }
+
+    pub fn get(&self, index: usize) -> Option<char> {
+        self.chars.get(index).cloned()
     }
 }
 
