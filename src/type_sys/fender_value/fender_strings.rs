@@ -66,6 +66,31 @@ impl FenderString {
         }
     }
 
+    pub fn remove_at(&mut self, mut pos: i64) -> Result<char, String> {
+        pos = if pos < 0 {
+            self.len() as i64 + pos
+        } else {
+            pos
+        };
+
+        let pos = if pos < 0 {
+            return Err("Invalid wrapping index".into());
+        } else {
+            pos as usize
+        };
+
+        if pos >= self.len() {
+            Err(format!(
+                "Index out of bounds, index was `{}` but length was `{}`",
+                pos,
+                self.len()
+            ))
+        } else {
+            self.has_changed.set(true);
+            Ok(self.chars.remove(pos))
+        }
+    }
+
     pub fn to_uppercase(&self) -> FenderString {
         FenderString::new(
             self.chars
@@ -91,15 +116,14 @@ impl FenderString {
         &self.chars
     }
 
-    pub fn swap(&mut self, pos_a:usize, pos_b:usize) -> bool {
-        if pos_a >= self.len() || pos_b >= self.len(){
+    pub fn swap(&mut self, pos_a: usize, pos_b: usize) -> bool {
+        if pos_a >= self.len() || pos_b >= self.len() {
             return false;
         }
         self.has_changed.set(true);
         self.chars.swap(pos_a, pos_b);
         true
     }
-
 }
 
 impl Index<usize> for FenderString {

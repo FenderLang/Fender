@@ -1,4 +1,30 @@
 #!/usr/bin/env fender
+$print_prefix = (value, name){
+   print("({name})\t")
+   println(value)
+}
 
-1.dbg().println()
-1.float().dbg().println()
+$l = [1,2,3,4,5].print_prefix("l")
+$s = "12345"    .print_prefix("s")
+
+"\nswap 0 - 1".println()
+
+l.swap(0,1).print_prefix("l")
+s.swap(0,1).print_prefix("s")
+
+"\nafter swap".println()
+l.print_prefix("l")
+s.print_prefix("s")
+
+"\nremove 0".println()
+l.remove(0)
+s.remove(0)
+l.println()
+s.println()
+
+
+"\nremove -2".println()
+l.remove(-2)
+s.remove(-2)
+l.println()
+s.println()

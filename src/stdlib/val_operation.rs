@@ -40,7 +40,7 @@ fndr_native_func!(
             }
         };
 
-        Ok(variable.into())
+        Ok(variable)
     }
 );
 
@@ -105,9 +105,8 @@ fndr_native_func!(
     /// Removes an element from a list and returns it or error if there is no element at that location
     remove_func,
     |_, mut value, pos| {
-        let Int(pos) = *pos else {
-            return Ok(FenderValue::make_error(format!("Remove must be indexed with an int: expected type `Int` found type `{}`", pos.get_type_id().to_string())).into());
-        };
+        let pos = type_match! {pos {Int(pos) => pos}};
+
         Ok(match value.remove_at(pos) {
             Ok(v) => v,
             Err(s) => FenderValue::make_error(s).into(),

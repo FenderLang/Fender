@@ -210,6 +210,7 @@ impl FenderValue {
     pub fn remove_at(&mut self, pos: i64) -> Result<FenderReference, String> {
         let list = match self {
             FenderValue::List(l) => l,
+            FenderValue::String(s) => return s.remove_at(pos).map(|c| FenderValue::Char(c).into()),
             FenderValue::Ref(r) => return r.remove_at(pos),
             e => {
                 return Err(format!(
