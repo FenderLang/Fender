@@ -42,21 +42,36 @@ impl FenderString {
             return;
         }
 
-        self.has_changed.set(true);
-        self.chars.extend(other.chars())
+        self.chars.extend(other.chars());
+
+        if !self.has_changed.get() {
+            self.cached_string.borrow_mut().push_str(other);
+        }
     }
 
     pub fn push_fndr_str(&mut self, other: &FenderString) {
         if other.is_empty() {
             return;
         }
-        self.has_changed.set(true);
-        self.chars.extend(other.chars.clone())
+
+        self.chars.extend(other.chars.clone());
+
+        if !self.has_changed.get() {
+            if other.has_changed.get() {
+                self.has_changed.set(true);
+            } else {
+                self.cached_string
+                    .borrow_mut()
+                    .push_str(other.cached_string.borrow().as_str());
+            }
+        }
     }
 
     pub fn push_char(&mut self, other: char) {
-        self.has_changed.set(true);
-        self.chars.push(other)
+        self.chars.push(other);
+        if !self.has_changed.get() {
+            self.cached_string.borrow_mut().push(other);
+        }
     }
 
     pub fn remove(&mut self, pos: usize) -> Option<char> {
@@ -126,6 +141,9 @@ impl FenderString {
     pub fn insert_char(&mut self, index: usize, value: char) -> bool {
         if index > self.len() {
             false
+        } else if index == self.len() {
+            self.push_char(value);
+            true
         } else {
             self.has_changed.set(true);
             self.chars.insert(index, value);
@@ -136,6 +154,9 @@ impl FenderString {
     pub fn insert_str(&mut self, index: usize, value: &str) -> bool {
         if index > self.len() {
             false
+        } else if index == self.len() {
+            self.push_str(value);
+            true
         } else {
             self.has_changed.set(true);
             let mut tmp = self.chars.split_off(index);
@@ -160,7 +181,11 @@ impl Index<usize> for FenderString {
 
 impl From<&str> for FenderString {
     fn from(value: &str) -> FenderString {
-        FenderString::new(value.chars().collect())
+        FenderString {
+            has_changed: Cell::new(false),
+            cached_string: RefCell::new(value.to_owned()),
+            chars: value.chars().collect(),
+        }
     }
 }
 
