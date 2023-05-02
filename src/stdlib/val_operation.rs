@@ -5,7 +5,6 @@ use crate::{
         type_id::FenderTypeId,
     },
 };
-use std::ops::DerefMut;
 
 fndr_native_func!(
     /// Get the `FenderValue::len` of `item`
@@ -23,27 +22,25 @@ fndr_native_func!(
     /// Swap two values in a list
     swap_func,
     |_, mut variable, pos_a, pos_b| {
-        let (Int(pos_a), Int(pos_b)) =  (&*pos_a, &*pos_b) else{
-        return Ok(FenderValue::make_error(format!(
-            "Swap indices must be of type Int, values provided were of following types (`{}`, `{}`)",
-            pos_a.get_real_type_id().to_string(),
-            pos_b.get_real_type_id().to_string(),
-        ))
-        .into());
-    };
-
-        Ok(match variable.deref_mut() {
-            List(l) => {
-                l.swap(*pos_a as usize, *pos_b as usize);
-                List(l.to_vec().into()).into()
+        let (pos_a, pos_b) = type_match!(
+            pos_a, pos_b {
+                (Int(pos_a), Int(pos_b))=> (pos_a, pos_b)
             }
+        );
 
-            _ => Error(format!(
-                "Cannot call swap on value of type `{}`",
-                variable.get_real_type_id().to_string()
-            ))
-            .into(),
-        })
+        type_match! {
+            variable
+            {
+                List(mut l) => {
+                    l.swap(pos_a as usize, pos_b as usize);
+                },
+                String(mut s) => {
+                    s.swap(pos_a as usize, pos_b as usize);
+                }
+            }
+        };
+
+        Ok(variable.into())
     }
 );
 

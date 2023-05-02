@@ -90,6 +90,16 @@ impl FenderString {
     pub fn chars(&self) -> &Vec<char> {
         &self.chars
     }
+
+    pub fn swap(&mut self, pos_a:usize, pos_b:usize) -> bool {
+        if pos_a >= self.len() || pos_b >= self.len(){
+            return false;
+        }
+        self.has_changed.set(true);
+        self.chars.swap(pos_a, pos_b);
+        true
+    }
+
 }
 
 impl Index<usize> for FenderString {
