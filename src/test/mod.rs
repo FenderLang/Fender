@@ -156,6 +156,14 @@ fn run_pass_by_reference_file() {
 }
 
 #[test]
+fn pass_by_value() {
+    assert_eq!(
+        *run("$a = 0; $list = []; list.push(a); a = 1; list[0]"),
+        FenderValue::Int(0)
+    );
+}
+
+#[test]
 fn format_strings() {
     assert_eq!(
         *run("$x = 4; \"x is equal to {x}\""),
