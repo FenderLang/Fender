@@ -20,9 +20,8 @@ $each = (list, func) {
 
 $map = (list, func) {
     $i = 0
-    list.println()
     while({i < list.len()}, {
-        list[i] = list[i].func()
+        list[i] = func(list[i])
         i = i + 1
     })
     list
@@ -37,4 +36,4 @@ $fold = (list, accum, func) {
     accum
 }
 
-["1", "4", "3"].map(int).list().println().fold(0, (a, b) {a + b})
+["1", "4", "3"].map(int).fold(0, (a, b) {a + b})
