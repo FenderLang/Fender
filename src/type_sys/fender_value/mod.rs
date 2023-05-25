@@ -44,7 +44,7 @@ impl FenderValue {
         FenderValue::List(InternalReference::new(list))
     }
     pub fn make_string<S: ToString>(s_body: S) -> FenderValue {
-        FenderValue::String(InternalReference::new(s_body.to_string().as_str().into()))
+        FenderValue::String(InternalReference::new(FenderString::from(s_body.to_string().as_str())))
     }
 
     pub fn get_type_id(&self) -> FenderTypeId {
@@ -436,7 +436,7 @@ impl FenderValue {
         match self {
             FenderValue::Ref(v) => format!("Ref({})", v.to_literal_display_string()),
             FenderValue::Char(c) => format!("'{c}'"),
-            FenderValue::String(s) => format!("{}", s.escaped_string()),
+            FenderValue::String(s) => s.escaped_string(),
             v => v.to_string(),
         }
     }

@@ -19,7 +19,7 @@ pub enum FenderReference {
 impl FenderReference {
     pub fn get_pass_object(&self) -> FenderReference {
         match self {
-            FenderReference::FRef(r) => FenderReference::FRef(r.deref().clone().into()),
+            FenderReference::FRef(r) => FenderReference::FRaw(r.deref().clone()),
             FenderReference::FRaw(v) => FenderReference::FRaw(v.clone()),
         }
     }
@@ -110,7 +110,7 @@ impl Value for FenderReference {
     fn dupe_ref(&self) -> FenderReference {
         match self {
             FenderReference::FRef(internal_ref) => FenderReference::FRef(internal_ref.clone()),
-            FenderReference::FRaw(_) => self.deep_clone(),
+            FenderReference::FRaw(_) => self.clone(),
         }
     }
 
@@ -134,7 +134,7 @@ impl Value for FenderReference {
 
     fn into_ref(self) -> Self {
         match self {
-            FenderReference::FRef(_) => self,
+            FenderReference::FRef(_) => FenderReference::FRef(self.deref().clone().into()),
             FenderReference::FRaw(v) => FenderReference::FRef(InternalReference::new(v)),
         }
     }

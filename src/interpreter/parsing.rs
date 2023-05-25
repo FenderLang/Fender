@@ -163,6 +163,7 @@ pub(crate) fn parse_code_body(
         function.set_captures(captures);
     }
     new_scope.register_stack_vars(&mut function);
+    function.layout = new_scope.stack_layout.borrow().clone();
     Ok(engine.register_function(function, new_scope.return_target))
 }
 
@@ -289,15 +290,31 @@ pub(crate) fn parse_assignment(
         .children_named("assignOp")
         .next()
         .map(|t| parse_binary_operator(&t.get_match()));
-    let target = parse_expr(target, engine, scope)?;
+    let target_expr = parse_expr(target, engine, scope)?;
+    if let Expression::Variable(v) = &target_expr {
+        if let VariableType::Stack(s) = v {
+            scope.stack_layout.borrow_mut().set_alloc(*s);
+        } else {
+            scope.mark_mutable(
+                &target
+                    .rec_iter()
+                    .select_token("name")
+                    .next()
+                    .expect(
+                        "Left-hand assignment expression did not have a name to mark as mutable",
+                    )
+                    .get_match(),
+            );
+        }
+    }
     let value = parse_expr(value, engine, scope)?;
     Ok(if let Some(op) = op {
         Expression::BinaryOpEval(
             FenderBinaryOperator::AssignOperate(op.into()),
-            [target, value].into(),
+            [target_expr, value].into(),
         )
     } else {
-        Expression::AssignDynamic([target, value].into())
+        Expression::AssignDynamic([target_expr, value].into())
     })
 }
 
