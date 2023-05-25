@@ -139,30 +139,34 @@ impl FenderString {
     }
 
     pub fn insert_char(&mut self, index: usize, value: char) -> bool {
-        if index > self.len() {
-            false
-        } else if index == self.len() {
-            self.push_char(value);
-            true
-        } else {
-            self.has_changed.set(true);
-            self.chars.insert(index, value);
-            true
+        match index.cmp(&self.len()) {
+            std::cmp::Ordering::Greater => false,
+            std::cmp::Ordering::Equal => {
+                self.push_char(value);
+                true
+            }
+            _ => {
+                self.has_changed.set(true);
+                self.chars.insert(index, value);
+                true
+            }
         }
     }
 
     pub fn insert_str(&mut self, index: usize, value: &str) -> bool {
-        if index > self.len() {
-            false
-        } else if index == self.len() {
-            self.push_str(value);
-            true
-        } else {
-            self.has_changed.set(true);
-            let mut tmp = self.chars.split_off(index);
-            self.chars.extend(value.chars());
-            self.chars.append(&mut tmp);
-            true
+        match index.cmp(&self.len()) {
+            std::cmp::Ordering::Greater => false,
+            std::cmp::Ordering::Equal => {
+                self.push_str(value);
+                true
+            }
+            _ => {
+                self.has_changed.set(true);
+                let mut tmp = self.chars.split_off(index);
+                self.chars.extend(value.chars());
+                self.chars.append(&mut tmp);
+                true
+            }
         }
     }
 

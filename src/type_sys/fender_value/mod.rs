@@ -44,7 +44,9 @@ impl FenderValue {
         FenderValue::List(InternalReference::new(list))
     }
     pub fn make_string<S: ToString>(s_body: S) -> FenderValue {
-        FenderValue::String(InternalReference::new(FenderString::from(s_body.to_string().as_str())))
+        FenderValue::String(InternalReference::new(FenderString::from(
+            s_body.to_string().as_str(),
+        )))
     }
 
     pub fn get_type_id(&self) -> FenderTypeId {
