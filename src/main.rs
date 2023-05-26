@@ -1,3 +1,4 @@
+#![feature(generic_arg_infer)]
 #[cfg(feature = "repl")]
 use fender::interpreter::repl::FenderRepl;
 use fender::{

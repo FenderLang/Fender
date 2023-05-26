@@ -1,25 +1,44 @@
-use std::{
-    cell::{Cell, RefCell},
-    fmt::Display,
-    hash::Hash,
-    ops::Index,
-};
+use std::{cell::RefCell, fmt::Display, hash::Hash, ops::Index};
 
 use crate::index_oob;
 
 #[derive(Debug, Clone)]
 pub struct FenderString {
     chars: Vec<char>,
-    has_changed: Cell<bool>,
-    cached_string: RefCell<String>,
+    cacheable: bool,
+    cached_string: RefCell<Option<String>>,
 }
 
 impl FenderString {
     pub fn new(chars: Vec<char>) -> FenderString {
         FenderString {
             chars,
-            has_changed: Cell::new(true),
+            cacheable: false,
             cached_string: Default::default(),
+        }
+    }
+
+    pub fn new_cached(chars: Vec<char>) -> FenderString {
+        FenderString {
+            chars,
+            cacheable: true,
+            cached_string: Default::default(),
+        }
+    }
+
+    pub fn not_cached_from_str(str_val: &str) -> FenderString {
+        FenderString {
+            chars: str_val.chars().collect(),
+            cacheable: false,
+            cached_string: RefCell::new(None),
+        }
+    }
+    pub fn cached_from_str<S: ToString>(str_val: S) -> FenderString {
+        let str_val = str_val.to_string();
+        FenderString {
+            chars: str_val.chars().collect(),
+            cacheable: true,
+            cached_string: RefCell::new(Some(str_val)),
         }
     }
 }
@@ -44,8 +63,8 @@ impl FenderString {
 
         self.chars.extend(other.chars());
 
-        if !self.has_changed.get() {
-            self.cached_string.borrow_mut().push_str(other);
+        if let Some(s) = self.cached_string.borrow_mut().as_mut() {
+            s.push_str(other);
         }
     }
 
@@ -56,21 +75,18 @@ impl FenderString {
 
         self.chars.extend(other.chars.clone());
 
-        if !self.has_changed.get() {
-            if other.has_changed.get() {
-                self.has_changed.set(true);
-            } else {
-                self.cached_string
-                    .borrow_mut()
-                    .push_str(other.cached_string.borrow().as_str());
+        if let Some(s) = self.cached_string.borrow_mut().as_mut() {
+            for c in other.iter() {
+                s.push(*c);
             }
         }
     }
 
     pub fn push_char(&mut self, other: char) {
         self.chars.push(other);
-        if !self.has_changed.get() {
-            self.cached_string.borrow_mut().push(other);
+
+        if let Some(s) = self.cached_string.borrow_mut().as_mut() {
+            s.push(other);
         }
     }
 
@@ -78,7 +94,9 @@ impl FenderString {
         if pos >= self.len() {
             None
         } else {
-            self.has_changed.set(true);
+            if self.cacheable {
+                *self.cached_string.get_mut() = None;
+            }
             Some(self.chars.remove(pos))
         }
     }
@@ -99,7 +117,9 @@ impl FenderString {
         if pos >= self.len() {
             Err(index_oob!(pos, self.len()))
         } else {
-            self.has_changed.set(true);
+            if self.cacheable {
+                *self.cached_string.get_mut() = None;
+            }
             Ok(self.chars.remove(pos))
         }
     }
@@ -133,7 +153,9 @@ impl FenderString {
         if pos_a >= self.len() || pos_b >= self.len() {
             return false;
         }
-        self.has_changed.set(true);
+        if self.cacheable {
+            *self.cached_string.get_mut() = None;
+        }
         self.chars.swap(pos_a, pos_b);
         true
     }
@@ -146,7 +168,9 @@ impl FenderString {
                 true
             }
             _ => {
-                self.has_changed.set(true);
+                if self.cacheable {
+                    *self.cached_string.get_mut() = None;
+                }
                 self.chars.insert(index, value);
                 true
             }
@@ -161,7 +185,9 @@ impl FenderString {
                 true
             }
             _ => {
-                self.has_changed.set(true);
+                if self.cacheable {
+                    *self.cached_string.get_mut() = None;
+                }
                 let mut tmp = self.chars.split_off(index);
                 self.chars.extend(value.chars());
                 self.chars.append(&mut tmp);
@@ -186,9 +212,9 @@ impl Index<usize> for FenderString {
 impl From<&str> for FenderString {
     fn from(value: &str) -> FenderString {
         FenderString {
-            has_changed: Cell::new(false),
-            cached_string: RefCell::new(value.to_owned()),
+            cached_string: RefCell::new(None),
             chars: value.chars().collect(),
+            cacheable: false,
         }
     }
 }
@@ -207,12 +233,15 @@ impl Hash for FenderString {
 
 impl Display for FenderString {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.has_changed.get() {
-            self.has_changed.set(false);
-            let mut cache = self.cached_string.borrow_mut();
-            *cache = self.chars.iter().collect();
+        if !self.cacheable {
+            return write!(f, "{}", self.chars.iter().collect::<String>());
         }
 
-        write!(f, "{}", self.cached_string.borrow())
+        if let Some(s) = &*self.cached_string.borrow() {
+            write!(f, "{}", s)
+        } else {
+            *self.cached_string.borrow_mut() = Some(self.chars.iter().collect());
+            write!(f, "{}", self.cached_string.borrow().as_ref().unwrap())
+        }
     }
 }
