@@ -4,7 +4,7 @@ use crate::type_sys::{
     freight_type_system::FenderTypeSystem,
 };
 use freight_vm::{execution_engine::ExecutionEngine, function::ArgCount};
-use reedline::{DefaultValidator, Prompt, Reedline, Signal};
+use reedline::{DefaultValidator, Prompt, Reedline, Signal, ValidationResult, Validator};
 use std::error::Error;
 
 pub struct FenderRepl<'a> {
@@ -63,6 +63,31 @@ impl Prompt for FenderPrompt {
     }
 }
 
+struct FenderValidator;
+
+impl Validator for FenderValidator {
+    fn validate(&self, line: &str) -> ValidationResult {
+        let mut iter = line.chars();
+        let mut balance = 0;
+        let mut quoted = None;
+        while let Some(c) = iter.next() {
+            match c {
+                '\\' => drop(iter.next()),
+                '(' | '[' | '{' if quoted.is_none() => balance += 1,
+                ')' | ']' | '}' if quoted.is_none() => balance -= 1,
+                '"' | '\'' if quoted.is_none() => quoted = Some(c),
+                '"' | '\'' if quoted == Some(c) => quoted = None,
+                _ => (),
+            }
+        }
+        if balance == 0 && quoted.is_none() {
+            ValidationResult::Complete
+        } else {
+            ValidationResult::Incomplete
+        }
+    }
+}
+
 impl<'a> FenderRepl<'a> {
     pub fn new() -> FenderRepl<'a> {
         let mut engine = ExecutionEngine::new_default();
@@ -70,7 +95,7 @@ impl<'a> FenderRepl<'a> {
         FenderRepl {
             engine,
             scope,
-            editor: Reedline::create().with_validator(Box::new(DefaultValidator)),
+            editor: Reedline::create().with_validator(Box::new(FenderValidator)),
         }
     }
 
