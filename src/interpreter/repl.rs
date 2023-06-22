@@ -4,7 +4,7 @@ use crate::type_sys::{
     freight_type_system::FenderTypeSystem,
 };
 use freight_vm::{execution_engine::ExecutionEngine, function::ArgCount};
-use reedline::{DefaultValidator, Prompt, Reedline, Signal, ValidationResult, Validator};
+use reedline::{Prompt, Reedline, Signal, ValidationResult, Validator};
 use std::error::Error;
 
 pub struct FenderRepl<'a> {
