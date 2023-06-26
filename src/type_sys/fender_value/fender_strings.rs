@@ -132,6 +132,7 @@ impl FenderString {
                 .collect(),
         )
     }
+
     pub fn to_lowercase(&self) -> FenderString {
         FenderString::new(
             self.chars
@@ -198,6 +199,10 @@ impl FenderString {
 
     pub fn get(&self, index: usize) -> Option<char> {
         self.chars.get(index).cloned()
+    }
+
+    pub fn get_cached_str(&self)->RefCell<Option<String>>{
+       self.cached_string.clone()
     }
 }
 
